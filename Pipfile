@@ -10,6 +10,8 @@ torch = "*"
 flake8 = "*"
 pep8-naming = "*"
 pytest = "*"
+tensorboard = "*"
+tensorflow = "*"
 
 [requires]
 python_version = "3.8"
