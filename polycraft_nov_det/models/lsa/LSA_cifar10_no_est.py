@@ -1,9 +1,8 @@
-import polycraft_nov_det.models.lsa.unmodified.models as models
-import models.LSA_cifar10
-import models.base
+import polycraft_nov_det.models.lsa.unmodified.models.LSA_cifar10 as LSA_cifar10
+import polycraft_nov_det.models.lsa.unmodified.models.base as base
 
 
-class LSACIFAR10NoEst(models.base.BaseModule):
+class LSACIFAR10NoEst(base.BaseModule):
     """
     LSA model for CIFAR10 one-class classification without estimator.
     """
@@ -20,13 +19,13 @@ class LSACIFAR10NoEst(models.base.BaseModule):
         self.code_length = code_length
 
         # Build encoder
-        self.encoder = models.LSA_cifar10.Encoder(
+        self.encoder = LSA_cifar10.Encoder(
             input_shape=input_shape,
             code_length=code_length
         )
 
         # Build decoder
-        self.decoder = models.LSA_cifar10.Decoder(
+        self.decoder = LSA_cifar10.Decoder(
             code_length=code_length,
             deepest_shape=self.encoder.deepest_shape,
             output_shape=input_shape
