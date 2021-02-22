@@ -1,5 +1,15 @@
-# test torch has been installed, since it's separate from the Pipenv
+# test torch and torchvision have been installed, since they're separate from the Pipenv
 def test_torch():
-    import torch
-    import torchvision
-    assert True
+    try:
+        import torch
+    except Exception as e:
+        print(e)
+        raise Exception("PyTorch not installed correctly")
+
+
+def test_torchvision():
+    try:
+        import torchvision
+    except Exception as e:
+        print(e)
+        raise Exception("torchvision not installed correctly")
