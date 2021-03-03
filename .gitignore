@@ -1,3 +1,4 @@
 __pycache__
 .vscode
 polycraft_nov_det/base_data/*
+**/runs/
