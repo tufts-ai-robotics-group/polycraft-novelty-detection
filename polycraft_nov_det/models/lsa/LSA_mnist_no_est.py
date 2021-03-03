@@ -83,7 +83,7 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr)
     # train model
     for epoch in range(epochs):
-        epoch_loss = 0
+        train_loss = 0
         for data, target in train_loader:
             data = data.to(device)
             optimizer.zero_grad()
@@ -93,13 +93,21 @@ def train():
             batch_loss.backward()
             optimizer.step()
             # logging
-            epoch_loss += batch_loss.item() * batch_size
-        # record training loss
-        av_epoch_loss = epoch_loss / len(train_loader)
-        writer.add_scalar("Average Train Loss", av_epoch_loss, epoch)
+            train_loss += batch_loss.item() * batch_size
+        # calculate and record train loss
+        av_train_loss = train_loss / len(train_loader)
+        writer.add_scalar("Average Train Loss", av_train_loss, epoch)
+        # get validation loss
+        valid_loss = 0
+        for data, target in valid_loader:
+            data = data.to(device)
+            r_data, embedding = model(data)
+            batch_loss = loss_func(data, r_data)
+            valid_loss += batch_loss.item() * batch_size
+        av_valid_loss = valid_loss / len(valid_loader)
+        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
         # TODO add reconstruction visualization
         # TODO add latent space visualization (try PCA or t-SNE for projection)
-        # TODO add validation set
     # save model
     with path("polycraft_nov_det/models/lsa", "LSA_mnist_no_est.pt") as f_path:
         torch.save(model.state_dict(), f_path)
