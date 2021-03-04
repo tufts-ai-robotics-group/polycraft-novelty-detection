@@ -27,21 +27,19 @@ def torch_mnist(batch_size=1, include_classes=None, shuffle=True):
                           transform=transforms.ToTensor())
         test_set = MNIST(root=data_path, train=False, download=True,
                          transform=transforms.ToTensor())
-    # sort the training set by class
-    class_count = torch.bincount(train_set.targets)
-    sort_ind = torch.argsort(train_set.targets)
-    train_set = data.Subset(train_set, sort_ind)
-    # get a validation set with an even class distribution
-    valid_count = class_count // 10
-    train_ind = torch.tensor([], dtype=torch.int32)
-    valid_ind = torch.tensor([], dtype=torch.int32)
-    for i in range(len(class_count)):
-        class_start = torch.sum(class_count[:i])
-        class_end = torch.sum(class_count[:i + 1])
-        train_ind = torch.cat((train_ind, torch.arange(class_start, class_end - valid_count[i])))
-        valid_ind = torch.cat((valid_ind, torch.arange(class_end - valid_count[i], class_end)))
-    valid_set = data.Subset(train_set, valid_ind)
-    train_set = data.Subset(train_set, train_ind)
+    # select only included classes
+    if include_classes is not None:
+        train_include = torch.any(torch.stack([train_set.targets == target
+                                               for target in include_classes]),
+                                  dim=0)
+        test_include = torch.any(torch.stack([test_set.targets == target
+                                              for target in include_classes]),
+                                 dim=0)
+        train_set = data.Subset(train_set, torch.nonzero(train_include)[:, 0])
+        test_set = data.Subset(test_set, torch.nonzero(test_include)[:, 0])
+    # get a validation set
+    valid_len = len(train_set) // 10
+    train_set, valid_set = data.random_split(train_set, [len(train_set) - valid_len, valid_len])
     # get DataLoaders for datasets
     return (data.DataLoader(train_set, batch_size, shuffle),
             data.DataLoader(valid_set, batch_size, shuffle),
