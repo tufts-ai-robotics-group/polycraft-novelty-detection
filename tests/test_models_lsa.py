@@ -31,7 +31,7 @@ def test_forward_mnist_no_est():
 
 
 def test_mnist_no_est():
-    train_loader, test_loader = torch_mnist(batch_size, False)
+    train_loader, _, _ = torch_mnist(batch_size)
     model = LSAMNISTNoEst(mnist_input_shape, 64)
     for data, target in train_loader:
         model(data)
