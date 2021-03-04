@@ -16,39 +16,31 @@ def torch_mnist(batch_size=1, shuffle=True):
     Returns:
         (DataLoader, DataLoader, DataLoader): MNIST train, validation, and test sets.
                                               Contains batches of (1, 28, 28) images,
-                                              with values 0-255.
+                                              with values 0-1.
     """
     # get path within module
     with path("polycraft_nov_det", "base_data") as data_path:
         # get dataset with separate data and targets
         train_set = MNIST(root=data_path, train=True, download=True,
-                          target_transform=transforms.ToTensor())
+                          transform=transforms.ToTensor())
         test_set = MNIST(root=data_path, train=False, download=True,
-                         target_transform=transforms.ToTensor())
+                         transform=transforms.ToTensor())
     # sort the training set by class
+    class_count = torch.bincount(train_set.targets)
     sort_ind = torch.argsort(train_set.targets)
-    train_data = train_set.data[sort_ind]
-    train_targets = train_set.targets[sort_ind]
-    # adds extra channel dimension to data for compatibility with networks expecting RGB
-    train_data = train_set.data[:, None].float()
-    test_data = test_set.data[:, None].float()
+    train_set = data.Subset(train_set, sort_ind)
     # get a validation set with an even class distribution
-    class_count = torch.bincount(train_targets)
     valid_count = class_count // 10
-    valid_mask = torch.zeros(len(train_targets), dtype=torch.bool)
-    class_end = 0
+    train_ind = torch.tensor([], dtype=torch.int32)
+    valid_ind = torch.tensor([], dtype=torch.int32)
     for i in range(len(class_count)):
-        class_end += class_count[i]
-        valid_mask[torch.arange(class_end - valid_count[i], class_end)] = True
-    valid_data = train_data[valid_mask]
-    valid_targets = train_targets[valid_mask]
-    train_data = train_data[~valid_mask]
-    train_targets = train_targets[~valid_mask]
-    # get tensor dataset with data and targets
-    train_tensor = data.TensorDataset(train_data, train_targets)
-    valid_tensor = data.TensorDataset(valid_data, valid_targets)
-    test_tensor = data.TensorDataset(test_data, test_set.targets)
+        class_start = torch.sum(class_count[:i])
+        class_end = torch.sum(class_count[:i + 1])
+        train_ind = torch.cat((train_ind, torch.arange(class_start, class_end - valid_count[i])))
+        valid_ind = torch.cat((valid_ind, torch.arange(class_end - valid_count[i], class_end)))
+    valid_set = data.Subset(train_set, valid_ind)
+    train_set = data.Subset(train_set, train_ind)
     # get DataLoaders for datasets
-    return (data.DataLoader(train_tensor, batch_size, shuffle),
-            data.DataLoader(valid_tensor, batch_size, shuffle),
-            data.DataLoader(test_tensor, batch_size, shuffle))
+    return (data.DataLoader(train_set, batch_size, shuffle),
+            data.DataLoader(valid_set, batch_size, shuffle),
+            data.DataLoader(test_set, batch_size, shuffle))
