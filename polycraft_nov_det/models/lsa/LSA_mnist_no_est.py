@@ -1,5 +1,14 @@
+from importlib.resources import path
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.tensorboard import SummaryWriter
+
+from polycraft_nov_det.data import torch_mnist
 import polycraft_nov_det.models.lsa.unmodified.models.LSA_mnist as LSA_mnist
 import polycraft_nov_det.models.lsa.unmodified.models.base as base
+from polycraft_nov_det.plot import plot_reconstruction
 
 
 class LSAMNISTNoEst(base.BaseModule):
@@ -54,20 +63,11 @@ class LSAMNISTNoEst(base.BaseModule):
 
 
 def train():
-    from importlib.resources import path
-
-    import torch
-    import torch.nn as nn
-    import torch.optim as optim
-    from torch.utils.tensorboard import SummaryWriter
-
-    from polycraft_nov_det.data import torch_mnist
-
     # define shape constants
     mnist_input_shape = (1, 28, 28)
     batch_size = 256
     # get dataloaders
-    train_loader, valid_loader, _ = torch_mnist(batch_size, False)
+    train_loader, valid_loader, _ = torch_mnist(batch_size)
     # get Tensorboard writer
     with path("polycraft_nov_det.models.lsa", "runs") as log_dir:
         writer = SummaryWriter(log_dir)
@@ -106,9 +106,9 @@ def train():
             valid_loss += batch_loss.item() * batch_size
         av_valid_loss = valid_loss / len(valid_loader)
         writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
-        # TODO add reconstruction visualization
+        # get reconstruction visualization
+        writer.add_figure("Reconstruction Vis", plot_reconstruction(data, r_data))
         # TODO add latent space visualization (try PCA or t-SNE for projection)
     # save model
-    with path("polycraft_nov_det/models/lsa", "LSA_mnist_no_est.pt") as f_path:
-        torch.save(model.state_dict(), f_path)
+    torch.save(model.state_dict(), "LSA_mnist_no_est.pt")
     return model

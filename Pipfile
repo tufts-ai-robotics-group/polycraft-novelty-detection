@@ -11,6 +11,7 @@ pep8-naming = "*"
 pytest = "*"
 tensorboard = "*"
 tensorflow = "*"
+matplotlib = "*"
 
 [requires]
 python_version = "3.8"
