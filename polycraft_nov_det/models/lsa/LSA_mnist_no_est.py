@@ -73,7 +73,7 @@ def train():
         writer = SummaryWriter(log_dir)
     # define training constants
     lr = 1e-3
-    epochs = 1
+    epochs = 100
     loss_func = nn.MSELoss()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # construct model
@@ -109,6 +109,7 @@ def train():
         # get reconstruction visualization
         writer.add_figure("Reconstruction Vis", plot_reconstruction(data, r_data))
         # TODO add latent space visualization (try PCA or t-SNE for projection)
-    # save model
-    torch.save(model.state_dict(), "LSA_mnist_no_est.pt")
+        # save model
+        if (epoch + 1) % (epochs // 10) == 0 or epoch == epochs - 1:
+            torch.save(model.state_dict(), "LSA_mnist_no_est_%d.pt" % (epoch + 1,))
     return model
