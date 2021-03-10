@@ -1,5 +1,3 @@
-from importlib.resources import path
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -69,8 +67,7 @@ def train():
     # get dataloaders
     train_loader, valid_loader, _ = torch_mnist(batch_size)
     # get Tensorboard writer
-    with path("polycraft_nov_det.models.lsa", "runs") as log_dir:
-        writer = SummaryWriter(log_dir)
+    writer = SummaryWriter("runs")
     # define training constants
     lr = 1e-3
     epochs = 100
@@ -111,5 +108,5 @@ def train():
         # TODO add latent space visualization (try PCA or t-SNE for projection)
         # save model
         if (epoch + 1) % (epochs // 10) == 0 or epoch == epochs - 1:
-            torch.save(model.state_dict(), "LSA_mnist_no_est_%d.pt" % (epoch + 1,))
+            torch.save(model.state_dict(), "models/LSA_mnist_no_est_%d.pt" % (epoch + 1,))
     return model
