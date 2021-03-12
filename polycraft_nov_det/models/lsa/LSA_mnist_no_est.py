@@ -70,9 +70,9 @@ def train():
     writer = SummaryWriter("runs")
     # define training constants
     lr = 1e-3
-    epochs = 100
+    epochs = 250
     loss_func = nn.MSELoss()
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     # construct model
     model = LSAMNISTNoEst(mnist_input_shape, 64)
     model.to(device)
@@ -104,7 +104,7 @@ def train():
         av_valid_loss = valid_loss / len(valid_loader)
         writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
         # get reconstruction visualization
-        writer.add_figure("Reconstruction Vis", plot_reconstruction(data, r_data))
+        writer.add_figure("Reconstruction Vis", plot_reconstruction(data, r_data), epoch)
         # TODO add latent space visualization (try PCA or t-SNE for projection)
         # save model
         if (epoch + 1) % (epochs // 10) == 0 or epoch == epochs - 1:

@@ -7,8 +7,8 @@ def plot_reconstruction(images, r_images):
     if images.shape[0] < num_images:
         num_images = images.shape[0]
     # remove grad from tensors for numpy conversion
-    images = images.detach()
-    r_images = r_images.detach()
+    images = images.detach().cpu()
+    r_images = r_images.detach().cpu()
     # plot the image and reconstruction side by side
     fig, ax = plt.subplots(nrows=2, ncols=num_images)
     ax[0][num_images // 2].set_title("Input")
