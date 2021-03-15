@@ -69,7 +69,9 @@ def train():
     # get dataloaders
     train_loader, valid_loader, _ = torch_mnist(batch_size)
     # get Tensorboard writer
-    writer = SummaryWriter("runs/" + datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
+    model_label = "LSA_mnist_no_est_all_classes"
+    writer = SummaryWriter("models/" + model_label + "/" +
+                           datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
     # define training constants
     lr = 1e-3
     epochs = 1000
@@ -110,5 +112,6 @@ def train():
         # TODO add latent space visualization (try PCA or t-SNE for projection)
         # save model
         if (epoch + 1) % (epochs // 10) == 0 or epoch == epochs - 1:
-            torch.save(model.state_dict(), "models/LSA_mnist_no_est_%d.pt" % (epoch + 1,))
+            torch.save(model.state_dict(),
+                       "models/" + model_label + "/LSA_mnist_no_est_%d.pt" % (epoch + 1,))
     return model
