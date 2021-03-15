@@ -1,3 +1,5 @@
+import datetime
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -67,7 +69,8 @@ def train():
     # get dataloaders
     train_loader, valid_loader, _ = torch_mnist(batch_size)
     # get Tensorboard writer
-    writer = SummaryWriter("runs")
+    writer = SummaryWriter("runs",
+                           datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
     # define training constants
     lr = 1e-3
     epochs = 250
