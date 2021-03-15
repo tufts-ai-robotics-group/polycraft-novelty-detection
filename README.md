@@ -35,3 +35,25 @@ To run unit tests, run the following command:
 ```
 pipenv run python -m pytest
 ```
+
+## Directory Structure
+
+#### polycraft-novelty-detection (root)
+
+The root folder should only contain the project README and configuration files.
+
+#### models
+
+Saved copies of Pytorch models whose Tensorboard data is stored in the runs folder.
+
+#### polycraft_nov_det
+
+Python module for Polycraft novelty detection. All Python code for the repository should be within this folder and be accessible through the Python module interface.
+
+#### runs
+
+Tensorboard data for the Pytorch models saved in the models folder.
+
+#### tests
+
+Automated Pytest tests for polycraft_nov_det, divided by test subject.
