@@ -70,7 +70,7 @@ def train():
     train_loader, valid_loader, _ = torch_mnist(batch_size)
     # get Tensorboard writer
     model_label = "LSA_mnist_no_est_all_classes"
-    writer = SummaryWriter("models/" + model_label + "/" +
+    writer = SummaryWriter("runs/" + model_label + "/" +
                            datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
     # define training constants
     lr = 1e-3
