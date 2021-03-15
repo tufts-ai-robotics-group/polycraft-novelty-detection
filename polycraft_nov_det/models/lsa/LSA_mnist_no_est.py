@@ -74,7 +74,7 @@ def train():
                            datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
     # define training constants
     lr = 1e-3
-    epochs = 1000
+    epochs = 500
     loss_func = nn.MSELoss()
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     # construct model
