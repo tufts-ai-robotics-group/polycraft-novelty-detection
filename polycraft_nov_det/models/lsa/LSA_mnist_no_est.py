@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -69,11 +69,10 @@ def train():
     # get dataloaders
     train_loader, valid_loader, _ = torch_mnist(batch_size)
     # get Tensorboard writer
-    writer = SummaryWriter("runs",
-                           datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
+    writer = SummaryWriter("runs/" + datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
     # define training constants
     lr = 1e-3
-    epochs = 250
+    epochs = 1000
     loss_func = nn.MSELoss()
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     # construct model
