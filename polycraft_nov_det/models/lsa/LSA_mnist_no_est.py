@@ -73,7 +73,7 @@ def train():
     writer = SummaryWriter("runs/" + model_label + "/" +
                            datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
     # define training constants
-    lr = 1e-3
+    lr = 1e-2
     epochs = 500
     loss_func = nn.MSELoss()
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
