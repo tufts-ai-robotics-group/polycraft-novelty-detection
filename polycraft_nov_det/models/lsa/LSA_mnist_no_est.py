@@ -11,6 +11,10 @@ import polycraft_nov_det.models.lsa.unmodified.models.base as base
 from polycraft_nov_det.plot import plot_reconstruction
 
 
+# data shape constant
+MNIST_SHAPE = (1, 28, 28)
+
+
 class LSAMNISTNoEst(base.BaseModule):
     """
     LSA model for MNIST one-class classification without estimator.
@@ -63,10 +67,8 @@ class LSAMNISTNoEst(base.BaseModule):
 
 
 def train():
-    # define shape constants
-    mnist_input_shape = (1, 28, 28)
-    batch_size = 256
     # get dataloaders
+    batch_size = 256
     train_loader, valid_loader, _ = torch_mnist(batch_size)
     # get Tensorboard writer
     model_label = "LSA_mnist_no_est_all_classes"
@@ -78,7 +80,7 @@ def train():
     loss_func = nn.MSELoss()
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     # construct model
-    model = LSAMNISTNoEst(mnist_input_shape, 64)
+    model = LSAMNISTNoEst(MNIST_SHAPE, 64)
     model.to(device)
     # construct optimizer
     optimizer = optim.Adam(model.parameters(), lr)
@@ -114,4 +116,19 @@ def train():
         if (epoch + 1) % (epochs // 10) == 0 or epoch == epochs - 1:
             torch.save(model.state_dict(),
                        "models/" + model_label + "/LSA_mnist_no_est_%d.pt" % (epoch + 1,))
+    return model
+
+
+def load_model(path):
+    """Load a saved model
+
+    Args:
+        path (str): Path to saved model state_dict
+
+    Returns:
+        LSAMNISTNoEst: Model with saved state_dict
+    """
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    model = LSAMNISTNoEst(MNIST_SHAPE, 64)
+    model.load_state_dict(torch.load(path, map_location=device))
     return model
