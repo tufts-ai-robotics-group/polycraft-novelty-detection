@@ -2,6 +2,12 @@
 Visual novelty detector for the Polycraft domain.
 
 ## Installation
+
+This repository utilizes Git submodules so utilize ```git clone --recurse-submodules``` instead of ```git clone``` when first downloading the repository. If this command was forgotten when cloning, run the following from inside the repository:
+```
+git submodule update --init --recursive
+```
+
 If you do not have Pipenv installed, run the following:
 ```
 pip install pipenv
@@ -53,6 +59,10 @@ Python module for Polycraft novelty detection. All Python code for the repositor
 #### runs
 
 Tensorboard data for the Pytorch models saved in the models folder.
+
+#### submodules
+
+Git submodules used as dependencies for the project.
 
 #### tests
 
