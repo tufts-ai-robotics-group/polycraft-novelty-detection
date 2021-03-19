@@ -7,6 +7,7 @@ verify_ssl = true
 
 [packages]
 polycraft-nov-det = {editable = true, path = "."}
+polycraft-nov-data = {editable = true, path = "./submodules/polycraft-novelty-data"}
 
 [requires]
 python_version = "3.8"
