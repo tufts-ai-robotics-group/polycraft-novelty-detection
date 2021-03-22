@@ -80,7 +80,12 @@ def train(include_classes=None):
     batch_size = 256
     train_loader, valid_loader, _ = torch_mnist(batch_size, include_classes)
     # get Tensorboard writer
-    model_label = "LSA_mnist_no_est_all_classes"
+    model_label = "LSA_mnist_no_est_"
+    if include_classes is None:
+        model_label += "all_classes"
+    else:
+        classes = "_".join([str(include_class) for include_class in include_classes])
+        model_label += "class_" + classes
     writer = SummaryWriter("runs/" + model_label + "/" +
                            datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
     # define training constants
