@@ -66,10 +66,19 @@ class LSAMNISTNoEst(base.BaseModule):
         return x_r, z
 
 
-def train():
+def train(include_classes=None):
+    """Train a model.
+
+    Args:
+        include_classes (list, optional): List of classes to include.
+                                          Defaults to None, including all classes.
+
+    Returns:
+        LSAMNISTNoEst: Trained model.
+    """
     # get dataloaders
     batch_size = 256
-    train_loader, valid_loader, _ = torch_mnist(batch_size)
+    train_loader, valid_loader, _ = torch_mnist(batch_size, include_classes)
     # get Tensorboard writer
     model_label = "LSA_mnist_no_est_all_classes"
     writer = SummaryWriter("runs/" + model_label + "/" +
