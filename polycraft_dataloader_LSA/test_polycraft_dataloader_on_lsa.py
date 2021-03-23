@@ -1,38 +1,27 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Mar 12 12:52:53 2021
-
-@author: SchneiderS
-"""
-from torch.utils.data import DataLoader, ConcatDataset
-import numpy as np
 import torch
 import torch.nn as nn
-import matplotlib.pyplot as plt
 import torch.optim as optim
-
-from polycraft_dataloader import create_data_generators
-
-from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst as LSANet
 from torch.utils.tensorboard import SummaryWriter
 
+from polycraft_dataloader import create_data_generators
+from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst as LSANet
 from polycraft_nov_det.plot import plot_reconstruction
 
 
 
 def train():
 
-    scale = 0.25
-
     # batch size depends on scale we use 0.25 --> 6, 0.5 --> 42, 0.75 --> 110, 1 --> 195
+    scale = 0.25
     batch_size = 6
 
     pc_input_shape = (3, 32, 32)  # color channels, height, width
 
     # get dataloaders
+    print('Download zipped files (if necessary), extract the ones we want to have and generate dataloaders.')
     train_loader, valid_loader, test_loader = create_data_generators(
                                                             shuffle=True, 
-                                                            novelty_type='normal')
+                                                            novelty_type='normal', scale_level=scale)
    
     print('Size of training loader', len(train_loader))
     print('Size of validation loader', len(valid_loader))
