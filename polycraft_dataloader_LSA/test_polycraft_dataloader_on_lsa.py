@@ -4,8 +4,9 @@ import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
 from polycraft_dataloader import create_data_generators
+from polycraft_dataloader import normalize_img
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst as LSANet
-from polycraft_nov_det.plot import plot_reconstruction
+from polycraft_nov_det.plot import plot_reconstruction_rgb
 
 
 
@@ -97,7 +98,7 @@ def train():
 
             x = flat_patches[0].float().to(device)
             x_rec, z = model(x)
-
+            
             batch_loss = loss_func(x, x_rec)
             valid_loss += batch_loss.item() * batch_size
 
@@ -107,7 +108,8 @@ def train():
         print('Average validation loss  ', av_valid_loss)
 
         # get reconstruction visualization
-        writer.add_figure("Reconstruction Vis", plot_reconstruction(x, x_rec), epoch)
+        x_rec = normalize_img(x_rec)
+        writer.add_figure("Reconstruction Vis", plot_reconstruction_rgb(x, x_rec), epoch)
 
         # TODO add latent space visualization (try PCA or t-SNE for projection)
         # save model
