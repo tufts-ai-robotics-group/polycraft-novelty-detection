@@ -54,11 +54,10 @@ def plot_reconstruction_rgb(images, r_images):
         "vmin": 0,
         "vmax": 1,
     }
-
     for i in range(num_images):
-        #Transpose images in (C, H, W) format to matplotlib's (H, W, C) format
-        ax[0][i].imshow(np.transpose(images[i, :], (1, 2, 0)))
-        ax[1][i].imshow(np.transpose(r_images[i, :], (1, 2, 0)))
+        # Transpose images in (C, H, W) format to matplotlib's (H, W, C) format
+        ax[0][i].imshow(np.transpose(images[i, :], (1, 2, 0)), **imshow_kwargs)
+        ax[1][i].imshow(np.transpose(r_images[i, :], (1, 2, 0)), **imshow_kwargs)
     # disable tick marks
     for axis in ax.flat:
         axis.set_xticks([])
