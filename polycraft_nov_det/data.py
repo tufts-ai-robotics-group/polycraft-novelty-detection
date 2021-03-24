@@ -6,11 +6,11 @@ from torchvision.datasets import MNIST
 from torchvision import transforms
 
 
-def torch_mnist(batch_size=1, include_classes=None, shuffle=True):
+def torch_mnist(batch_size=32, include_classes=None, shuffle=True):
     """torch DataLoaders for MNIST
 
     Args:
-        batch_size (int, optional): batch_size for DataLoaders. Defaults to 1.
+        batch_size (int, optional): batch_size for DataLoaders. Defaults to 32.
         include_classes (list, optional): List of classes to include.
                                           Defaults to None, including all classes.
         shuffle (bool, optional): shuffle for DataLoaders. Defaults to True.
