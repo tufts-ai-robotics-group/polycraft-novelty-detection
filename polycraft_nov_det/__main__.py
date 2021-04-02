@@ -1,3 +1,4 @@
-from polycraft_nov_det.models.lsa.LSA_mnist_no_est import train
+from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import train
 
-model = train([0, 1, 2, 3, 4])
+# TODO use arguments to run different models/datasets
+model = train()
