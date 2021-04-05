@@ -75,13 +75,14 @@ def plot_empirical_cdfs(ecdfs, labels):
     Returns:
         plt.Figure: Figure with plot of CDFs of novelty.EmpiricalCDF
     """
-    # TODO add decision boundary marker
     fig, ax = plt.subplots()
     for ecdf, label in zip(ecdfs, labels):
         # copy of first entry used so plot starts at 0 probability
         plt.plot(np.insert(ecdf.samples, 0, ecdf.samples[0]),
                  np.arange(0, ecdf.N + 1)/ecdf.N,
                  label=label)
+        # plot the decision boundary
+        plt.scatter(ecdf.quantile(.99), .99)
     plt.legend()
     plt.show()
     return fig
