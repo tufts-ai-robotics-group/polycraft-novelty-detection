@@ -38,6 +38,13 @@ class EmpiricalCDF():
         quantile_val = self.quantile(q)
         return data < quantile_val
 
+    def save(self, file):
+        np.save(file, self.samples)
+
+
+def load_ecdf(file):
+    return EmpiricalCDF(np.load(file))
+
 
 class ReconstructionDet():
     """Reconstruction error novelty detector
