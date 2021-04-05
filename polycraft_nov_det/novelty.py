@@ -11,7 +11,7 @@ class EmpiricalCDF():
         """Empirical cumulative distribution function
 
         Args:
-            samples (np.ndarray): (N) array of samples from distribution to approximate
+            samples (np.ndarray): Array of (N) samples from distribution to approximate
         """
         self.samples = np.sort(samples)
         self.N = len(self.samples)
@@ -42,37 +42,54 @@ class EmpiricalCDF():
 class ReconstructionDet():
     """Reconstruction error novelty detector
     """
-    def __init__(self, model, train_loader):
+    def __init__(self, model, ecdf):
         """Reconstruction error novelty detector
 
         Args:
             model (torch.nn.Module): Autoencoder to measure reconstruction error from
-            train_loader (torch.utils.data.Dataloader): Train set for non-novel reconstruction error
+            ecdf (novelty.EmpiricalCDF): ECDF for non-novel reconstruction error
         """
         self.model = model
         self.device = next(model.parameters()).device
-
-        # get reconstruction error from training data
-        r_error = torch.Tensor([])
-        for data, target in train_loader:
-            data = data.to(self.device)
-            r_data, embedding = self.model(data)
-            # gets mean reconstruction per image in data
-            data_r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
-                                      (*range(1, data.dim()),))
-            r_error = torch.cat((r_error, data_r_error))
-        # construct EmpiricalCDF from reconstruction error
-        self.ecdf = EmpiricalCDF(r_error.detach().numpy())
+        self.ecdf = ecdf
 
     def is_novel(self, data, q=.99):
         """Evaluate novelty based on reconstruction error
 
         Args:
-            data (torch.tensor): Data to use as input to autoencoder
+            data (torch.tensor): Data to use as input to autoencoder with (N) samples
             q (float, optional): In [0, 1], determines quantile used for evaluation.
                                  Defaults to .99.
+
+        Returns:
+            torch.tensor: (N) booleans where True is novel
         """
         data = data.to(self.device)
         r_data, embedding = self.model(data)
-        r_error = mse_loss(data, r_data, reduction="none")
-        return self.ecdf.in_quantile(r_error.detach().numpy(), q)
+        r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
+                             (*range(1, data.dim()),))
+        return ~self.ecdf.in_quantile(r_error.detach().numpy(), q)
+
+
+def reconstruction_ecdf(model, train_loader):
+    """Create an ECDF from autoencoder reconstruction error
+
+    Args:
+        model (torch.nn.Module): Autoencoder to measure reconstruction error from
+        train_loader (torch.utils.data.Dataloader): Train set for non-novel reconstruction error
+
+    Returns:
+        novelty.EmpiricalCDF: ECDF from autoencoder reconstruction error
+    """
+    device = next(model.parameters()).device
+    # get reconstruction error from training data
+    r_error = torch.Tensor([])
+    for data, target in train_loader:
+        data = data.to(device)
+        r_data, embedding = model(data)
+        # gets mean reconstruction per image in data
+        data_r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
+                                  (*range(1, data.dim()),))
+        r_error = torch.cat((r_error, data_r_error))
+    # construct EmpiricalCDF from reconstruction error
+    return EmpiricalCDF(r_error.detach().numpy())
