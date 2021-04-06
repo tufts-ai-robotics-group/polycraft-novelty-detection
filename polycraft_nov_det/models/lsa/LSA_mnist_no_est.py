@@ -8,7 +8,8 @@ from torch.utils.tensorboard import SummaryWriter
 from polycraft_nov_det.data import torch_mnist
 import polycraft_nov_det.models.lsa.unmodified.models.LSA_mnist as LSA_mnist
 import polycraft_nov_det.models.lsa.unmodified.models.base as base
-from polycraft_nov_det.plot import plot_reconstruction
+from polycraft_nov_det.novelty import load_ecdf, reconstruction_ecdf
+from polycraft_nov_det.plot import plot_empirical_cdfs, plot_reconstruction
 
 
 # data shape constant
@@ -146,3 +147,21 @@ def load_model(path):
     model = LSAMNISTNoEst(MNIST_SHAPE, 64)
     model.load_state_dict(torch.load(path, map_location=device))
     return model
+
+
+def plot_cached_ecdf():
+    dir_name = "models\\LSA_mnist_no_est_class_0_1_2_3_4\\500_lr_1e-2\\"
+    model_name = "LSA_mnist_no_est_500"
+    model = load_model(dir_name + model_name + ".pt")
+    ecdfs = []
+    classes = range(10)
+    for i in classes:
+        ecdf_name = "%s%i_train_%s.npy" % (dir_name, i, model_name)
+        try:
+            ecdf = load_ecdf(ecdf_name)
+        except Exception:
+            train_loader, _, _ = torch_mnist(include_classes=[i])
+            ecdf = reconstruction_ecdf(model, train_loader)
+            ecdf.save(ecdf_name)
+        ecdfs.append(ecdf)
+    return plot_empirical_cdfs(ecdfs, classes)
