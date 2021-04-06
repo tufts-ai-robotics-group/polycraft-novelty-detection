@@ -7,7 +7,7 @@ from polycraft_nov_data.polycraft_dataloader import create_data_generators
 
 import polycraft_nov_det.models.lsa.unmodified.models.LSA_cifar10 as LSA_cifar10
 import polycraft_nov_det.models.lsa.unmodified.models.base as base
-from polycraft_nov_det.plot import plot_reconstruction_rgb
+from polycraft_nov_det.plot import plot_reconstruction
 
 
 class LSACIFAR10NoEst(base.BaseModule):
@@ -149,7 +149,7 @@ def train():
         print('Average validation loss  ', av_valid_loss, flush=True)
 
         # get reconstruction visualization
-        writer.add_figure("Reconstruction Vis", plot_reconstruction_rgb(x, x_rec), epoch)
+        writer.add_figure("Reconstruction Vis", plot_reconstruction(x, x_rec), epoch)
 
         # TODO add latent space visualization (try PCA or t-SNE for projection)
         # save model
