@@ -91,16 +91,17 @@ def reconstruction_ecdf(model, train_loader):
     device = next(model.parameters()).device
     # get reconstruction error from training data
     r_error = torch.Tensor([])
-    for data, target in train_loader:
+    for data, _ in train_loader:
         data = data.to(device)
-        r_data, embedding = model(data)
+        r_data, _ = model(data)
         # gets mean reconstruction per image in data
         data_r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
                                   (*range(1, data.dim()),))
         r_error = torch.cat((r_error, data_r_error))
     # construct EmpiricalCDF from reconstruction error
     return EmpiricalCDF(r_error.detach().numpy())
-    
+
+
 def reconstruction_ecdf_polycraft(model, train_loader):
     """Create an ECDF from autoencoder reconstruction error for polycraft
 
@@ -112,25 +113,19 @@ def reconstruction_ecdf_polycraft(model, train_loader):
         novelty.EmpiricalCDF: ECDF from autoencoder reconstruction error
     """
     device = next(model.parameters()).device
-    
     # get reconstruction error from training data
     r_error = torch.Tensor([])
-    for i, sample in enumerate(train_loader):
-        
+    for sample in train_loader:
+        # TODO revise Polycraft dataloader so preprocessing done by the loader
         # sample contains all patches of one screen image and its novelty description
         patches = sample[0]
-        nov_dic = sample[1]
-
-        # Dimensions of flat_patches: [1, batch_size, color channels, height of patch, width of patch]
+        # Dimensions of flat_patches: [1, batch_size, C, H, W]
         flat_patches = torch.flatten(patches, start_dim=1, end_dim=2)
         data = flat_patches[0].float().to(device)
-        
-        r_data, embedding = model(data)
-        
+        r_data, _ = model(data)
         # gets mean reconstruction per image in data
         data_r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
                                   (*range(1, data.dim()),))
         r_error = torch.cat((r_error, data_r_error))
-        
     # construct EmpiricalCDF from reconstruction error
     return EmpiricalCDF(r_error.detach().numpy())
