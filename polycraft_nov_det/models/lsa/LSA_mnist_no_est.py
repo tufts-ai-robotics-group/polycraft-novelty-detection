@@ -149,14 +149,12 @@ def load_model(path):
     return model
 
 
-def plot_cached_ecdf():
-    dir_name = "models\\LSA_mnist_no_est_class_0_1_2_3_4\\500_lr_1e-2\\"
-    model_name = "LSA_mnist_no_est_500"
-    model = load_model(dir_name + model_name + ".pt")
+def load_cached_ecdfs(model_dir, model_name):
+    model = load_model(model_dir + model_name + ".pt")
     ecdfs = []
     classes = range(10)
     for i in classes:
-        ecdf_name = "%s%i_train_%s.npy" % (dir_name, i, model_name)
+        ecdf_name = "%s%i_train_%s.npy" % (model_dir, i, model_name)
         try:
             ecdf = load_ecdf(ecdf_name)
         except Exception:
@@ -164,4 +162,10 @@ def plot_cached_ecdf():
             ecdf = reconstruction_ecdf(model, train_loader)
             ecdf.save(ecdf_name)
         ecdfs.append(ecdf)
-    return plot_empirical_cdfs(ecdfs, classes)
+    return ecdfs
+
+
+def plot_cached_ecdfs():
+    model_dir = "models\\LSA_mnist_no_est_class_0_1_2_3_4\\500_lr_1e-2\\"
+    model_name = "LSA_mnist_no_est_500"
+    return plot_empirical_cdfs(load_cached_ecdfs(model_dir, model_name), range(10))
