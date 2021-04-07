@@ -50,10 +50,8 @@ def check_image_for_novelty(models_state_dict_path):
 
         # Dimensions of flat_patches: [1, batch_size, color channels, height of patch, width of patch]
         flat_patches = torch.flatten(patches, start_dim=1, end_dim=2)
-
-        x = flat_patches[0].float().to(device)
         
-        x_rec, z = model(x)
+        x = flat_patches[0].float().to(device)
         
         novelty_score = rec.is_novel(x, 0.88)
         
