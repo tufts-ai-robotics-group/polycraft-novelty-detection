@@ -12,6 +12,7 @@ setup(
     install_requires=[
         "matplotlib",
         "numpy",
+        "scikit-learn",
         "tensorboard",
         "tensorflow",
         # dev packages, not installing correctly when in extras_require

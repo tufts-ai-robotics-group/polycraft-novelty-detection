@@ -9,7 +9,7 @@ from polycraft_nov_det.data import torch_mnist
 import polycraft_nov_det.models.lsa.unmodified.models.LSA_mnist as LSA_mnist
 import polycraft_nov_det.models.lsa.unmodified.models.base as base
 from polycraft_nov_det.novelty import load_ecdf, reconstruction_ecdf
-from polycraft_nov_det.plot import plot_empirical_cdfs, plot_reconstruction
+import polycraft_nov_det.plot as plot
 
 
 # data shape constant
@@ -125,8 +125,7 @@ def train(include_classes=None):
         av_valid_loss = valid_loss / len(valid_loader)
         writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
         # get reconstruction visualization
-        writer.add_figure("Reconstruction Vis", plot_reconstruction(data, r_data), epoch)
-        # TODO add latent space visualization (try PCA or t-SNE for projection)
+        writer.add_figure("Reconstruction Vis", plot.plot_reconstruction(data, r_data), epoch)
         # save model
         if (epoch + 1) % (epochs // 10) == 0 or epoch == epochs - 1:
             torch.save(model.state_dict(),
@@ -168,4 +167,19 @@ def load_cached_ecdfs(model_dir, model_name):
 def plot_cached_ecdfs():
     model_dir = "models\\LSA_mnist_no_est_class_0_1_2_3_4\\500_lr_1e-2\\"
     model_name = "LSA_mnist_no_est_500"
-    return plot_empirical_cdfs(load_cached_ecdfs(model_dir, model_name), range(10))
+    return plot.plot_empirical_cdfs(load_cached_ecdfs(model_dir, model_name), range(10))
+
+
+def plot_embedding():
+    model_path = "models\\LSA_mnist_no_est_class_0_1_2_3_4\\500_lr_1e-2\\LSA_mnist_no_est_500.pt"
+    model = load_model(model_path)
+    embeddings = torch.Tensor([])
+    targets = torch.Tensor([])
+    # get embedding and targets from validation set
+    _, valid_loader, _ = torch_mnist()
+    for data, target in valid_loader:
+        _, embedding = model(data)
+        embeddings = torch.cat((embeddings, embedding))
+        targets = torch.cat((targets, target))
+    # plot the embedding
+    plot.plot_embedding(embeddings, targets)

@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 
 def plot_reconstruction(images, r_images, cmap="rgb"):
@@ -68,3 +69,29 @@ def plot_empirical_cdfs(ecdfs, labels):
     plt.legend()
     plt.show()
     return fig
+
+
+def plot_embedding(embeddings, targets):
+    """Plot PCA projection of autoencoder embeddings
+
+    Args:
+        embeddings (torch.tensor): (N, D) autoencoder embeddings
+        targets (torch.tensor): (N) labels for data that was embedded
+    """
+    # remove grad from tensors for numpy conversion
+    embeddings = embeddings.detach().cpu()
+    targets = targets.detach().cpu()
+    # get projection of embeddings
+    pca = PCA(2, random_state=0)
+    embeddings_proj = pca.fit_transform(embeddings)
+    # labeled scatter plot
+    fig, ax = plt.subplots()
+    for target in np.unique(targets):
+        is_target = targets == target
+        plt.scatter(embeddings_proj[is_target, 0], embeddings_proj[is_target, 1], label=target)
+    plt.legend()
+    plt.show()
+    return fig
+
+
+# TODO confusion matrix
