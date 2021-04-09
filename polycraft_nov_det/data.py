@@ -39,7 +39,8 @@ def torch_mnist(batch_size=32, include_classes=None, shuffle=True):
         test_set = data.Subset(test_set, torch.nonzero(test_include)[:, 0])
     # get a validation set
     valid_len = len(train_set) // 10
-    train_set, valid_set = data.random_split(train_set, [len(train_set) - valid_len, valid_len])
+    train_set, valid_set = data.random_split(train_set, [len(train_set) - valid_len, valid_len],
+                                             generator=torch.Generator().manual_seed(42))
     # get DataLoaders for datasets
     return (data.DataLoader(train_set, batch_size, shuffle),
             data.DataLoader(valid_set, batch_size, shuffle),
