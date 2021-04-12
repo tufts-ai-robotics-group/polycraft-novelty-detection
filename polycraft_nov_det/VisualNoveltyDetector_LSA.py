@@ -1,20 +1,10 @@
 import torch
 import torch.nn as nn
-from skimage.transform import rescale
+
+from polycraft_nov_data.polycraft_dataloader import preprocess_image
 
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst as LSANet
 from polycraft_nov_det.data_handler import read_image_csv
-
-
-def normalize_img(img):
-    minval = img.min()
-    maxval = img.max()
-    diff = maxval - minval
-    if diff > 0:
-        img_norm = (img - minval) / diff
-    else:
-        img_norm = torch.zeros(img.size())
-    return img_norm
 
 
 class VisualNoveltyDetector:
@@ -30,23 +20,9 @@ class VisualNoveltyDetector:
         self.scale_factor = scale_factor
         self.p_size = 32
 
-    def crop_rescale_normalize(self, image):
-        image = image[0:234, :, :]  # remove minecraft bar
-        image = rescale(image, (self.scale_factor, self.scale_factor, 1), anti_aliasing=True)
-        image = normalize_img(image)
-        return image
-
-    def extract_patches(self, image):
-        # Extract patches
-        stride = int(self.p_size/2)  # patch stride
-        image = torch.from_numpy(image)
-        patches = image.unfold(0, self.p_size, stride).unfold(1, self.p_size, stride)
-        return torch.flatten(patches, start_dim=0, end_dim=1)
-
     def apply_model_and_compute_mse(self, img):
         mse_loss = nn.MSELoss()
-        img = self.crop_rescale_normalize(img)
-        x = self.extract_patches(img)
+        x = preprocess_image(img)
         x_rec, z = self.model(x.float())
         rec_loss = mse_loss(x, x_rec)
         return rec_loss
