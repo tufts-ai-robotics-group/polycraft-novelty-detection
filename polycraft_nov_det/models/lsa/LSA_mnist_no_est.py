@@ -125,7 +125,8 @@ def train(include_classes=None):
         av_valid_loss = valid_loss / len(valid_loader)
         writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
         # get reconstruction visualization
-        writer.add_figure("Reconstruction Vis", plot.plot_reconstruction(data, r_data), epoch)
+        writer.add_figure("Reconstruction Vis", plot.plot_reconstruction(data, r_data, cmap="gray"),
+                          epoch)
         # save model
         if (epoch + 1) % (epochs // 10) == 0 or epoch == epochs - 1:
             torch.save(model.state_dict(),
