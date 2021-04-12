@@ -29,9 +29,8 @@ def plot_reconstruction(images, r_images, cmap="rgb"):
     imshow_kwargs = {
         "vmin": 0,
         "vmax": 1,
+        "cmap": cmap,
     }
-    if cmap == "gray":
-        imshow_kwargs["cmap"] = cmap
     # plot the image and reconstruction side by side
     for i in range(num_images):
         if cmap == "gray":
