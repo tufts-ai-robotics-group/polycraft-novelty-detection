@@ -6,13 +6,36 @@ from torchvision.datasets import MNIST
 from torchvision import transforms
 
 
-def torch_mnist(batch_size=32, include_classes=None, shuffle=True):
+class GaussianNoise:
+    """Dataset transform to apply Gaussian Noise to normalized data
+    """
+    def __init__(self, std=1/40):
+        """Dataset transform to apply Gaussian Noise to normalized data
+
+        Args:
+            std (float, optional): STD of noise. Defaults to 1/40.
+        """
+        self.std = std
+
+    def __call__(self, tensor):
+        out = tensor + torch.randn(tensor.size()) * self.std
+        out[out < 0] = 0
+        out[out > 1] = 1
+        return out
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(std=%f)' % (self.std,)
+
+
+def torch_mnist(batch_size=32, include_classes=None, noise=False, shuffle=True):
     """torch DataLoaders for MNIST
 
     Args:
         batch_size (int, optional): batch_size for DataLoaders. Defaults to 32.
         include_classes (list, optional): List of classes to include.
                                           Defaults to None, including all classes.
+        noise (bool, optional): Whether to apply noise to training/validation data.
+                                Defaults to False.
         shuffle (bool, optional): shuffle for DataLoaders. Defaults to True.
 
     Returns:
@@ -23,8 +46,10 @@ def torch_mnist(batch_size=32, include_classes=None, shuffle=True):
     # get path within module
     with path("polycraft_nov_det", "base_data") as data_path:
         # get dataset with separate data and targets
+        train_transform = transforms.ToTensor() if not noise else \
+            transforms.Compose([transforms.ToTensor(), GaussianNoise()])
         train_set = MNIST(root=data_path, train=True, download=True,
-                          transform=transforms.ToTensor())
+                          transform=train_transform)
         test_set = MNIST(root=data_path, train=False, download=True,
                          transform=transforms.ToTensor())
     # select only included classes

@@ -67,19 +67,17 @@ class LSAMNISTNoEst(base.BaseModule):
         return x_r, z
 
 
-def train(include_classes=None):
-    """Train a model.
-
-    Args:
-        include_classes (list, optional): List of classes to include.
-                                          Defaults to None, including all classes.
+def train(**kwargs):
+    """Train a model. Keyword arguments are passed to data loader.
 
     Returns:
         LSAMNISTNoEst: Trained model.
     """
+    # get kwargs needed for this function
+    include_classes = kwargs.get("include_classes", None)
     # get dataloaders
     batch_size = 256
-    train_loader, valid_loader, _ = torch_mnist(batch_size, include_classes)
+    train_loader, valid_loader, _ = torch_mnist(batch_size, **kwargs)
     # get Tensorboard writer
     model_label = "LSA_mnist_no_est_"
     if include_classes is None:
