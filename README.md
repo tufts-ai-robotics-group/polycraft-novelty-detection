@@ -67,3 +67,11 @@ Git submodules used as dependencies for the project.
 #### tests
 
 Automated Pytest tests for polycraft_nov_det, divided by test subject.
+
+## Model Training
+
+Model training can be done by executing the module. To view available configurations run:
+
+```
+pipenv run python -m polycraft_nov_det -h
+```

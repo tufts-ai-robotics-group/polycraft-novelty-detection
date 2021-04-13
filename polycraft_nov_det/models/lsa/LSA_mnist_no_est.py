@@ -67,12 +67,12 @@ class LSAMNISTNoEst(base.BaseModule):
         return x_r, z
 
 
-def train(include_classes=None, train_noisy=False):
+def train(include_classes=None, train_noisy=True):
     """Train a model.
     Args:
         include_classes (list, optional): List of classes to include.
                                           Defaults to None, including all classes.
-        train_noisy (bool, optional): Whether to use denoising autoencoder. Defaults to False.
+        train_noisy (bool, optional): Whether to use denoising autoencoder. Defaults to True.
     Returns:
         LSAMNISTNoEst: Trained model.
     """
