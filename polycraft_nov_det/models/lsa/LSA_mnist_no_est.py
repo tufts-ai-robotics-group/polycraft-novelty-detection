@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
-from polycraft_nov_det.data import torch_mnist
+from polycraft_nov_det.data import torch_mnist, GaussianNoise
 import polycraft_nov_det.models.lsa.unmodified.models.LSA_mnist as LSA_mnist
 import polycraft_nov_det.models.lsa.unmodified.models.base as base
 from polycraft_nov_det.novelty import load_ecdf, reconstruction_ecdf
@@ -67,17 +67,18 @@ class LSAMNISTNoEst(base.BaseModule):
         return x_r, z
 
 
-def train(**kwargs):
-    """Train a model. Keyword arguments are passed to data loader.
-
+def train(include_classes=None, train_noisy=False):
+    """Train a model.
+    Args:
+        include_classes (list, optional): List of classes to include.
+                                          Defaults to None, including all classes.
+        train_noisy (bool, optional): Whether to use denoising autoencoder. Defaults to False.
     Returns:
         LSAMNISTNoEst: Trained model.
     """
-    # get kwargs needed for this function
-    include_classes = kwargs.get("include_classes", None)
     # get dataloaders
     batch_size = 256
-    train_loader, valid_loader, _ = torch_mnist(batch_size, **kwargs)
+    train_loader, valid_loader, _ = torch_mnist(batch_size, include_classes)
     # get Tensorboard writer
     model_label = "LSA_mnist_no_est_"
     if include_classes is None:
@@ -104,7 +105,10 @@ def train(**kwargs):
             data = data.to(device)
             optimizer.zero_grad()
             # update weights with optimizer
-            r_data, embedding = model(data)
+            if not train_noisy:
+                r_data, embedding = model(data)
+            else:
+                r_data, embedding = model(GaussianNoise()(data))
             batch_loss = loss_func(data, r_data)
             batch_loss.backward()
             optimizer.step()

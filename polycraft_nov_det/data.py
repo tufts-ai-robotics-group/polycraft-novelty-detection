@@ -27,15 +27,13 @@ class GaussianNoise:
         return self.__class__.__name__ + '(std=%f)' % (self.std,)
 
 
-def torch_mnist(batch_size=32, include_classes=None, noise=False, shuffle=True):
+def torch_mnist(batch_size=32, include_classes=None, shuffle=True):
     """torch DataLoaders for MNIST
 
     Args:
         batch_size (int, optional): batch_size for DataLoaders. Defaults to 32.
         include_classes (list, optional): List of classes to include.
                                           Defaults to None, including all classes.
-        noise (bool, optional): Whether to apply noise to training/validation data.
-                                Defaults to False.
         shuffle (bool, optional): shuffle for DataLoaders. Defaults to True.
 
     Returns:
@@ -46,10 +44,8 @@ def torch_mnist(batch_size=32, include_classes=None, noise=False, shuffle=True):
     # get path within module
     with path("polycraft_nov_det", "base_data") as data_path:
         # get dataset with separate data and targets
-        train_transform = transforms.ToTensor() if not noise else \
-            transforms.Compose([transforms.ToTensor(), GaussianNoise()])
         train_set = MNIST(root=data_path, train=True, download=True,
-                          transform=train_transform)
+                          transform=transforms.ToTensor())
         test_set = MNIST(root=data_path, train=False, download=True,
                          transform=transforms.ToTensor())
     # select only included classes
