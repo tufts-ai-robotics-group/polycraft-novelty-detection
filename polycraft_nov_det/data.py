@@ -18,7 +18,7 @@ class GaussianNoise:
         self.std = std
 
     def __call__(self, tensor):
-        out = tensor + torch.randn(tensor.size()) * self.std
+        out = tensor + torch.randn_like(tensor) * self.std
         out[out < 0] = 0
         out[out > 1] = 1
         return out
