@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
+import json
 
 from polycraft_nov_data.polycraft_dataloader import preprocess_image
 
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst as LSANet
-from polycraft_nov_det.data_handler import read_image_csv
+from polycraft_nov_det.data_handler import json2img
 
 
 class VisualNoveltyDetector:
@@ -28,7 +29,8 @@ class VisualNoveltyDetector:
         rec_loss = mse_loss(x, x_rec)
         return rec_loss
 
-    def check_for_novelty(self, img):
+    def check_for_novelty(self, screen_json):
+        img = json2img(screen_json)
         print('We compute a score here, then we send it back!')
         img_rec_loss = self.apply_model_and_compute_MSE(img)
         # How exactly do we want to evaluate if an image is novel!?!?
@@ -37,9 +39,13 @@ class VisualNoveltyDetector:
 
 
 if __name__ == "__main__":
-    # Test on csv from polycraft which includes the save_screen json!
-    data, states = read_image_csv(
-        path="novelty-lvl-1_2021-04-12-10-44-43_SENSE-SCREEN.csv", n_images=None, load_states=False)
+    
     detector = VisualNoveltyDetector(
         state_dict_path='saved_statedict/LSA_polycraft_no_est_075_980.pt', scale_factor=0.75)
-    detector.check_for_novelty(data[0])
+    
+    with open("save_screen.json", 'r') as json_screen:
+        img_json = json.load(json_screen)
+        img_json = str(img_json) #convert to string in order to have the same SAVE_SCREEN format as received from the game
+        
+        #data = json.loads(json_screen)#s
+        detector.check_for_novelty(img_json)
