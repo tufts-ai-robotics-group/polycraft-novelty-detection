@@ -20,9 +20,10 @@ class VisualNoveltyDetector:
         self.scale_factor = scale_factor
         self.p_size = 32
 
-    def apply_model_and_compute_mse(self, img):
+    def apply_model_and_compute_MSE(self, img):
         mse_loss = nn.MSELoss()
-        x = preprocess_image(img)
+        x = preprocess_image(img, self.scale_factor, self.p_size)
+        x =  torch.flatten(x, start_dim=0, end_dim=1)
         x_rec, z = self.model(x.float())
         rec_loss = mse_loss(x, x_rec)
         return rec_loss
