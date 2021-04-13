@@ -1,4 +1,5 @@
 from datetime import datetime
+import os.path
 
 import torch
 import torch.nn as nn
@@ -151,30 +152,31 @@ def load_model(path):
     return model
 
 
-def load_cached_ecdfs(model_dir, model_name):
-    model = load_model(model_dir + model_name + ".pt")
+def load_cached_ecdfs(model_path):
+    model = load_model(model_path)
+    model_dir, model_name = os.path.split(model_path)
+    model_name = model_name[:model_name.rfind(".")]
     ecdfs = []
     classes = range(10)
     for i in classes:
-        ecdf_name = "%s%i_train_%s.npy" % (model_dir, i, model_name)
-        try:
-            ecdf = load_ecdf(ecdf_name)
-        except Exception:
+        # load cached ECDF if it exists
+        ecdf_path = os.path.join(model_dir, "%i_train_%s.npy" % (i, model_name))
+        if os.path.isfile(ecdf_path):
+            ecdf = load_ecdf(ecdf_path)
+        # otherwise generate ECDF and cache it for later
+        else:
             train_loader, _, _ = torch_mnist(include_classes=[i])
             ecdf = reconstruction_ecdf(model, train_loader)
-            ecdf.save(ecdf_name)
+            ecdf.save(ecdf_path)
         ecdfs.append(ecdf)
     return ecdfs
 
 
-def plot_cached_ecdfs():
-    model_dir = "models\\LSA_mnist_no_est_class_0_1_2_3_4\\500_lr_1e-2\\"
-    model_name = "LSA_mnist_no_est_500"
-    return plot.plot_empirical_cdfs(load_cached_ecdfs(model_dir, model_name), range(10))
+def plot_cached_ecdfs(model_path):
+    return plot.plot_empirical_cdfs(load_cached_ecdfs(model_path), range(10))
 
 
-def plot_embedding():
-    model_path = "models\\LSA_mnist_no_est_class_0_1_2_3_4\\500_lr_1e-2\\LSA_mnist_no_est_500.pt"
+def plot_embedding(model_path):
     model = load_model(model_path)
     embeddings = torch.Tensor([])
     targets = torch.Tensor([])
