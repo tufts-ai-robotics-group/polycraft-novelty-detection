@@ -64,6 +64,7 @@ def train():
     # batch size depends on scale we use 0.25 --> 6, 0.5 --> 42, 0.75 --> 110, 1 --> 195
     scale = 0.75
     batch_size = 110
+    n_z = 100
 
     pc_input_shape = (3, 32, 32)  # color channels, height, width
 
@@ -86,7 +87,7 @@ def train():
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
     # construct model
-    model = LSACIFAR10NoEst(pc_input_shape, batch_size)
+    model = LSACIFAR10NoEst(pc_input_shape, n_z)
     model.to(device)
 
     # construct optimizer
