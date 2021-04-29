@@ -5,6 +5,8 @@ from torch.utils import data
 from torchvision.datasets import MNIST
 from torchvision import transforms
 
+import polycraft_nov_data.dataset_transforms as dataset_transforms
+
 
 class GaussianNoise:
     """Dataset transform to apply Gaussian Noise to normalized data
@@ -48,20 +50,9 @@ def torch_mnist(batch_size=32, include_classes=None, shuffle=True):
                           transform=transforms.ToTensor())
         test_set = MNIST(root=data_path, train=False, download=True,
                          transform=transforms.ToTensor())
-    # select only included classes
-    if include_classes is not None:
-        train_include = torch.any(torch.stack([train_set.targets == target
-                                               for target in include_classes]),
-                                  dim=0)
-        test_include = torch.any(torch.stack([test_set.targets == target
-                                              for target in include_classes]),
-                                 dim=0)
-        train_set = data.Subset(train_set, torch.nonzero(train_include)[:, 0])
-        test_set = data.Subset(test_set, torch.nonzero(test_include)[:, 0])
-    # get a validation set
-    valid_len = len(train_set) // 10
-    train_set, valid_set = data.random_split(train_set, [len(train_set) - valid_len, valid_len],
-                                             generator=torch.Generator().manual_seed(42))
+    # select only included classes and split the train set to get a validation set
+    train_set, valid_set = dataset_transforms.filter_split(train_set, [.9, .1], include_classes)
+    test_set = dataset_transforms.filter_dataset(test_set, include_classes)
     # get DataLoaders for datasets
     return (data.DataLoader(train_set, batch_size, shuffle),
             data.DataLoader(valid_set, batch_size, shuffle),
