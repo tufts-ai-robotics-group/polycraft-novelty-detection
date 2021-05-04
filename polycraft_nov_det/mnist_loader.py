@@ -1,6 +1,5 @@
 from importlib.resources import path
 
-import torch
 from torch.utils import data
 from torchvision.datasets import MNIST
 from torchvision import transforms
@@ -8,25 +7,8 @@ from torchvision import transforms
 import polycraft_nov_data.dataset_transforms as dataset_transforms
 
 
-class GaussianNoise:
-    """Dataset transform to apply Gaussian Noise to normalized data
-    """
-    def __init__(self, std=1/40):
-        """Dataset transform to apply Gaussian Noise to normalized data
-
-        Args:
-            std (float, optional): STD of noise. Defaults to 1/40.
-        """
-        self.std = std
-
-    def __call__(self, tensor):
-        out = tensor + torch.randn_like(tensor) * self.std
-        out[out < 0] = 0
-        out[out > 1] = 1
-        return out
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(std=%f)' % (self.std,)
+# data shape constant
+MNIST_SHAPE = (1, 28, 28)
 
 
 def torch_mnist(batch_size=32, include_classes=None, shuffle=True):
