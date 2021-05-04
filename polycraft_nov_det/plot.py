@@ -3,13 +3,12 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
 
-def plot_reconstruction(images, r_images, cmap="rgb"):
+def plot_reconstruction(images, r_images):
     """Plot sample of image reconstructions
 
     Args:
         images (torch.tensor): Images input to autoencoder
         r_images (torch.tensor): Reconstructed images output from autoencoder
-        cmap (str, optional): Color map for images, either "rgb" or "gray". Defaults to "rgb".
 
     Returns:
         plt.Figure: Figure with plot of sample of image reconstructions
@@ -18,9 +17,14 @@ def plot_reconstruction(images, r_images, cmap="rgb"):
     num_images = 5
     if images.shape[0] < num_images:
         num_images = images.shape[0]
+    # determine the color map to use
+    if images.shape[1] == 1:
+        cmap = "gray"
+    else:
+        cmap = "rgb"
     # remove grad from tensors for numpy conversion
-    images = images.detach().cpu()
-    r_images = r_images.detach().cpu()
+    images = np.clip(images.detach().cpu(), 0, 1)
+    r_images = np.clip(r_images.detach().cpu(), 0, 1)
     # set up axes
     fig, ax = plt.subplots(nrows=2, ncols=num_images)
     ax[0][num_images // 2].set_title("Input")
@@ -29,13 +33,12 @@ def plot_reconstruction(images, r_images, cmap="rgb"):
     imshow_kwargs = {
         "vmin": 0,
         "vmax": 1,
-        "cmap": cmap,
     }
     # plot the image and reconstruction side by side
     for i in range(num_images):
         if cmap == "gray":
-            ax[0][i].imshow(images[i, 0], **imshow_kwargs)
-            ax[1][i].imshow(r_images[i, 0], **imshow_kwargs)
+            ax[0][i].imshow(images[i, 0], cmap=cmap, **imshow_kwargs)
+            ax[1][i].imshow(r_images[i, 0], cmap=cmap, **imshow_kwargs)
         else:
             # Transpose images in (C, H, W) format to matplotlib's (H, W, C) format
             ax[0][i].imshow(np.transpose(images[i, :], (1, 2, 0)), **imshow_kwargs)
