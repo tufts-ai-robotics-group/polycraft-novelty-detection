@@ -76,6 +76,9 @@ def plot_embedding(embeddings, targets):
     Args:
         embeddings (torch.tensor): (N, D) autoencoder embeddings
         targets (torch.tensor): (N) labels for data that was embedded
+
+    Returns:
+        plt.Figure: Figure with PCA projection of autoencoder embeddings
     """
     # remove grad from tensors for numpy conversion
     embeddings = embeddings.detach().cpu()
@@ -93,4 +96,19 @@ def plot_embedding(embeddings, targets):
     return fig
 
 
-# TODO confusion matrix
+def plot_confusion_matrix(detector, class_dataloaders, class_labels, novel_labels):
+    """Plot confusion matrix for novelty detection
+
+    Args:
+        detector (ReconstructionDet): Novelty detector.
+        class_dataloaders (iterable): Iterable with dataloaders for each class to evaluate.
+        novel_labels (iterable): Iterable with label for each class_dataloader.
+        novel_labels (iterable): Iterable with boolean describing if class_dataloader is novel.
+
+    Returns:
+        plt.Figure: Figure with confusion matrix for novelty detection
+    """
+    # TODO implement
+    fig, ax = plt.subplots()
+    plt.show()
+    return fig
