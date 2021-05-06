@@ -1,11 +1,8 @@
 import os
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
 from skimage import io
 from random import randint
-from skimage.transform import rescale
 
 import torch
 import torchvision.transforms as transforms
@@ -34,14 +31,6 @@ def roi_coords_from_csv(csv_file):
     return rois
 
 
-class cropImage(object):
-    # Remove minecraft bar.
-    def __call__(self, image):
-        image = np.asarray(image)
-        image = image[0:234, :, :]
-        return image
-
-
 class ROIPatchSampler(Dataset):
     """
     This patch sampler extracts a pair of image patches, one patch is
@@ -57,7 +46,7 @@ class ROIPatchSampler(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.patch_size = int(data_const.PATCH_SHAPE[1] * self.scale**(-1))
-        
+
     def __len__(self):
         return 5  # We have 5 images per size
 
@@ -69,16 +58,16 @@ class ROIPatchSampler(Dataset):
         image_dir = os.path.join(self.root_dir, image_dir)
         image = io.imread(image_dir)
         image = self.transform(image)  # minecraft bar is removed here
+        image = image.permute(1, 2, 0)
 
         # image patch with/without novelty, patch size set according to scale
         img_patch_no, img_patch_nono = self.get_patches_from_rois(image, idx)
 
-        # decrease resolution according to scale --> 32 x 32 patch
-        img_patch_no = image_transforms.ScaleImage(self.scale)(img_patch_no)
-        img_patch_nono = image_transforms.ScaleImage(self.scale)(img_patch_nono)
+        img_patch_no = self.rescale_patch(img_patch_no)
+        img_patch_nono = self.rescale_patch(img_patch_nono)
 
         return img_patch_no, img_patch_nono
-    
+
     def get_patches_from_rois(self, image, idx):
         H, W, C = image.shape
 
@@ -114,8 +103,7 @@ class ROIPatchSampler(Dataset):
                 break
 
         # patch containing novelty
-        novelty_patch  = image[Y-int(dy/2):Y+int(dy/2),X-int(dx/2):X+int(dx/2),:]
-        novelty_patch = transforms.ToTensor()(novelty_patch)
+        novelty_patch = image[Y-int(dy/2):Y+int(dy/2), X-int(dx/2):X+int(dx/2), :]
 
         # -- no-novelty patch ------------------------------------------------
         n = 0
@@ -128,12 +116,13 @@ class ROIPatchSampler(Dataset):
                 break
 
         no_novelty_patch  = image[Y-int(dy/2):Y+int(dy/2),X-int(dx/2):X+int(dx/2),:]
-        no_novelty_patch = transforms.ToTensor()(no_novelty_patch)
 
         return novelty_patch, no_novelty_patch
 
     def rescale_patch(self, patch):
-        return rescale(patch, (self.scale, self.scale, 1), anti_aliasing=True)
+        patch = patch.permute(2, 0, 1)
+        p_h, p_w = data_const.PATCH_SHAPE[1],  data_const.PATCH_SHAPE[2]
+        return transforms.functional.resize(patch, (p_h, p_w))
 
     def get_roi_coordinates(self):
         rois = roi_coords_from_csv(self.root_dir + '/size' + str(self.size) + '.csv')
@@ -159,7 +148,7 @@ def plot_loss_his(scale, size, root_dir, model_path, epochs):
     pc_input_shape = data_const.PATCH_SHAPE
     n_z = 110
 
-    trnfrm = transforms.Compose([cropImage()])
+    trnfrm = transforms.Compose([transforms.ToTensor(), image_transforms.CropUI()])
     data = ROIPatchSampler(scale=scale, size=size, root_dir=root_dir, transform=trnfrm)     
     train_loader = DataLoader(data, batch_size=1, shuffle=False, **kwargs)
 
@@ -176,7 +165,7 @@ def plot_loss_his(scale, size, root_dir, model_path, epochs):
 
     for epoch in range(epochs):
         for i, sample in enumerate(train_loader):
-            
+
             patch_no = sample[0]  # patch with novelty
             patch_nono = sample[1]  # patch without any novelty
 
@@ -202,20 +191,20 @@ def plot_loss_his(scale, size, root_dir, model_path, epochs):
             #x_rec_no = x_rec_no.detach().numpy()
             #plt.imshow(np.transpose(x_rec_no[0], (1, 2, 0)))
             #plt.show()
-        
-    plt.hist([all_loss_nono, all_loss_no], bins=20, alpha=0.7, color=("b", "m"), label=['no novelty', 'novelty'])
+
+    plt.hist([all_loss_nono, all_loss_no], bins=30, alpha=0.7, color=("b", "m"), label=['no novelty', 'novelty'])
     plt.legend()
     plt.title('Patch-wise MSE loss, size %s, scale %s' % (str(size), str(scale)))
     plt.yticks([])
     plt.xlim([-0.0005, 0.06])
-    
+
     return
 
 
 if __name__ == '__main__':
 
-    scale = 0.5   
-    size = 4
+    scale = 0.75   
+    size = 1
     epochs = 100
     root_dir='../datasets/novel_data/novelty_evaluation_size_indexed/' + str(size) + '_/' + str(size)
     model_path = 'saved_statedict/LSA_polycraft_no_est_075_random_3000.pt'
