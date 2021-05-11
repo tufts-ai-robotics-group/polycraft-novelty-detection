@@ -30,17 +30,17 @@ def model_label(model, include_classes):
     return model_label
 
 
-def save_model(model, model_label, epoch):
+def save_model(model, session_path, epoch):
     """Save a model.
 
     Args:
         model (torch.nn.Module): Model to save.
-        model_label (str): Label for the model type, preferably from model_label function.
+        session_path (pathlib.Path): Unique path segment for the training session from train.
         epoch (int): Training epoch to label saved model with.
     """
     # construct paths
-    model_dir = pathlib.Path("models") / pathlib.Path(model_label)
-    model_fname = pathlib.Path(model_label + "_%d.pt" % (epoch + 1,))
+    model_dir = pathlib.Path("models") / session_path
+    model_fname = pathlib.Path("%d.pt" % (epoch + 1,))
     # make directory and save model
     model_dir.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), model_dir / model_fname)
@@ -63,9 +63,11 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
     Returns:
         torch.nn.Module: Trained model.
     """
+    # get a unique path for this session to prevent overwriting
+    start_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+    session_path = pathlib.Path(model_label) / pathlib.Path(start_time)
     # get Tensorboard writer
-    writer = SummaryWriter("runs/" + model_label + "/" +
-                           datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
+    writer = SummaryWriter(pathlib.Path("runs") / session_path)
     # define training constants
     loss_func = nn.MSELoss()
     device = torch.device(gpu if gpu is not None else "cpu")
@@ -107,5 +109,5 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
         writer.add_figure("Reconstruction Vis", plot.plot_reconstruction(data, r_data), epoch)
         # save model
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
-            save_model(model, model_label, epoch)
+            save_model(model, session_path, epoch)
     return model
