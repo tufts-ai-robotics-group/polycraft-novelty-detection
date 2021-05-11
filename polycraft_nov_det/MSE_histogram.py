@@ -37,7 +37,7 @@ class ROIPatchSampler(Dataset):
     extracted randomly from a region with a novelty, the other from a non-novel 
     region. 
     The novel region is specified in a csv file by the x- and y-coordinates
-    of the lower left corner and its width and height.
+    of the upper left corner and its width and height.
     """
 
     def __init__(self, scale, size, root_dir, transform=None):
@@ -72,7 +72,7 @@ class ROIPatchSampler(Dataset):
         H, W, C = image.shape
 
         # bounding box values:
-        # --> x & y coordinate of lower left corner, its width and height
+        # --> x & y coordinate of upper left corner, its width and height
         roi_coords = self.get_roi_coordinates()
         x_idx, y_idx, width, height = roi_coords[idx]
 
@@ -133,7 +133,6 @@ def plot_loss_his(scale, size, root_dir, model_path, epochs):
     """Plots a histogram of reconstruction losses of novel and non-novel 
     patches. The plotted loss values are computed based on the MSE loss 
     averaged over a patch. 
-
     Args:
         scale: Resolution scaling factor (1 --> original resolution)
         size: Size of the novelty, 0 for largest, 4 for smalles size of novelty
