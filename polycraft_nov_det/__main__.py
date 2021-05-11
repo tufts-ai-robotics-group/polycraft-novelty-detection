@@ -35,6 +35,8 @@ training_group.add_argument("-lr", type=float,
                             help="Learning rate")
 training_group.add_argument("-no_noise", action="store_true",
                             help="Don't add noise to training images")
+training_group.add_argument("-gpu", type=int,
+                            help="Index of GPU to train on, negative int for CPU")
 args = parser.parse_args()
 
 # handle MNIST args
@@ -48,6 +50,7 @@ if args.model == "mnist":
     train_kwargs = {
         "lr": 1e-2,
         "epochs": 500,
+        "gpu": 1,
     }
     # get dataloaders
     batch_size = 256 if args.batch_size is None else args.batch_size
@@ -66,6 +69,7 @@ elif args.model == "polycraft":
     train_kwargs = {
         "lr": 1e-3,
         "epochs": 1000,
+        "gpu": 1,
     }
     # get dataloaders
     batch_size = 128 if args.batch_size is None else args.batch_size
@@ -79,6 +83,9 @@ elif args.model == "polycraft":
 args_dict = vars(args)
 train_kwargs = {key: val if args_dict[key] is None else args_dict[key]
                 for key, val in train_kwargs.items()}
+# use CPU if negative GPU index given
+if train_kwargs["gpu"] < 0:
+    train_kwargs["gpu"] = None
 # start model training
 model_label = train.model_label(model, include_classes)
 train.train(model, model_label, train_loader, valid_loader, train_noisy=not args.no_noise,

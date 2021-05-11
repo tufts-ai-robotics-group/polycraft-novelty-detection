@@ -46,7 +46,8 @@ def save_model(model, model_label, epoch):
     torch.save(model.state_dict(), model_dir / model_fname)
 
 
-def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_noisy=True):
+def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_noisy=True,
+          gpu=None):
     """Train a model.
 
     Args:
@@ -57,6 +58,7 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
         lr (float): Learning rate.
         epochs (int, optional): Number of epochs to train for. Defaults to 500.
         train_noisy (bool, optional): Whether to use denoising autoencoder. Defaults to True.
+        gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
 
     Returns:
         torch.nn.Module: Trained model.
@@ -66,7 +68,7 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
                            datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
     # define training constants
     loss_func = nn.MSELoss()
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device(gpu if gpu is not None else "cpu")
     # move model to device
     model.to(device)
     # construct optimizer
