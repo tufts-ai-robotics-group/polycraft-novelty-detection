@@ -71,15 +71,11 @@ def plot_cached_ecdfs(model_path):
     return plot.plot_empirical_cdfs(load_cached_ecdfs(model_path), range(10))
 
 
-def plot_embedding(model_path):
-    model = load_model(model_path)
+def calc_model_embeddings(model, data_loader):
     embeddings = torch.Tensor([])
     targets = torch.Tensor([])
-    # get embedding and targets from validation set
-    _, valid_loader, _ = mnist_loader.torch_mnist()
-    for data, target in valid_loader:
+    for data, target in data_loader:
         _, embedding = model(data)
         embeddings = torch.cat((embeddings, embedding))
         targets = torch.cat((targets, target))
-    # plot the embedding
-    plot.plot_embedding(embeddings, targets)
+    return embeddings, targets
