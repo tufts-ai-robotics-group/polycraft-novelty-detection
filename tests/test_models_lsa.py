@@ -1,14 +1,14 @@
 import torch
 
-import polycraft_nov_data.data_const
 from polycraft_nov_data.dataloader import polycraft_dataloaders
 
 from polycraft_nov_det.mnist_loader import torch_mnist, MNIST_SHAPE
+from polycraft_nov_det.mini_imagenet_loader import mini_imagenet_dataloaders
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
 from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 
 
-cifar_input_shape = polycraft_nov_data.data_const.PATCH_SHAPE
+cifar_input_shape = (3, 32, 32)
 batch_size = 256
 
 
@@ -41,9 +41,21 @@ def test_dataloader_mnist_no_est():
         break
 
 
-def test_dataloader_cifar10_no_est():
+def test_dataloader_polycraft():
     train_loader, _, _ = polycraft_dataloaders(batch_size)
     patch_train_loader, _, _ = polycraft_dataloaders(all_patches=True)
+    model = LSACIFAR10NoEst(cifar_input_shape, 64)
+    for data, _ in train_loader:
+        model(data)
+        break
+    for data, _ in patch_train_loader:
+        model(data)
+        break
+
+
+def test_dataloader_mini_imagenet():
+    train_loader, _, _ = mini_imagenet_dataloaders(batch_size)
+    patch_train_loader, _, _ = mini_imagenet_dataloaders(all_patches=True)
     model = LSACIFAR10NoEst(cifar_input_shape, 64)
     for data, _ in train_loader:
         model(data)

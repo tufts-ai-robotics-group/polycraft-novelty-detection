@@ -3,6 +3,13 @@ from pathlib import Path
 import shutil
 import urllib.request
 
+from torch.utils import data
+from torchvision import transforms
+from torchvision.datasets import ImageFolder
+
+from polycraft_nov_data.dataset_transforms import collate_patches, filter_dataset
+from polycraft_nov_data.image_transforms import SamplePatch, ToPatches
+
 
 # constants related to data labels and locations
 DATA_LABELS = [
@@ -21,6 +28,7 @@ with importlib.resources.path("polycraft_nov_det", "base_data") as dataset_root:
 DATA_PATHS = {label: DATASET_ROOT / Path(label) for label in DATA_LABELS}
 # constants related to shape of data
 IMAGE_SHAPE = (3, 84, 84)
+RESIZE_SHAPE = (3, 64, 64)
 PATCH_SHAPE = (3, 32, 32)
 
 
@@ -37,3 +45,76 @@ def download_datasets():
             urllib.request.urlretrieve(DATA_URLS[label], archive_path)
             shutil.unpack_archive(archive_path, DATASET_ROOT)
             archive_path.unlink()
+
+
+def mini_imagenet_dataset(transform=None):
+    download_datasets()
+    return ImageFolder(DATASET_ROOT, transform=transform)
+
+
+def mini_imagenet_dataloaders(batch_size=32, shuffle=True, all_patches=False):
+    """torch DataLoaders for patched Mini-ImageNet datasets
+
+    Args:
+        batch_size (int, optional): batch_size for DataLoaders. Defaults to 32.
+        shuffle (bool, optional): shuffle for DataLoaders. Defaults to True.
+        all_patches (bool, optional): Whether to replace batches with all patches from an image.
+                                      Defaults to False.
+
+    Returns:
+        (DataLoader, DataLoader, DataLoader): Mini-ImageNet train, validation, and test sets.
+                                              Contains batches of (3, 32, 32) images,
+                                              with values 0-1.
+    """
+    # if using patches, override batch dim to hold the set of patches
+    if not all_patches:
+        collate_fn = None
+        transform = TrainPreprocess()
+    else:
+        batch_size = None
+        collate_fn = collate_patches
+        transform = TestPreprocess()
+    # get the dataset
+    dataset = mini_imagenet_dataset(transform)
+    # split into datasets
+    train_set = filter_dataset(dataset, include_classes=[dataset.class_to_idx["train"]])
+    valid_set = filter_dataset(dataset, include_classes=[dataset.class_to_idx["val"]])
+    test_set = filter_dataset(dataset, include_classes=[dataset.class_to_idx["test"]])
+    # get DataLoaders for datasets
+    return (data.DataLoader(train_set, batch_size, shuffle, collate_fn=collate_fn),
+            data.DataLoader(valid_set, batch_size, shuffle, collate_fn=collate_fn),
+            data.DataLoader(test_set, batch_size, shuffle, collate_fn=collate_fn))
+
+
+class TrainPreprocess:
+    def __init__(self, image_scale=1.0):
+        """Image preprocessing for training
+
+        Args:
+            image_scale (float, optional): Scaling to apply to image. Defaults to 1.0.
+        """
+        self.preprocess = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Resize(RESIZE_SHAPE[1:]),
+            SamplePatch(PATCH_SHAPE),
+        ])
+
+    def __call__(self, tensor):
+        return self.preprocess(tensor)
+
+
+class TestPreprocess:
+    def __init__(self, image_scale=1.0):
+        """Image preprocessing for testing
+
+        Args:
+            image_scale (float, optional): Scaling to apply to image. Defaults to 1.0.
+        """
+        self.preprocess = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Resize(RESIZE_SHAPE[1:]),
+            ToPatches(PATCH_SHAPE),
+        ])
+
+    def __call__(self, tensor):
+        return self.preprocess(tensor)
