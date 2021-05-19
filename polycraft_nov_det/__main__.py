@@ -3,6 +3,7 @@ import argparse
 from polycraft_nov_data.data_const import PATCH_SHAPE
 from polycraft_nov_data.dataloader import polycraft_dataloaders, polycraft_dataset
 
+import polycraft_nov_det.mini_imagenet_loader as mini_imagenet_loader
 import polycraft_nov_det.mnist_loader as mnist_loader
 import polycraft_nov_det.models.lsa.LSA_cifar10_no_est as LSA_cifar10_no_est
 import polycraft_nov_det.models.lsa.LSA_mnist_no_est as LSA_mnist_no_est
@@ -11,7 +12,7 @@ import polycraft_nov_det.train as train
 
 # construct argument parser
 parser = argparse.ArgumentParser(description="Polycraft Novelty Detection Model Training")
-parser.add_argument("model", choices=["mnist", "polycraft"],
+parser.add_argument("model", choices=["mnist", "polycraft", "miniimagenet"],
                     help="Model to train")
 # Polycraft specific args
 polycraft_group = parser.add_argument_group("Polycraft")
@@ -39,12 +40,11 @@ training_group.add_argument("-gpu", type=int,
                             help="Index of GPU to train on, negative int for CPU")
 args = parser.parse_args()
 
+include_classes = None
 # handle MNIST args
 if args.model == "mnist":
     # determine classes to use
-    if args.add_novel:
-        include_classes = None
-    else:
+    if not args.add_novel:
         include_classes = [0, 1, 2, 3, 4]
     # set default train kwargs
     train_kwargs = {
@@ -61,9 +61,7 @@ if args.model == "mnist":
 # handle Polycraft args
 elif args.model == "polycraft":
     # determine classes to use
-    if args.add_novel:
-        include_classes = None
-    else:
+    if not args.add_novel:
         include_classes = [polycraft_dataset().class_to_idx["normal"]]
     # set default train kwargs
     train_kwargs = {
@@ -78,6 +76,21 @@ elif args.model == "polycraft":
     # get model instance
     latent_len = 100 if args.latent_len is None else args.latent_len
     model = LSA_cifar10_no_est.LSACIFAR10NoEst(PATCH_SHAPE, latent_len)
+# handle Mini-ImageNet args
+elif args.model == "miniimagenet":
+    # set default train kwargs
+    train_kwargs = {
+        "lr": 1e-3,
+        "epochs": 1000,
+        "gpu": 1,
+    }
+    # get dataloaders
+    batch_size = 128 if args.batch_size is None else args.batch_size
+    train_loader, valid_loader, _ = mini_imagenet_loader.mini_imagenet_dataloaders(batch_size)
+    # get model instance
+    latent_len = 100 if args.latent_len is None else args.latent_len
+    model = LSA_cifar10_no_est.LSACIFAR10NoEst(mini_imagenet_loader.PATCH_SHAPE, latent_len)
+
 
 # update train_kwargs with parsed args
 args_dict = vars(args)
