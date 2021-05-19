@@ -204,7 +204,7 @@ if __name__ == '__main__':
 
     scale = 0.75   
     size = 1
-    epochs = 100
+    noe = 100  # Number of randomly selected patch pairs per image
     root_dir='../datasets/novel_data/novelty_evaluation_size_indexed/' + str(size) + '_/' + str(size)
     model_path = 'saved_statedict/LSA_polycraft_no_est_075_random_3000.pt'
-    plot_loss_his(scale, size, root_dir, model_path, epochs=100)
+    plot_loss_his(scale, size, root_dir, model_path, epochs=noe)
