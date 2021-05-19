@@ -35,6 +35,7 @@ PATCH_SHAPE = (3, 32, 32)
 def download_datasets():
     """Download Mini-ImageNet datasets if not downloaded
     """
+    DATASET_ROOT.mkdir(exist_ok=True)
     for label, data_path in DATA_PATHS.items():
         # make the directory if it doesn't exist
         data_path.mkdir(exist_ok=True)
