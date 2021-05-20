@@ -82,9 +82,18 @@ def mini_imagenet_dataloaders(batch_size=32, shuffle=True, all_patches=False):
     valid_set = filter_dataset(dataset, include_classes=[dataset.class_to_idx["val"]])
     test_set = filter_dataset(dataset, include_classes=[dataset.class_to_idx["test"]])
     # get DataLoaders for datasets
-    return (data.DataLoader(train_set, batch_size, shuffle, collate_fn=collate_fn),
-            data.DataLoader(valid_set, batch_size, shuffle, collate_fn=collate_fn),
-            data.DataLoader(test_set, batch_size, shuffle, collate_fn=collate_fn))
+    num_workers = 4
+    dataloader_kwargs = {
+        "num_workers": num_workers,
+        "prefetch_factor": batch_size//num_workers,
+        "persistent_workers": True,
+        "batch_size": batch_size,
+        "shuffle": shuffle,
+        "collate_fn": collate_fn,
+    }
+    return (data.DataLoader(train_set, **dataloader_kwargs),
+            data.DataLoader(valid_set, **dataloader_kwargs),
+            data.DataLoader(test_set, **dataloader_kwargs))
 
 
 class TrainPreprocess:
