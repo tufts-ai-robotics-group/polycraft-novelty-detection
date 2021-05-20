@@ -47,8 +47,7 @@ def load_polycraft_model(path, device="cpu", latent_len=100):
     return load_model(path, model, device)
 
 
-def load_cached_ecdfs(model_path):
-    model = load_model(model_path)
+def load_cached_ecdfs(model_path, model):
     model_dir, model_name = os.path.split(model_path)
     model_name = model_name[:model_name.rfind(".")]
     ecdfs = []
@@ -67,8 +66,8 @@ def load_cached_ecdfs(model_path):
     return ecdfs
 
 
-def plot_cached_ecdfs(model_path):
-    return plot.plot_empirical_cdfs(load_cached_ecdfs(model_path), range(10))
+def plot_cached_ecdfs(model_path, model):
+    return plot.plot_empirical_cdfs(load_cached_ecdfs(model_path, model), range(10))
 
 
 def calc_model_embeddings(model, data_loader):

@@ -46,6 +46,19 @@ def load_ecdf(file):
     return EmpiricalCDF(np.load(file))
 
 
+def cat_ecdfs(ecdfs):
+    """Concatenate ECDFs by combining samples
+
+    Args:
+        ecdfs (iterable): Iterable of ECDFs to concatenate
+
+    Returns:
+        EmpiricalCDF: Concatenated ECDF
+    """
+    samples = [ecdf.samples for ecdf in ecdfs]
+    return EmpiricalCDF(np.sort(np.concatenate(samples)))
+
+
 class ReconstructionDet():
     """Reconstruction error novelty detector
     """
@@ -60,13 +73,13 @@ class ReconstructionDet():
         self.device = next(model.parameters()).device
         self.ecdf = ecdf
 
-    def is_novel(self, data, q=.99):
+    def is_novel(self, data, quantile=.99):
         """Evaluate novelty based on reconstruction error
 
         Args:
             data (torch.tensor): Data to use as input to autoencoder with (N) samples
-            q (float, optional): In [0, 1], determines quantile used for evaluation.
-                                 Defaults to .99.
+            quantile (float, optional): In [0, 1], determines quantile used for evaluation.
+                                        Defaults to .99.
 
         Returns:
             torch.tensor: (N) booleans where True is novel
@@ -75,7 +88,7 @@ class ReconstructionDet():
         r_data, embedding = self.model(data)
         r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
                              (*range(1, data.dim()),))
-        return ~self.ecdf.in_quantile(r_error.detach().numpy(), q)
+        return ~self.ecdf.in_quantile(r_error.detach().numpy(), quantile)
 
 
 def reconstruction_ecdf(model, train_loader):
