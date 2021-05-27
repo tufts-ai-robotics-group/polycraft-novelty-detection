@@ -55,8 +55,10 @@ def compute_novelty_scores_of_images(model_path, scale, allts, pooling):
     n_z = 110
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
-    data_directory_nono = 'C:/Users/SchneiderS/Desktop/unseen_data/item_novelty'
-    data_directory_no = 'C:/Users/SchneiderS/Desktop/unseen_data/no_novelties'
+    # I store the files in the repository as a temporary solution, we
+    # might add the BOX's URL to data_const!?
+    data_directory_nono = 'unseen_data/item_novelty'
+    data_directory_no = 'unseen_data/no_novelties'
    
     normal_loader = get_data_loader(scale, b_size, data_dir=data_directory_nono)
     novel_loader = get_data_loader(scale, b_size, data_dir=data_directory_no)
