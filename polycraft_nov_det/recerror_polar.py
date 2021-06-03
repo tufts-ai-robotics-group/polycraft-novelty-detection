@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
-import polycraft_nov_data.image_transforms as image_transforms
+from polycraft_nov_data.dataloader import polycraft_dataloaders
 import polycraft_nov_data.data_const as data_const
 
 
@@ -39,7 +39,7 @@ def plot_error_with_patch_2d(values, patches):
        all_patches (list of torch.tensors): List of all the input patches
             corresponding to each rec. error in all_losses
     """
-    phi = 2*np.pi*np.random.rand(len(values))  # compute random angle
+    phis = 2*np.pi*np.random.rand(len(values))  # compute random angle
 
     allx = []
     ally = []
@@ -48,7 +48,7 @@ def plot_error_with_patch_2d(values, patches):
 
     for i in range(len(values)):
         r = values[i]
-        phi = phi[i]
+        phi = phis[i]
         ax.plot(r*np.cos(phi), r*np.sin(phi))
 
         allx.append(r*np.cos(phi))
@@ -61,24 +61,6 @@ def plot_error_with_patch_2d(values, patches):
     plt.ylim((- max(values), max(values)))
     plt.gca().set_aspect("equal")
     plt.title('Rec errors in polar coord sys with random angle')
-
-
-def get_data_loader(scale, data_dir):
-    """Get images, convert them to tensors, remove Minecraft bar,
-    rescale them and sample patches randomly.
-
-    Args:
-        scale (float): Scaling to apply to image, 1.0 for original resolution
-        data_dir (string): Folder where subfolders with images are saved in
-
-    Returns:
-        loader (torch.DataLoader): Dataloader with randomly sampled patches
-    """
-    trnsfrm = image_transforms.TrainPreprocess(scale)
-    data = torchvision.datasets.ImageFolder(root=data_dir, transform=trnsfrm)
-    loader = torch.utils.data.DataLoader(data, batch_size=1, shuffle=True)
-
-    return loader
 
 
 def compute_novelty_scores_of_images(model_path, scale, noi):
@@ -96,11 +78,10 @@ def compute_novelty_scores_of_images(model_path, scale, noi):
         all_patches (list of torch.tensors): List of all the input patches
             corresponding to each rec. error in all_losses
     """
-    n_z = 110
+    n_z = 100
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    data_directory_nono = 'datasets/normal_data'
-    loader = get_data_loader(scale, data_dir=data_directory_nono)
+    loader, _, _ = polycraft_dataloaders(batch_size=1, include_classes=["normal"], image_scale=scale)
 
     # construct model
     model = LSACIFAR10NoEst(data_const.PATCH_SHAPE, n_z)
@@ -136,10 +117,8 @@ def compute_novelty_scores_of_images(model_path, scale, noi):
     return all_losses, all_patches
 
 
-if __name__ == '__main__':
-
-    plt.rcParams['figure.dpi'] = 800
-    state_dict = '../models/polycraft/noisy/scale_0_75/1000.pt'
+def main():
+    state_dict = 'models/polycraft/noisy/scale_0_75/1000.pt'
     scale = 0.75
 
     losses, patches = compute_novelty_scores_of_images(state_dict, scale, 200)
