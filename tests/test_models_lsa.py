@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from polycraft_nov_data.dataloader import polycraft_dataloaders
@@ -12,54 +13,45 @@ cifar_input_shape = (3, 32, 32)
 batch_size = 256
 
 
-# constructor tests
-def test_constructor_cifar10_no_est():
-    LSACIFAR10NoEst(cifar_input_shape, 64)
+class TestCIFAR10():
+    @pytest.fixture
+    def model(self):
+        return LSACIFAR10NoEst(cifar_input_shape, 64)
+
+    def test_forward(self, model):
+        model(torch.zeros((batch_size,) + cifar_input_shape))
+
+    def test_dataloader_mini_imagenet(self, model):
+        train_loader, _, _ = mini_imagenet_dataloaders(batch_size)
+        patch_train_loader, _, _ = mini_imagenet_dataloaders(all_patches=True)
+        for data, _ in train_loader:
+            model(data)
+            break
+        for data, _ in patch_train_loader:
+            model(data)
+            break
+
+    def test_dataloader_polycraft(self, model):
+        train_loader, _, _ = polycraft_dataloaders(batch_size)
+        patch_train_loader, _, _ = polycraft_dataloaders(all_patches=True)
+        for data, _ in train_loader:
+            model(data)
+            break
+        for data, _ in patch_train_loader:
+            model(data)
+            break
 
 
-def test_constructor_mnist_no_est():
-    LSAMNISTNoEst(MNIST_SHAPE, 64)
+class TestMNIST():
+    @pytest.fixture
+    def model(self):
+        return LSAMNISTNoEst(MNIST_SHAPE, 64)
 
+    def test_forward(self, model):
+        model(torch.zeros((batch_size,) + MNIST_SHAPE))
 
-# forward tests
-def test_forward_cifar10_no_est():
-    model = LSACIFAR10NoEst(cifar_input_shape, 64)
-    model(torch.zeros((batch_size,) + cifar_input_shape))
-
-
-def test_forward_mnist_no_est():
-    model = LSAMNISTNoEst(MNIST_SHAPE, 64)
-    model(torch.zeros((batch_size,) + MNIST_SHAPE))
-
-
-# dataloader and model tests
-def test_dataloader_mnist_no_est():
-    train_loader, _, _ = torch_mnist(batch_size)
-    model = LSAMNISTNoEst(MNIST_SHAPE, 64)
-    for data, _ in train_loader:
-        model(data)
-        break
-
-
-def test_dataloader_polycraft():
-    train_loader, _, _ = polycraft_dataloaders(batch_size)
-    patch_train_loader, _, _ = polycraft_dataloaders(all_patches=True)
-    model = LSACIFAR10NoEst(cifar_input_shape, 64)
-    for data, _ in train_loader:
-        model(data)
-        break
-    for data, _ in patch_train_loader:
-        model(data)
-        break
-
-
-def test_dataloader_mini_imagenet():
-    train_loader, _, _ = mini_imagenet_dataloaders(batch_size)
-    patch_train_loader, _, _ = mini_imagenet_dataloaders(all_patches=True)
-    model = LSACIFAR10NoEst(cifar_input_shape, 64)
-    for data, _ in train_loader:
-        model(data)
-        break
-    for data, _ in patch_train_loader:
-        model(data)
-        break
+    def test_dataloader_mnist(self, model):
+        train_loader, _, _ = torch_mnist(batch_size)
+        for data, _ in train_loader:
+            model(data)
+            break
