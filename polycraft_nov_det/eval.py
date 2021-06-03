@@ -6,8 +6,7 @@ import polycraft_nov_det.novelty as novelty
 import polycraft_nov_det.plot as plot
 
 
-def eval_mnist():
-    model_path = "models/LSA_mnist_no_est_class_0_1_2_3_4/noisy_500_lr_1e-2/LSA_mnist_no_est_500.pt"
+def eval_mnist(model_path):
     model = model_utils.load_mnist_model(model_path)
     ecdfs = model_utils.load_cached_ecdfs(model_path, model)
     normal_ecdf = novelty.cat_ecdfs(ecdfs[:5])
