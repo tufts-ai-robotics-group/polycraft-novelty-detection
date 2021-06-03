@@ -206,7 +206,7 @@ def plot_precision_recall(tp, tn, fp, fn):
 
 if __name__ == '__main__':
 
-    state_dict_path = '../models/polycraft/saved_statedict_random_patches/saved_statedict_polycraft_scale_0_75/LSA_polycraft_no_est_075_random_3000.pt'
+    state_dict_path = '../models/polycraft/noisy/scale_0_75/1000.pt'
     pool = 'max'
     scale = 0.75
     dec = 4  # round thresholds to 4th decimal scale
