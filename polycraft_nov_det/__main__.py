@@ -1,7 +1,7 @@
 import argparse
 
 from polycraft_nov_data.data_const import PATCH_SHAPE
-from polycraft_nov_data.dataloader import polycraft_dataloaders, polycraft_dataset
+from polycraft_nov_data.dataloader import polycraft_dataloaders
 
 import polycraft_nov_det.mini_imagenet_loader as mini_imagenet_loader
 import polycraft_nov_det.mnist_loader as mnist_loader
@@ -62,7 +62,7 @@ if args.model == "mnist":
 elif args.model == "polycraft":
     # determine classes to use
     if not args.add_novel:
-        include_classes = [polycraft_dataset().class_to_idx["normal"]]
+        include_classes = ["normal"]
     # set default train kwargs
     train_kwargs = {
         "lr": 1e-3,
