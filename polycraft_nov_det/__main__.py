@@ -66,7 +66,7 @@ elif args.model == "polycraft":
     # set default train kwargs
     train_kwargs = {
         "lr": 1e-3,
-        "epochs": 1000,
+        "epochs": 8000,
         "gpu": 1,
     }
     # get dataloaders
