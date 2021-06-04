@@ -1,15 +1,14 @@
 import torch
-
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
 import torchvision
 import torchvision.transforms as transforms
-
 from sklearn import metrics
 
-from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst as LSANet
 import polycraft_nov_data.image_transforms as image_transforms
+
+from polycraft_nov_det.model_utils import load_polycraft_model
 
 
 def get_data_loader(image_scale, batch_size, data_dir):
@@ -34,15 +33,14 @@ def get_data_loader(image_scale, batch_size, data_dir):
     return loader
 
 
-def compute_novelty_scores_of_images(model_path, scale, allts, pooling):
+def compute_novelty_scores_of_images(model, scale, allts, pooling):
     """
     Apply model on non-novel (--> negative) and novel ( --> positive) images
     and compute the amount of positives (P), negatives (N), false positives
     (FP), true positives (TP), false negatives (FN) and true negatives (TN)
     based on thresholding the pooled patch reconstruction errors.
 
-    :param model_path: path where the parameters of the trained model are
-    stored
+    :param model: trained model
     :param scale: image_scale used for decrease in resolution,
     set to 1 for original resolution
     :param allts: all threshold values used for novelty score computation
@@ -51,8 +49,6 @@ def compute_novelty_scores_of_images(model_path, scale, allts, pooling):
     :return: P, N, FP, TP, FN, TN
     """
     b_size = 1
-    pc_input_shape = (3, 32, 32)  # color channels, height, width
-    n_z = 110
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     # I store the files in the repository as a temporary solution, we
@@ -67,8 +63,6 @@ def compute_novelty_scores_of_images(model_path, scale, allts, pooling):
     p = len(novel_loader)  # all images are novel
 
     # construct model
-    model = LSANet(pc_input_shape, n_z)
-    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     model.eval()
     model.to(device)
 
@@ -207,6 +201,7 @@ def plot_precision_recall(tp, tn, fp, fn):
 if __name__ == '__main__':
 
     state_dict_path = '../models/polycraft/noisy/scale_0_75/1000.pt'
+    model = load_polycraft_model(state_dict_path)
     pool = 'max'
     scale = 0.75
     dec = 4  # round thresholds to 4th decimal scale
@@ -247,7 +242,7 @@ if __name__ == '__main__':
     allts = np.append(allts, 0.07)
     """
 
-    p, n, fp, tp, fn, tn = compute_novelty_scores_of_images(state_dict_path, scale, allts, pool)
+    p, n, fp, tp, fn, tn = compute_novelty_scores_of_images(model, scale, allts, pool)
 
     plot_roc(p, n, fp, tp, allts)
     plot_precision_recall(tp, tn, fp, fn)

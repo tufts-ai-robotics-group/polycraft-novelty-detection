@@ -1,13 +1,11 @@
 import torch
 import torch.nn as nn
-import torchvision
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
-from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
+from polycraft_nov_det.model_utils import load_polycraft_model
 from polycraft_nov_data.dataloader import polycraft_dataloaders
-import polycraft_nov_data.data_const as data_const
 
 
 def plot_images_instead_of_dots(x, y, images, ax=None):
@@ -63,13 +61,13 @@ def plot_error_with_patch_2d(values, patches):
     plt.title('Rec errors in polar coord sys with random angle')
 
 
-def compute_novelty_scores_of_images(model_path, scale, noi):
+def compute_novelty_scores_of_images(model, scale, noi):
     """
     Apply model on patches and compute the averaged reconstruction error over
     each patch.
 
     Args:
-        model_path (string):Path where the parameters of the trained model are stored
+        model (LSACIFAR10NoEst): Trained model
         scale (float): Scaling to apply to image, 1.0 for original resolution
         noi (int): Number of images/patches we want to use and plot
 
@@ -78,14 +76,11 @@ def compute_novelty_scores_of_images(model_path, scale, noi):
         all_patches (list of torch.tensors): List of all the input patches
             corresponding to each rec. error in all_losses
     """
-    n_z = 100
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    loader, _, _ = polycraft_dataloaders(batch_size=1, include_classes=["normal"], image_scale=scale)
+    loader, _, _ = polycraft_dataloaders(1, ["normal"], scale)
 
     # construct model
-    model = LSACIFAR10NoEst(data_const.PATCH_SHAPE, n_z)
-    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     model.eval()
     model.to(device)
 
@@ -120,6 +115,7 @@ def compute_novelty_scores_of_images(model_path, scale, noi):
 def main():
     state_dict = 'models/polycraft/noisy/scale_0_75/1000.pt'
     scale = 0.75
+    model = load_polycraft_model(state_dict)
 
-    losses, patches = compute_novelty_scores_of_images(state_dict, scale, 200)
+    losses, patches = compute_novelty_scores_of_images(model, scale, 200)
     plot_error_with_patch_2d(losses, patches)

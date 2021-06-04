@@ -6,8 +6,8 @@ import numpy as np
 
 from sklearn.metrics import confusion_matrix
 
-from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst as LSANet
-from ROC_precision_recall import get_data_loader
+from polycraft_nov_det.model_utils import load_polycraft_model
+from polycraft_nov_det.ROC_precision_recall import get_data_loader
 
 
 def plot_confusion_matrix(cm, classes, t, scale, pool, cmap='BuPu'):
@@ -35,14 +35,13 @@ def plot_confusion_matrix(cm, classes, t, scale, pool, cmap='BuPu'):
     plt.savefig('conf.png', dpi=1000, bbox_inches="tight")
 
 
-def compute_novelty_score_predictions(model_path, scale, thresh, pooling):
+def compute_novelty_score_predictions(model, scale, thresh, pooling):
     """
     Apply model on non-novel and novel images and compute their novelty
     score predictions based on thresholding the pooled (max or mean) patch
     reconstruction errors.
     In general, we define novel as True, non-novel as False.
-    :param model_path: path where the parameters of the trained model are
-    stored
+    :param model: trained model
     :param scale: image_scale used for decrease in resolution,
     set to 1 for original resolution
     :param thresh: threshold used for novelty score computation
@@ -52,8 +51,6 @@ def compute_novelty_score_predictions(model_path, scale, thresh, pooling):
     """
 
     b_size = 1
-    pc_input_shape = (3, 32, 32)  # color channels, height, width
-    n_z = 110
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
     # temporary solution
@@ -68,9 +65,6 @@ def compute_novelty_score_predictions(model_path, scale, thresh, pooling):
     p = len(novel_loader)   # all images are novel
 
     # construct model
-    model = LSANet(pc_input_shape, n_z)
-    model.load_state_dict(torch.load(model_path,
-                                     map_location=torch.device('cpu')))
     model.eval()
     model.to(device)
 
@@ -139,13 +133,14 @@ def compute_novelty_score_predictions(model_path, scale, thresh, pooling):
 if __name__ == '__main__':
 
     state_dict_path = '../models/polycraft/noisy/scale_0_75/1000.pt'
+    model = load_polycraft_model(state_dict_path)
 
     pool = 'max'  # either maximum or mean of all patch losses is computed
     scale = 0.75
     t = 0.0076  # Threshold used to decide if something is novel or not
     classes = (['not novel', 'novel'])
 
-    y_, y = compute_novelty_score_predictions(state_dict_path, scale, t, pool)
+    y_, y = compute_novelty_score_predictions(model, scale, t, pool)
     y_ = torch.Tensor(y_)  # Ground truth, novel --> True, not novel --> False
     y = torch.Tensor(y)  # Prediction, novel --> True, not novel --> False
 
