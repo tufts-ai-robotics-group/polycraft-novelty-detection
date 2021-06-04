@@ -105,9 +105,10 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
             valid_loss += batch_loss.item() * batch_size
         av_valid_loss = valid_loss / len(valid_loader)
         writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
-        # get reconstruction visualization
-        writer.add_figure("Reconstruction Vis", plot.plot_reconstruction(data, r_data), epoch)
-        # save model
+        # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
+            # get reconstruction visualization
+            writer.add_figure("Reconstruction Vis", plot.plot_reconstruction(data, r_data), epoch)
+            # save model
             save_model(model, session_path, epoch)
     return model
