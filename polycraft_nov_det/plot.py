@@ -126,20 +126,3 @@ def plot_embedding(embeddings, targets):
         plt.scatter(embeddings_proj[is_target, 0], embeddings_proj[is_target, 1], label=target)
     plt.legend()
     return fig
-
-
-def plot_confusion_matrix(detector, class_dataloaders, class_labels, novel_labels):
-    """Plot confusion matrix for novelty detection
-
-    Args:
-        detector (ReconstructionDet): Novelty detector.
-        class_dataloaders (iterable): Iterable with dataloaders for each class to evaluate.
-        novel_labels (iterable): Iterable with label for each class_dataloader.
-        novel_labels (iterable): Iterable with boolean describing if class_dataloader is novel.
-
-    Returns:
-        plt.Figure: Figure with confusion matrix for novelty detection
-    """
-    # TODO implement
-    fig, ax = plt.subplots()
-    return fig
