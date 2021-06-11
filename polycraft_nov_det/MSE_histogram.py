@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 from skimage import io
-from random import randint
 
 import torch
 import torchvision.transforms as transforms
@@ -40,7 +40,8 @@ class ROIPatchSampler(Dataset):
     of the upper left corner and its width and height.
     """
 
-    def __init__(self, scale, size, root_dir, transform=None):
+    def __init__(self, epochs, scale, size, root_dir, transform=None):
+        self.epochs = epochs
         self.scale = scale
         self.size = size
         self.root_dir = root_dir
@@ -48,7 +49,7 @@ class ROIPatchSampler(Dataset):
         self.patch_size = int(data_const.PATCH_SHAPE[1] * self.scale**(-1))
 
     def __len__(self):
-        return 5  # We have 5 images per size
+        return 20  # We have 20 images per size
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
@@ -69,6 +70,8 @@ class ROIPatchSampler(Dataset):
         return img_patch_no, img_patch_nono
 
     def get_patches_from_rois(self, image, idx):
+        # Use epoch number as random seed in order to sample different patches
+        rng = np.random.RandomState(self.epochs)
         H, W, C = image.shape
 
         # bounding box values:
@@ -85,8 +88,8 @@ class ROIPatchSampler(Dataset):
         dy = self.patch_size
 
         max_n = 1000
-        offset1 = 2  # just to make sure that the novelty is more centered
-        offset2 = 8  # just to make sure that we do not capture a novelty here
+        offset1 = 4 * ((4 - self.size + 1)/2) # just to make sure that the novelty is more centered
+        offset2 = 4 * ((4 - self.size + 1)/2)  # just to make sure that we do not capture a novelty here
 
         # -- novelty patch ----------------------------------------------------
         X, Y = 0, 0
@@ -94,8 +97,8 @@ class ROIPatchSampler(Dataset):
 
         while(X < X_min or X > X_max or Y < Y_min or Y > Y_max):
             # coordinates of center pixel, offset1 to get a more central region
-            Y = randint(y_idx + offset1, y_idx + height - offset1) 
-            X = randint(x_idx + offset1, x_idx + width - offset1) 
+            Y = rng.randint(y_idx + offset1, y_idx + height - offset1) 
+            X = rng.randint(x_idx + offset1, x_idx + width - offset1) 
             n += 1
 
             if (n > max_n):
@@ -108,8 +111,8 @@ class ROIPatchSampler(Dataset):
         # -- no-novelty patch ------------------------------------------------
         n = 0
         while((X > x_idx-offset2 and X < (x_idx + width + offset2)) or (Y > y_idx-offset2 and Y < (y_idx + height+offset2))):
-            X = randint(X_min, X_max)
-            Y = randint(Y_min, Y_max)
+            X = rng.randint(X_min, X_max)
+            Y = rng.randint(Y_min, Y_max)
             n += 1
             if (n > max_n):
                 print('No non-novel region where a whole patch fits in!')
@@ -129,7 +132,7 @@ class ROIPatchSampler(Dataset):
         return rois    
 
 
-def plot_loss_his(scale, size, root_dir, model_path, epochs):
+def plot_loss_his(scale, size, model_path, epochs):
     """Plots a histogram of reconstruction losses of novel and non-novel 
     patches. The plotted loss values are computed based on the MSE loss 
     averaged over a patch. 
@@ -145,11 +148,11 @@ def plot_loss_his(scale, size, root_dir, model_path, epochs):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     kwargs = {'num_workers': 1, 'pin_memory': True} if device == 'cuda' else {}
     pc_input_shape = data_const.PATCH_SHAPE
-    n_z = 110
+    n_z = 100
+    root_dir='datasets/novelty_evaluation_size/' + str(size) + '_/' + str(size)
 
     trnfrm = transforms.Compose([transforms.ToTensor(), image_transforms.CropUI()])
-    data = ROIPatchSampler(scale=scale, size=size, root_dir=root_dir, transform=trnfrm)     
-    train_loader = DataLoader(data, batch_size=1, shuffle=False, **kwargs)
+    
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # construct model
@@ -163,6 +166,10 @@ def plot_loss_his(scale, size, root_dir, model_path, epochs):
     all_loss_nono = []
 
     for epoch in range(epochs):
+        data = ROIPatchSampler(epoch, scale=scale, size=size, root_dir=root_dir, 
+                               transform=trnfrm)     
+        train_loader = DataLoader(data, batch_size=1, shuffle=False, **kwargs)
+        
         for i, sample in enumerate(train_loader):
 
             patch_no = sample[0]  # patch with novelty
@@ -183,6 +190,10 @@ def plot_loss_his(scale, size, root_dir, model_path, epochs):
             loss_no = loss_func(x_no, x_rec_no)
             all_loss_nono.append(loss_nono.item())
             all_loss_no.append(loss_no.item())
+            
+            #if loss_no.item() > 0.01:
+            #    plt.imshow(np.transpose(patch_no[0, :,:,:].detach().numpy(), (1, 2, 0)))
+            #    plt.show()
 
             #x_rec_nono = x_rec_nono.detach().numpy()
             #plt.imshow(np.transpose(x_rec_nono[0], (1, 2, 0)))
@@ -191,11 +202,11 @@ def plot_loss_his(scale, size, root_dir, model_path, epochs):
             #plt.imshow(np.transpose(x_rec_no[0], (1, 2, 0)))
             #plt.show()
 
-    plt.hist([all_loss_nono, all_loss_no], bins=30, alpha=0.7, color=("b", "m"), label=['no novelty', 'novelty'])
+    plt.hist([all_loss_nono, all_loss_no], bins=140, alpha=0.7, color=("b", "m"), label=['no novelty', 'novelty'])
     plt.legend()
     plt.title('Patch-wise MSE loss, size %s, scale %s' % (str(size), str(scale)))
     plt.yticks([])
-    plt.xlim([-0.0005, 0.06])
+    plt.xlim([-0.0005, 0.1])
 
     return
 
@@ -204,7 +215,7 @@ if __name__ == '__main__':
 
     scale = 0.75   
     size = 1
-    noe = 100  # Number of randomly selected patch pairs per image
-    root_dir='../datasets/novel_data/novelty_evaluation_size_indexed/' + str(size) + '_/' + str(size)
-    model_path = 'saved_statedict/LSA_polycraft_no_est_075_random_3000.pt'
-    plot_loss_his(scale, size, root_dir, model_path, epochs=noe)
+    noe = 20  # Number of randomly selected patch pairs per image
+    model_path = 'models/polycraft/no_noise/scale_0_75/7200.pt'
+    
+    plot_loss_his(scale, size, model_path, epochs=noe)
