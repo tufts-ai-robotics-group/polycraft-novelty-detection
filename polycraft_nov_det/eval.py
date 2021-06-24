@@ -11,7 +11,7 @@ def eval_mnist(model_path):
     ecdfs = model_utils.load_cached_ecdfs(model_path, model)
     normal_ecdf = novelty.cat_ecdfs(ecdfs[:5])
     detector = novelty.ReconstructionDet(model, normal_ecdf)
-    train_loader, _, _ = mnist_loader.torch_mnist(6, include_classes=[1])
+    train_loader, _, _ = mnist_loader.torch_mnist(6)
     data, _ = next(iter(train_loader))
     plot.plot_per_patch_nov_det(detector, .99, (2, 3, 1, 28, 28), data)
     plt.show()

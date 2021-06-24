@@ -33,7 +33,7 @@ class TestCIFAR10():
 
     def test_dataloader_polycraft(self, model):
         train_loader, _, _ = polycraft_dataloaders(batch_size)
-        patch_train_loader, _, _ = polycraft_dataloaders(all_patches=True)
+        patch_train_loader, _, _ = polycraft_dataloaders(include_novel=True)
         for data, _ in train_loader:
             model(data)
             break

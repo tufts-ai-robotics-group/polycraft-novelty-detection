@@ -20,8 +20,6 @@ polycraft_group.add_argument("-image_scale", type=float,
                              help="float in (0, 1] to scale Polycraft images by")
 # data specific args
 data_group = parser.add_argument_group("data")
-data_group.add_argument("-add_novel", action="store_true",
-                        help="Include novel images in datasets")
 data_group.add_argument("-batch_size", type=int,
                         help="Batch size for DataLoader")
 # model specific args
@@ -43,9 +41,6 @@ args = parser.parse_args()
 include_classes = None
 # handle MNIST args
 if args.model == "mnist":
-    # determine classes to use
-    if not args.add_novel:
-        include_classes = [0, 1, 2, 3, 4]
     # set default train kwargs
     train_kwargs = {
         "lr": 1e-2,
@@ -54,15 +49,12 @@ if args.model == "mnist":
     }
     # get dataloaders
     batch_size = 256 if args.batch_size is None else args.batch_size
-    train_loader, valid_loader, _ = mnist_loader.torch_mnist(batch_size, include_classes)
+    train_loader, valid_loader, _ = mnist_loader.torch_mnist(batch_size)
     # get model instance
     latent_len = 64 if args.latent_len is None else args.latent_len
     model = LSA_mnist_no_est.LSAMNISTNoEst(mnist_loader.MNIST_SHAPE, latent_len)
 # handle Polycraft args
 elif args.model == "polycraft":
-    # determine classes to use
-    if not args.add_novel:
-        include_classes = ["normal"]
     # set default train kwargs
     train_kwargs = {
         "lr": 1e-3,
@@ -72,7 +64,7 @@ elif args.model == "polycraft":
     # get dataloaders
     batch_size = 128 if args.batch_size is None else args.batch_size
     image_scale = 1.0 if args.image_scale is None else args.image_scale
-    train_loader, valid_loader, _ = polycraft_dataloaders(batch_size, include_classes, image_scale)
+    train_loader, valid_loader, _ = polycraft_dataloaders(batch_size, image_scale)
     # get model instance
     latent_len = 100 if args.latent_len is None else args.latent_len
     model = LSA_cifar10_no_est.LSACIFAR10NoEst(PATCH_SHAPE, latent_len)
