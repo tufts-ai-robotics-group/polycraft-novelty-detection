@@ -8,7 +8,6 @@ import polycraft_nov_det.mnist_loader as mnist_loader
 from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
 from polycraft_nov_det.novelty import load_ecdf, reconstruction_ecdf
-import polycraft_nov_det.plot as plot
 
 
 def load_model(path, model, device="cpu"):
@@ -47,10 +46,9 @@ def load_polycraft_model(path, device="cpu", latent_len=100):
     return load_model(path, model, device)
 
 
-def load_cached_ecdfs(model_path, model):
+def load_cached_ecdf(model_path, model):
     model_dir, model_name = os.path.split(model_path)
     model_name = model_name[:model_name.rfind(".")]
-    ecdfs = []
     # load cached ECDF if it exists
     ecdf_path = os.path.join(model_dir, "train_%s.npy" % (model_name))
     if os.path.isfile(ecdf_path):
@@ -60,12 +58,7 @@ def load_cached_ecdfs(model_path, model):
         train_loader, _, _ = mnist_loader.torch_mnist()
         ecdf = reconstruction_ecdf(model, train_loader)
         ecdf.save(ecdf_path)
-    ecdfs.append(ecdf)
-    return ecdfs
-
-
-def plot_cached_ecdfs(model_path, model):
-    return plot.plot_empirical_cdfs(load_cached_ecdfs(model_path, model), range(10))
+    return ecdf
 
 
 def calc_model_embeddings(model, data_loader):

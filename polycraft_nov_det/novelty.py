@@ -46,19 +46,6 @@ def load_ecdf(file):
     return EmpiricalCDF(np.load(file))
 
 
-def cat_ecdfs(ecdfs):
-    """Concatenate ECDFs by combining samples
-
-    Args:
-        ecdfs (iterable): Iterable of ECDFs to concatenate
-
-    Returns:
-        EmpiricalCDF: Concatenated ECDF
-    """
-    samples = [ecdf.samples for ecdf in ecdfs]
-    return EmpiricalCDF(np.sort(np.concatenate(samples)))
-
-
 class ReconstructionDet():
     """Reconstruction error novelty detector
     """

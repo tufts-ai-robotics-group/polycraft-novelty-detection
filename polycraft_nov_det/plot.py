@@ -50,25 +50,22 @@ def plot_reconstruction(images, r_images):
     return fig
 
 
-def plot_empirical_cdfs(ecdfs, labels):
-    """Plot CDF of iterable of novelty.EmpiricalCDF
+def plot_empirical_cdf(ecdf):
+    """Plot CDF of novelty.EmpiricalCDF
 
     Args:
-        ecdfs (iterable): Iterable of empirical CDFs to plot
-        labels (iterable): Iterable of labels for empirical CDFs
+        ecdf (novelty.EmpiricalCDF): Empirical CDF to plot
 
     Returns:
         plt.Figure: Figure with plot of CDFs of novelty.EmpiricalCDF
     """
     fig, ax = plt.subplots()
-    for ecdf, label in zip(ecdfs, labels):
-        # copy of first entry used so plot starts at 0 probability
-        plt.plot(np.insert(ecdf.samples, 0, ecdf.samples[0]),
-                 np.arange(0, ecdf.N + 1)/ecdf.N,
-                 label=label)
-        # plot the decision boundary
-        plt.scatter(ecdf.quantile(.99), .99)
-    plt.legend()
+    # copy of first entry used so plot starts at 0 probability
+    plt.plot(np.insert(ecdf.samples, 0, ecdf.samples[0]),
+             np.arange(0, ecdf.N + 1)/ecdf.N)
+    # plot the decision boundary
+    plt.scatter(ecdf.quantile(.99), .99)
+    plt.title("Empirical CDF")
     return fig
 
 
