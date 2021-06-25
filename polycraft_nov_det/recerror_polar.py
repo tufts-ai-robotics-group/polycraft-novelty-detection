@@ -77,8 +77,7 @@ def compute_novelty_scores_of_images(model, scale, noi):
             corresponding to each rec. error in all_losses
     """
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    loader, _, _ = polycraft_dataloaders(1, ["normal"], scale)
+    loader, _, _ = polycraft_dataloaders(1, scale)
 
     # construct model
     model.eval()
@@ -113,7 +112,7 @@ def compute_novelty_scores_of_images(model, scale, noi):
 
 
 def main():
-    state_dict = 'models/polycraft/noisy/scale_0_75/1000.pt'
+    state_dict = 'models/polycraft/noisy/scale_0_75/8000.pt'
     scale = 0.75
     model = load_polycraft_model(state_dict)
 
