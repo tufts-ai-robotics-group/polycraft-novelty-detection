@@ -61,21 +61,39 @@ class ReconstructionDet():
         self.ecdf = ecdf
 
     def is_novel(self, data, quantile=.99):
-        """Evaluate novelty based on reconstruction error
+        """Evaluate novelty based on reconstruction error per image
 
         Args:
-            data (torch.tensor): Data to use as input to autoencoder with (N) samples
+            data (torch.tensor): Data to use as input to autoencoder with (B) samples
             quantile (float, optional): In [0, 1], determines quantile used for evaluation.
                                         Defaults to .99.
 
         Returns:
-            torch.tensor: (N) booleans where True is novel
+            np.ndarray: (B) booleans where True is novel
         """
+        return ~self.ecdf.in_quantile(self._mean_r_error(data), quantile)
+
+    def is_novel_pooled(self, data, pool_func=np.max, quantile=.99):
+        """Evaluate novelty based on reconstruction error pooled per batch
+
+        Args:
+            data (torch.tensor): Data to use as input to autoencoder with (B) samples
+            pool_func (func): Function applied to (B) mean reconstruction errors.
+            quantile (float, optional): In [0, 1], determines quantile used for evaluation.
+                                        Defaults to .99.
+
+        Returns:
+            np.ndarray: boolean where True is novel
+        """
+        return ~self.ecdf.in_quantile(pool_func(self._mean_r_error(data)), quantile)
+
+    def _mean_r_error(self, data):
+        # per image mean reconstruction error
         data = data.to(self.device)
         r_data, embedding = self.model(data)
         r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
                              (*range(1, data.dim()),))
-        return ~self.ecdf.in_quantile(r_error.detach().numpy(), quantile)
+        return r_error.detach().numpy()
 
 
 def reconstruction_ecdf(model, train_loader):
