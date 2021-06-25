@@ -176,11 +176,6 @@ def plot_loss_his(scale, size, model_path, epochs):
             patch_no = sample[0]  # patch with novelty
             patch_nono = sample[1]  # patch without any novelty
 
-            # plt.imshow(np.transpose(patch_nono[0, :,:,:].detach().numpy(), (1, 2, 0)))
-            # plt.show()
-            # plt.imshow(np.transpose(patch_no[0, :,:,:].detach().numpy(), (1, 2, 0)))
-            # plt.show()
-
             x_nono = patch_nono
             x_rec_nono, z = model(x_nono.float().to(device))
             x_no = patch_no
@@ -191,17 +186,6 @@ def plot_loss_his(scale, size, model_path, epochs):
             loss_no = loss_func(x_no, x_rec_no)
             all_loss_nono.append(loss_nono.item())
             all_loss_no.append(loss_no.item())
-
-            # if loss_no.item() > 0.01:
-            #    plt.imshow(np.transpose(patch_no[0, :,:,:].detach().numpy(), (1, 2, 0)))
-            #    plt.show()
-
-            # x_rec_nono = x_rec_nono.detach().numpy()
-            # plt.imshow(np.transpose(x_rec_nono[0], (1, 2, 0)))
-            # plt.show()
-            # x_rec_no = x_rec_no.detach().numpy()
-            # plt.imshow(np.transpose(x_rec_no[0], (1, 2, 0)))
-            # plt.show()
 
     plt.hist([all_loss_nono, all_loss_no], bins=140, alpha=0.7,
              color=("b", "m"), label=['no novelty', 'novelty'])
