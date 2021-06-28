@@ -88,8 +88,7 @@ def plot_precision_recall(t_pos, f_pos, t_neg, f_neg, scale, pool):
     plt.savefig('PR.png')
 
 
-def classification_stats(valid_loader, model, allts, device, pooling,
-                         scale):
+def confusion_stats(valid_loader, model, allts, device, pooling):
     """
     Compute true positives, true negatives, false positives and false negatives
     (positive --> novel, negative --> non-novel)
@@ -203,8 +202,8 @@ def performance_evaluation():
         allts2 = np.round(np.linspace(0.04, 0.07, 20), 4)
         allts = np.append(allts1, allts2)
 
-    t_pos, f_pos, t_neg, f_neg = classification_stats(
-        valid_loader, model, allts, device, pooling, scale
+    t_pos, f_pos, t_neg, f_neg = confusion_stats(
+        valid_loader, model, allts, device, pooling
     )
     plot_roc(t_pos, f_pos, t_neg, f_neg, scale, pooling)
     plot_precision_recall(t_pos, t_neg, f_pos, f_neg, scale, pooling)
