@@ -24,7 +24,7 @@ DATA_URLS = {
 }
 
 with importlib.resources.path("polycraft_nov_det", "base_data") as dataset_root:
-    DATASET_ROOT = Path(dataset_root) / Path("MiniImageNet")
+    DATASET_ROOT = Path(dataset_root, "MiniImageNet")
 DATA_PATHS = {label: DATASET_ROOT / Path(label) for label in DATA_LABELS}
 # constants related to shape of data
 IMAGE_SHAPE = (3, 84, 84)
