@@ -66,6 +66,8 @@ def plot_empirical_cdf(ecdf):
     # plot the decision boundary
     plt.scatter(ecdf.quantile(.99), .99)
     plt.title("Empirical CDF")
+    plt.xlabel("Reconstruction Error")
+    plt.ylabel("Training Set Percentile")
     return fig
 
 

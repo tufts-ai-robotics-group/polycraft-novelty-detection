@@ -1,4 +1,6 @@
-import matplotlib.pyplot as plt
+from pathlib import Path
+
+from polycraft_nov_data.dataloader import polycraft_dataloaders
 
 import polycraft_nov_det.mnist_loader as mnist_loader
 import polycraft_nov_det.model_utils as model_utils
@@ -6,12 +8,26 @@ import polycraft_nov_det.novelty as novelty
 import polycraft_nov_det.plot as plot
 
 
-def eval_mnist(model_path):
-    model = model_utils.load_mnist_model(model_path)
-    train_ecdf = model_utils.load_cached_ecdf(model_path, model)
-    plot.plot_empirical_cdf(train_ecdf)
+def eval_mnist(model_path, device="cpu"):
+    model_path = Path(model_path)
+    model = model_utils.load_mnist_model(model_path, device)
+    dataloaders = mnist_loader.torch_mnist()
+    eval(model_path, model, dataloaders, device)
+
+
+def eval_polycraft(model_path, device="cpu"):
+    model_path = Path(model_path)
+    model = model_utils.load_polycraft_model(model_path, device)
+    dataloaders = polycraft_dataloaders()
+    eval(model_path, model, dataloaders, device)
+
+
+def eval(model_path, model, dataloaders, device="cpu"):
+    train_loader, valid_loader, test_loader = dataloaders
+    eval_path = Path(model_path.parent, "eval_" + model_path.stem)
+    eval_path.mkdir(exist_ok=True)
+    # construct and plot ECDF
+    train_ecdf = model_utils.load_cached_ecdf(model_path, model, train_loader)
+    plot.plot_empirical_cdf(train_ecdf).savefig(eval_path / Path("ecdf.png"))
+    # fit detector threshold on validation set
     detector = novelty.ReconstructionDet(model, train_ecdf)
-    train_loader, _, _ = mnist_loader.torch_mnist(6)
-    data, _ = next(iter(train_loader))
-    plot.plot_per_patch_nov_det(detector, .99, (2, 3, 1, 28, 28), data)
-    plt.show()
