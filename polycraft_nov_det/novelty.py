@@ -49,15 +49,16 @@ def load_ecdf(file):
 class ReconstructionDet():
     """Reconstruction error novelty detector
     """
-    def __init__(self, model, ecdf):
+    def __init__(self, model, ecdf, device="cpu"):
         """Reconstruction error novelty detector
 
         Args:
             model (torch.nn.Module): Autoencoder to measure reconstruction error from
             ecdf (novelty.EmpiricalCDF): ECDF for non-novel reconstruction error
+            device (str, optional): Device tag for torch.device. Defaults to "cpu".
         """
         self.model = model
-        self.device = next(model.parameters()).device
+        self.device = torch.device(device)
         self.ecdf = ecdf
 
     def is_novel(self, data, quantile=.99):
@@ -96,17 +97,18 @@ class ReconstructionDet():
         return r_error.detach().numpy()
 
 
-def reconstruction_ecdf(model, train_loader):
+def reconstruction_ecdf(model, train_loader, device="cpu"):
     """Create an ECDF from autoencoder reconstruction error
 
     Args:
         model (torch.nn.Module): Autoencoder to measure reconstruction error from
         train_loader (torch.utils.data.Dataloader): Train set for non-novel reconstruction error
+        device (str, optional): Device tag for torch.device. Defaults to "cpu".
 
     Returns:
         novelty.EmpiricalCDF: ECDF from autoencoder reconstruction error
     """
-    device = next(model.parameters()).device
+    device = torch.device(device)
     # get reconstruction error from training data
     r_error = torch.Tensor([])
     for data, _ in train_loader:
