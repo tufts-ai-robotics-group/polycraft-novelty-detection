@@ -105,29 +105,20 @@ def classification_stats(valid_loader, model, allts, device, pooling,
             r_data, embedding = model(data)
             loss2d = loss_func2d(data, r_data)
             loss2d = torch.mean(loss2d, (1, 2, 3))  # averaged loss per patch
-
             if pooling == 'mean':
                 # mean of all patch losses
                 pooled_loss = torch.mean(loss2d).item()
             if pooling == 'max':
                 # maximum of all patch losses
                 pooled_loss = torch.max(loss2d).item()
-
             for ii, t in enumerate(allts):
                 novelty_score = False
-
                 if pooled_loss > t:
                     novelty_score = True
-
                 if novelty_score is True:
                     f_pos[ii] += 1
-
                 if novelty_score is False:
                     t_neg[ii] += 1
-
-    plot_roc(t_pos, f_pos, t_neg, f_neg, scale, pooling)
-    plot_precision_recall(t_pos, t_neg, f_pos, f_neg, scale, pooling)
-
     return t_pos, f_pos, t_neg, f_neg
 
 
@@ -186,7 +177,7 @@ def performance_evaluation():
     """
     model_directory = './models/polycraft/noisy/scale_1/8000.pt'
     scale = 1
-    pool = 'max'
+    pooling = 'max'
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     # Use valid. set for threshold selection, test set for conf. matrix
     _, valid_loader, test_loader = polycraft_dataloaders(batch_size=1,
@@ -213,12 +204,14 @@ def performance_evaluation():
         allts = np.append(allts1, allts2)
 
     t_pos, f_pos, t_neg, f_neg = classification_stats(
-        valid_loader, model, allts, device, pool, scale
+        valid_loader, model, allts, device, pooling, scale
     )
+    plot_roc(t_pos, f_pos, t_neg, f_neg, scale, pooling)
+    plot_precision_recall(t_pos, t_neg, f_pos, f_neg, scale, pooling)
 
     thresh = find_optimal_treshold(t_pos, f_pos, t_neg, f_neg, allts)
     cm = compute_confusion_matrix(thresh, test_loader, model,
-                                  device, pool)
+                                  device, pooling)
 
     classes = (['normal', 'novel'])
-    plot_confusion_matrix(cm, classes, thresh, scale, pool)
+    plot_confusion_matrix(cm, classes, thresh, scale, pooling)
