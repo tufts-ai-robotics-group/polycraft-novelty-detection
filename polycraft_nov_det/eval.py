@@ -10,15 +10,15 @@ import polycraft_nov_det.plot as plot
 
 def eval_mnist(model_path, device="cpu"):
     model_path = Path(model_path)
-    model = model_utils.load_mnist_model(model_path, device)
-    dataloaders = mnist_loader.torch_mnist()
+    model = model_utils.load_mnist_model(model_path, device).eval()
+    dataloaders = mnist_loader.torch_mnist(include_novel=True)
     eval(model_path, model, dataloaders, device)
 
 
 def eval_polycraft(model_path, device="cpu"):
     model_path = Path(model_path)
-    model = model_utils.load_polycraft_model(model_path, device)
-    dataloaders = polycraft_dataloaders()
+    model = model_utils.load_polycraft_model(model_path, device).eval()
+    dataloaders = polycraft_dataloaders(include_novel=True)
     eval(model_path, model, dataloaders, device)
 
 
@@ -30,4 +30,4 @@ def eval(model_path, model, dataloaders, device="cpu"):
     train_ecdf = model_utils.load_cached_ecdf(model_path, model, train_loader)
     plot.plot_empirical_cdf(train_ecdf).savefig(eval_path / Path("ecdf.png"))
     # fit detector threshold on validation set
-    detector = novelty.ReconstructionDet(model, train_ecdf)
+    detector = novelty.ReconstructionDet(model, train_ecdf, device)

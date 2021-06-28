@@ -46,7 +46,7 @@ def load_polycraft_model(path, device="cpu", latent_len=100):
     return load_model(path, model, device)
 
 
-def load_cached_ecdf(model_path, model, train_loader):
+def load_cached_ecdf(model_path, model, train_loader, device="cpu"):
     model_dir, model_name = os.path.split(model_path)
     model_name = model_name[:model_name.rfind(".")]
     # load cached ECDF if it exists
@@ -55,7 +55,7 @@ def load_cached_ecdf(model_path, model, train_loader):
         ecdf = load_ecdf(ecdf_path)
     # otherwise generate ECDF and cache it for later
     else:
-        ecdf = reconstruction_ecdf(model, train_loader)
+        ecdf = reconstruction_ecdf(model, train_loader, device)
         ecdf.save(ecdf_path)
     return ecdf
 
