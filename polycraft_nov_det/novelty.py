@@ -20,23 +20,26 @@ class EmpiricalCDF():
         """Get q-th quantile of CDF
 
         Args:
-            q (float): In [0, 1], determines quantile
+            q (np.ndarray): (N) elements in [0, 1], determines quantile
+
+        Returns:
+            np.ndarray: (N) elements with quantile values
         """
-        index = int(np.ceil(self.N * q))
+        index = np.ceil((self.N - 1) * q).astype(int)
         return self.samples[index]
 
     def in_quantile(self, data, q):
         """Determine if data is within q-th quantile
 
         Args:
-            data (np.ndarray): array of scalars to evaluate
-            q (float): In [0, 1], determines quantile
+            data (np.ndarray): (B) array of scalars to evaluate
+            q (np.ndarray): (N) elements in [0, 1], determines quantile
 
         Returns:
-            np.ndarray: Array of bools same shape as data, True if data is within quantile
+            np.ndarray: (N, B) Array of bools, True if data is within quantile
         """
         quantile_val = self.quantile(q)
-        return data < quantile_val
+        return data[np.newaxis] < quantile_val[:, np.newaxis]
 
     def save(self, file):
         np.save(file, self.samples)
@@ -55,7 +58,7 @@ class ReconstructionDet():
         Args:
             model (torch.nn.Module): Autoencoder to measure reconstruction error from
             ecdf (novelty.EmpiricalCDF): ECDF for non-novel reconstruction error
-            device (str, optional): Device tag for torch.device. Defaults to "cpu".
+            device (str, optional): Device tag for torch.device. Defaults to "cpu"
         """
         self.model = model
         self.device = torch.device(device)
@@ -66,11 +69,10 @@ class ReconstructionDet():
 
         Args:
             data (torch.tensor): Data to use as input to autoencoder with (B) samples
-            quantile (float, optional): In [0, 1], determines quantile used for evaluation.
-                                        Defaults to .99.
+            quantile (np.ndarray): (N) elements in [0, 1], determines quantile for each output row
 
         Returns:
-            np.ndarray: (B) booleans where True is novel
+            np.ndarray: (N, B) Array of bools, True if data is novel
         """
         return ~self.ecdf.in_quantile(self._mean_r_error(data), quantile)
 
@@ -78,15 +80,14 @@ class ReconstructionDet():
         """Evaluate novelty based on reconstruction error pooled per batch
 
         Args:
-            data (torch.tensor): Data to use as input to autoencoder with (B) samples
-            pool_func (func): Function applied to (B) mean reconstruction errors.
-            quantile (float, optional): In [0, 1], determines quantile used for evaluation.
-                                        Defaults to .99.
+            data (torch.tensor): Data to use as input to autoencoder and then pool
+            quantile (np.ndarray): (N) elements in [0, 1], determines quantile for each output row
+            pool_func (func): Function applied to mean reconstruction errors
 
         Returns:
-            np.ndarray: boolean where True is novel
+            np.ndarray: (N) Array of bools, True if data is novel
         """
-        return ~self.ecdf.in_quantile(pool_func(self._mean_r_error(data)), quantile)
+        return ~self.ecdf.in_quantile(pool_func(self._mean_r_error(data)), quantile)[:, 0]
 
     def _mean_r_error(self, data):
         # per image mean reconstruction error
