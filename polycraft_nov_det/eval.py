@@ -1,9 +1,12 @@
 from pathlib import Path
 
+import numpy as np
+
 from polycraft_nov_data import data_const as polycraft_const
 from polycraft_nov_data.dataloader import polycraft_dataloaders
 from polycraft_nov_data.dataset_transforms import folder_name_to_target_list
 
+import polycraft_nov_det.confusion_matrix as confusion_matrix
 import polycraft_nov_det.mnist_loader as mnist_loader
 import polycraft_nov_det.model_utils as model_utils
 import polycraft_nov_det.novelty as novelty
@@ -18,10 +21,11 @@ def eval_mnist(model_path, device="cpu"):
          mnist_loader.MNIST_NOVEL, device)
 
 
-def eval_polycraft(model_path, device="cpu"):
+def eval_polycraft(model_path, image_scale=1, device="cpu"):
     model_path = Path(model_path)
     model = model_utils.load_polycraft_model(model_path, device).eval()
-    dataloaders = polycraft_dataloaders(include_novel=True)
+    dataloaders = polycraft_dataloaders(image_scale=image_scale, include_novel=True)
+    # get targets determined at runtime
     normal_targets = folder_name_to_target_list(dataloaders[0].dataset,
                                                 polycraft_const.NORMAL_CLASSES)
     novel_targets = folder_name_to_target_list(dataloaders[0].dataset,
@@ -38,3 +42,8 @@ def eval(model_path, model, dataloaders, normal_targets, novel_targets, device="
     plot.plot_empirical_cdf(train_ecdf).savefig(eval_path / Path("ecdf.png"))
     # fit detector threshold on validation set
     detector = novelty.ReconstructionDet(model, train_ecdf, device)
+    thresholds = np.linspace(.5, 1, 50)
+    t_pos, f_pos, t_neg, f_neg = confusion_matrix.confusion_stats(
+        valid_loader, detector, thresholds, normal_targets)
+    opt_thresh = confusion_matrix.find_optimal_treshold(t_pos, f_pos, t_neg, f_neg, thresholds)
+    print(opt_thresh)

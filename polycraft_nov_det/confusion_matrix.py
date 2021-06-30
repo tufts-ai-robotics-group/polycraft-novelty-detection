@@ -3,12 +3,7 @@ import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import metrics
-from sklearn.metrics import confusion_matrix
 import torch
-import torch.nn as nn
-
-from polycraft_nov_data.dataloader import polycraft_dataloaders
-import polycraft_nov_det.model_utils as model_utils
 
 
 # adapted from https://deeplizard.com/learn/video/0LhiS6yu2qQ
@@ -38,7 +33,7 @@ def plot_confusion_matrix(cm, classes, t, scale, pool, cmap='BuPu'):
     fig3.savefig('conf.png', bbox_inches="tight")
 
 
-def plot_roc(t_pos, f_pos, t_neg, f_neg, scale, pool):
+def plot_roc(t_pos, f_pos, t_neg, f_neg):
     """
     Plot ROC curve based on previously determined false and true positives.
     """
@@ -55,12 +50,12 @@ def plot_roc(t_pos, f_pos, t_neg, f_neg, scale, pool):
 
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('AUC = %.2f, scale = %s, pooling = %s' % (auc, str(scale), pool))
+    plt.title('AUC = %.2f' % (auc,))
     plt.legend(loc="lower right")
     plt.savefig('ROC.png')
 
 
-def plot_precision_recall(t_pos, f_pos, t_neg, f_neg, scale, pool):
+def plot_precision_recall(t_pos, f_pos, t_neg, f_neg):
     """
     Plot Precision Recall curve based on previously determined false and true
     positives and false and true negatives.
@@ -73,7 +68,7 @@ def plot_precision_recall(t_pos, f_pos, t_neg, f_neg, scale, pool):
     prec = np.where(allp == 1, 1, prec)
     recall = t_pos/alln
 
-    auc_pr = metrics.auc(recall, prec)
+    auc = metrics.auc(recall, prec)
 
     plt.figure()
     plt.plot(recall, prec, linestyle='--', marker='o', color='m', lw=2,
@@ -83,41 +78,24 @@ def plot_precision_recall(t_pos, f_pos, t_neg, f_neg, scale, pool):
     plt.ylim([0.0, 1.0])
     plt.xlabel('Recall')
     plt.ylabel('Precision')
-    plt.title('AUC = %.2f, scale = %s, pooling = %s' %
-              (auc_pr, str(scale), pool))
+    plt.title('AUC = %.2f' % (auc,))
     plt.savefig('PR.png')
 
 
-def confusion_stats(valid_loader, model, allts, device, pooling):
+def confusion_stats(valid_loader, detector, thresholds, normal_targets):
     """
     Compute true positives, true negatives, false positives and false negatives
     (positive --> novel, negative --> non-novel)
     """
-    loss_func2d = nn.MSELoss(reduction='none')
-    t_pos = np.zeros(len(allts))
-    f_pos = np.zeros(len(allts))
-    t_neg = np.zeros(len(allts))
-    f_neg = np.zeros(len(allts))
+    t_pos, f_pos, t_neg, f_neg = np.zeros((4, len(thresholds)))
     with torch.no_grad():
-        for data, target in valid_loader:
-            data = data.to(device)
-            r_data, embedding = model(data)
-            loss2d = loss_func2d(data, r_data)
-            loss2d = torch.mean(loss2d, (1, 2, 3))  # averaged loss per patch
-            if pooling == 'mean':
-                # mean of all patch losses
-                pooled_loss = torch.mean(loss2d).item()
-            if pooling == 'max':
-                # maximum of all patch losses
-                pooled_loss = torch.max(loss2d).item()
-            for ii, t in enumerate(allts):
-                novelty_score = False
-                if pooled_loss > t:
-                    novelty_score = True
-                if novelty_score is True:
-                    f_pos[ii] += 1
-                if novelty_score is False:
-                    t_neg[ii] += 1
+        for data, targets in valid_loader:
+            novel_pred = detector.is_novel(data, thresholds)
+            novel_true = np.isin(targets.numpy(), normal_targets, invert=True)[np.newaxis]
+            t_pos += np.sum(np.logical_and(novel_pred, novel_true), axis=1)
+            f_pos += np.sum(np.logical_and(novel_pred, ~novel_true), axis=1)
+            t_neg += np.sum(np.logical_and(~novel_pred, ~novel_true), axis=1)
+            f_neg += np.sum(np.logical_and(~novel_pred, novel_true), axis=1)
     return t_pos, f_pos, t_neg, f_neg
 
 
@@ -136,37 +114,6 @@ def find_optimal_treshold(t_pos, f_pos, t_neg, f_neg, allts):
     return optimal_threshold
 
 
-def compute_confusion_matrix(t_opt, normal_test, model, device, pooling):
-    """
-    Compute confusion matrix for the second half of the available unseen data
-    by using the optimal threshold we determined for the first half of the
-    unseen data.
-    """
-    loss_func2d = nn.MSELoss(reduction='none')
-    labels = []
-    pred = []
-    with torch.no_grad():
-        for i, sample in enumerate(normal_test):
-            patches = sample[0]
-            x = patches.float().to(device)
-            x.requires_grad = False
-            x_rec, z = model(x)
-
-            loss2d = loss_func2d(x_rec, x)
-            loss2d = torch.mean(loss2d, (1, 2, 3))  # averaged loss per patch
-            if pooling == 'mean':
-                pooled_loss = torch.mean(loss2d).item()
-            if pooling == 'max':
-                pooled_loss = torch.max(loss2d).item()
-
-            novelty_score = False
-            if pooled_loss > t_opt:
-                novelty_score = True
-            pred.append(novelty_score)
-    cm = confusion_matrix(labels, pred)  # Determine confusion matrix
-    return cm
-
-
 def performance_evaluation():
     """
     Computes ROC and precision-recall curve for one (unseen) subset of non-novel
@@ -174,34 +121,6 @@ def performance_evaluation():
     which we evaluate on the other (unseen) subset of non-novel and novel
     images.
     """
-    model_directory = './models/polycraft/noisy/scale_1/8000.pt'
-    scale = 1
-    pooling = 'max'
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-    # Use valid. set for threshold selection, test set for conf. matrix
-    _, valid_loader, test_loader = polycraft_dataloaders(batch_size=1,
-                                                         image_scale=scale, include_novel=True)
-    # construct model
-    model = model_utils.load_polycraft_model(model_directory, device)
-    model.eval()
-    #  max, 0.75, 0.5
-    if scale == 0.75 or scale == 0.5:
-        allts = np.round(np.linspace(0.003, 0.013, 30), 4)
-        allts = np.append(0.000005, allts)
-        allts = np.append(0.0005, allts)
-        allts = np.append(allts, 0.015)
-        allts = np.append(allts, 0.018)
-        allts = np.append(allts, 0.02)
-        allts = np.append(allts, 0.03)
-        allts = np.append(allts, 0.04)
-        allts = np.append(allts, 0.05)
-        allts = np.append(allts, 0.06)
-    #  max, 1
-    if scale == 1:
-        allts1 = np.round(np.linspace(0.003, 0.04, 40), 4)
-        allts2 = np.round(np.linspace(0.04, 0.07, 20), 4)
-        allts = np.append(allts1, allts2)
-
     t_pos, f_pos, t_neg, f_neg = confusion_stats(
         valid_loader, model, allts, device, pooling
     )
