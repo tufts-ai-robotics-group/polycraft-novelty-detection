@@ -40,12 +40,15 @@ def eval(model_path, model, dataloaders, normal_targets, novel_targets, device="
     eval_path.mkdir(exist_ok=True)
     # construct and plot ECDF
     train_ecdf = model_utils.load_cached_ecdf(model_path, model, train_loader)
-    plot.plot_empirical_cdf(train_ecdf).savefig(eval_path / Path("ecdf.png"))
     # fit detector threshold on validation set
     detector = novelty.ReconstructionDet(model, train_ecdf, device)
-    thresholds = np.linspace(.5, 1, 50)
+    thresholds = np.linspace(0, 2, 50)
     t_pos, f_pos, t_neg, f_neg = eval_calc.confusion_stats(
         valid_loader, detector, thresholds, normal_targets)
+    opt_index = eval_calc.optimal_index(t_pos, f_pos, t_neg, f_neg)
+    opt_thresh = thresholds[opt_index]
+    # plot ECDF with optimal index
+    plot.plot_empirical_cdf(train_ecdf, opt_thresh).savefig(eval_path / Path("ecdf.png"))
     # plot confusion matrix
     con_matrix = eval_calc.optimal_con_matrix(t_pos, f_pos, t_neg, f_neg)
     eval_plot.plot_con_matrix(con_matrix).savefig(eval_path / Path("con_matrix.png"))

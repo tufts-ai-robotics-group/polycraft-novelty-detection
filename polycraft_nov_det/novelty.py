@@ -20,13 +20,18 @@ class EmpiricalCDF():
         """Get q-th quantile of CDF
 
         Args:
-            q (np.ndarray): (N) elements in [0, 1], determines quantile
+            q (np.ndarray): (N) elements greater than 0, determines quantile
 
         Returns:
             np.ndarray: (N) elements with quantile values
         """
+        vals = np.zeros(q.shape)
         index = np.ceil((self.N - 1) * q).astype(int)
-        return self.samples[index]
+        vals[q <= 1] = self.samples[index[q <= 1]]
+        # linearly extend quantiles
+        slope = self.samples[-1] - self.samples[0]
+        vals[q > 1] = q[q > 1] * slope + self.samples[0]
+        return vals
 
     def in_quantile(self, data, q):
         """Determine if data is within q-th quantile

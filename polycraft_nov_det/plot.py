@@ -50,11 +50,12 @@ def plot_reconstruction(images, r_images):
     return fig
 
 
-def plot_empirical_cdf(ecdf):
+def plot_empirical_cdf(ecdf, opt_thresh):
     """Plot CDF of novelty.EmpiricalCDF
 
     Args:
         ecdf (novelty.EmpiricalCDF): Empirical CDF to plot
+        opt_thresh (float): Optimal threshold found by eval_calc.optimal_index
 
     Returns:
         plt.Figure: Figure with plot of CDFs of novelty.EmpiricalCDF
@@ -64,7 +65,7 @@ def plot_empirical_cdf(ecdf):
     plt.plot(np.insert(ecdf.samples, 0, ecdf.samples[0]),
              np.arange(0, ecdf.N + 1)/ecdf.N)
     # plot the decision boundary
-    plt.scatter(ecdf.quantile(.99), .99)
+    plt.scatter(ecdf.quantile(np.array([opt_thresh])), opt_thresh)
     plt.title("Empirical CDF")
     plt.xlabel("Reconstruction Error")
     plt.ylabel("Training Set Percentile")
