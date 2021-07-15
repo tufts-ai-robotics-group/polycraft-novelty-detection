@@ -6,7 +6,8 @@ from polycraft_nov_data import data_const as polycraft_const
 from polycraft_nov_data.dataloader import polycraft_dataloaders
 from polycraft_nov_data.dataset_transforms import folder_name_to_target_list
 
-import polycraft_nov_det.confusion_matrix as confusion_matrix
+import polycraft_nov_det.eval_calc as eval_calc
+import polycraft_nov_det.eval_plot as eval_plot
 import polycraft_nov_det.mnist_loader as mnist_loader
 import polycraft_nov_det.model_utils as model_utils
 import polycraft_nov_det.novelty as novelty
@@ -43,7 +44,11 @@ def eval(model_path, model, dataloaders, normal_targets, novel_targets, device="
     # fit detector threshold on validation set
     detector = novelty.ReconstructionDet(model, train_ecdf, device)
     thresholds = np.linspace(.5, 1, 50)
-    t_pos, f_pos, t_neg, f_neg = confusion_matrix.confusion_stats(
+    t_pos, f_pos, t_neg, f_neg = eval_calc.confusion_stats(
         valid_loader, detector, thresholds, normal_targets)
-    opt_thresh = confusion_matrix.find_optimal_treshold(t_pos, f_pos, t_neg, f_neg, thresholds)
-    print(opt_thresh)
+    # plot confusion matrix
+    con_matrix = eval_calc.optimal_con_matrix(t_pos, f_pos, t_neg, f_neg)
+    eval_plot.plot_con_matrix(con_matrix).savefig(eval_path / Path("con_matrix.png"))
+    # plot PR and ROC curves
+    eval_plot.plot_precision_recall(t_pos, f_pos, f_neg).savefig(eval_path / Path("pr.png"))
+    eval_plot.plot_roc(t_pos, f_pos, t_neg, f_neg).savefig(eval_path / Path("roc.png"))
