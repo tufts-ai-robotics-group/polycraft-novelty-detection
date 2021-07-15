@@ -55,7 +55,7 @@ def optimal_con_matrix(t_pos, f_pos, t_neg, f_neg):
         f_neg (np.ndarray): (N) false negatives per threshold
 
     Returns:
-        np.ndarray: Confusino matrix of threshold minimizing false positives and negatives
+        np.ndarray: Confusion matrix of threshold minimizing false positives and negatives
     """
     opt_ind = optimal_index(t_pos, f_pos, t_neg, f_neg)
     return np.array([[t_pos[opt_ind], f_pos[opt_ind]],
