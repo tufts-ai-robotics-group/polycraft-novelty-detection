@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 
 from polycraft_nov_data import data_const as polycraft_const
-from polycraft_nov_data.dataloader import polycraft_dataloaders
+from polycraft_nov_data.dataloader import polycraft_dataloaders, polycraft_dataset
 from polycraft_nov_data.dataset_transforms import folder_name_to_target_list
 
 import polycraft_nov_det.eval_calc as eval_calc
@@ -27,10 +27,12 @@ def eval_polycraft(model_path, image_scale=1, device="cpu"):
     model = model_utils.load_polycraft_model(model_path, device).eval()
     dataloaders = polycraft_dataloaders(image_scale=image_scale, include_novel=True)
     # get targets determined at runtime
-    normal_targets = folder_name_to_target_list(dataloaders[0].dataset,
+    base_dataset = polycraft_dataset()
+    normal_targets = folder_name_to_target_list(base_dataset,
                                                 polycraft_const.NORMAL_CLASSES)
-    novel_targets = folder_name_to_target_list(dataloaders[0].dataset,
+    novel_targets = folder_name_to_target_list(base_dataset,
                                                polycraft_const.NOVEL_CLASSES)
+    del base_dataset
     eval(model_path, model, dataloaders, normal_targets, novel_targets, device)
 
 
@@ -47,11 +49,13 @@ def eval(model_path, model, dataloaders, normal_targets, novel_targets, device="
         valid_loader, detector, thresholds, normal_targets)
     opt_index = eval_calc.optimal_index(t_pos, f_pos, t_neg, f_neg)
     opt_thresh = thresholds[opt_index]
-    # plot ECDF with optimal index
+    # plot ECDF with optimal thresh
     plot.plot_empirical_cdf(train_ecdf, opt_thresh).savefig(eval_path / Path("ecdf.png"))
-    # plot confusion matrix
-    con_matrix = eval_calc.optimal_con_matrix(t_pos, f_pos, t_neg, f_neg)
-    eval_plot.plot_con_matrix(con_matrix).savefig(eval_path / Path("con_matrix.png"))
-    # plot PR and ROC curves
+    # plot PR and ROC curves on validation set
     eval_plot.plot_precision_recall(t_pos, f_pos, f_neg).savefig(eval_path / Path("pr.png"))
     eval_plot.plot_roc(t_pos, f_pos, t_neg, f_neg).savefig(eval_path / Path("roc.png"))
+    # plot confusion matrix on test set
+    t_pos, f_pos, t_neg, f_neg = eval_calc.confusion_stats(
+        test_loader, detector, np.array([opt_thresh]), normal_targets)
+    con_matrix = eval_calc.optimal_con_matrix(t_pos, f_pos, t_neg, f_neg)
+    eval_plot.plot_con_matrix(con_matrix).savefig(eval_path / Path("con_matrix.png"))
