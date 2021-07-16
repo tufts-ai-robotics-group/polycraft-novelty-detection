@@ -11,7 +11,6 @@ import polycraft_nov_det.eval_plot as eval_plot
 import polycraft_nov_det.mnist_loader as mnist_loader
 import polycraft_nov_det.model_utils as model_utils
 import polycraft_nov_det.novelty as novelty
-import polycraft_nov_det.plot as plot
 
 
 def eval_mnist(model_path, device="cpu"):
@@ -40,17 +39,15 @@ def eval(model_path, model, dataloaders, normal_targets, novel_targets, device="
     train_loader, valid_loader, test_loader = dataloaders
     eval_path = Path(model_path.parent, "eval_" + model_path.stem)
     eval_path.mkdir(exist_ok=True)
-    # construct and plot ECDF
-    train_ecdf = model_utils.load_cached_ecdf(model_path, model, train_loader)
+    # construct linear regularization
+    train_lin_reg = model_utils.load_cached_lin_reg(model_path, model, train_loader)
     # fit detector threshold on validation set
-    detector = novelty.ReconstructionDet(model, train_ecdf, device)
+    detector = novelty.ReconstructionDet(model, train_lin_reg, device)
     thresholds = np.linspace(0, 2, 50)
     t_pos, f_pos, t_neg, f_neg = eval_calc.confusion_stats(
         valid_loader, detector, thresholds, normal_targets)
     opt_index = eval_calc.optimal_index(t_pos, f_pos, t_neg, f_neg)
     opt_thresh = thresholds[opt_index]
-    # plot ECDF with optimal thresh
-    plot.plot_empirical_cdf(train_ecdf, opt_thresh).savefig(eval_path / Path("ecdf.png"))
     # plot PR and ROC curves on validation set
     eval_plot.plot_precision_recall(t_pos, f_pos, f_neg).savefig(eval_path / Path("pr.png"))
     eval_plot.plot_roc(t_pos, f_pos, t_neg, f_neg).savefig(eval_path / Path("roc.png"))

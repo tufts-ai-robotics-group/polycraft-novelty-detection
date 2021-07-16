@@ -3,71 +3,49 @@ import torch
 from torch.nn.functional import mse_loss
 
 
-class EmpiricalCDF():
-    """Empirical cumulative distribution function
-    https://en.wikipedia.org/wiki/Empirical_distribution_function
+class LinearRegularization():
+    """Linear regularization for thresholding reconstruction error
     """
-    def __init__(self, samples):
-        """Empirical cumulative distribution function
+    def __init__(self, extrema):
+        """Linear regularization for thresholding reconstruction error
 
         Args:
-            samples (np.ndarray): Array of (N) samples from distribution to approximate
+            extrema (np.ndarray): Array [min, max] of reconstruction error set to regularize
         """
-        self.samples = np.sort(samples)
-        self.N = len(self.samples)
+        self.extrema = extrema
+        self.min = extrema[0]
+        self.max = extrema[1]
+        self.slope = self.max - self.min
 
-    def quantile(self, q):
-        """Get q-th quantile of CDF
+    def value(self, x):
+        return x * self.slope + self.min
 
-        Args:
-            q (np.ndarray): (N) elements greater than 0, determines quantile
-
-        Returns:
-            np.ndarray: (N) elements with quantile values
-        """
-        vals = np.zeros(q.shape)
-        index = np.ceil((self.N - 1) * q).astype(int)
-        vals[q <= 1] = self.samples[index[q <= 1]]
-        # linearly extend quantiles
-        slope = self.samples[-1] - self.samples[0]
-        vals[q > 1] = q[q > 1] * slope + self.samples[0]
-        return vals
-
-    def in_quantile(self, data, q):
-        """Determine if data is within q-th quantile
-
-        Args:
-            data (np.ndarray): (B) array of scalars to evaluate
-            q (np.ndarray): (N) elements in [0, 1], determines quantile
-
-        Returns:
-            np.ndarray: (N, B) Array of bools, True if data is within quantile
-        """
-        quantile_val = self.quantile(q)
-        return data[np.newaxis] < quantile_val[:, np.newaxis]
+    def lt_value(self, data, x):
+        y = self.value(x)
+        return data[np.newaxis] < y[:, np.newaxis]
 
     def save(self, file):
-        np.save(file, self.samples)
+        np.save(file, self.extrema)
 
 
-def load_ecdf(file):
-    return EmpiricalCDF(np.load(file))
+def load_lin_reg(file):
+    return LinearRegularization(np.load(file))
 
 
 class ReconstructionDet():
     """Reconstruction error novelty detector
     """
-    def __init__(self, model, ecdf, device="cpu"):
+    def __init__(self, model, lin_reg, device="cpu"):
         """Reconstruction error novelty detector
 
         Args:
             model (torch.nn.Module): Autoencoder to measure reconstruction error from
-            ecdf (novelty.EmpiricalCDF): ECDF for non-novel reconstruction error
+            lin_reg (novelty.LinearRegularization): Regularization for non-novel error
             device (str, optional): Device tag for torch.device. Defaults to "cpu"
         """
         self.model = model
         self.device = torch.device(device)
-        self.ecdf = ecdf
+        self.lin_reg = lin_reg
 
     def is_novel(self, data, quantile=.99):
         """Evaluate novelty based on reconstruction error per image
@@ -79,7 +57,7 @@ class ReconstructionDet():
         Returns:
             np.ndarray: (N, B) Array of bools, True if data is novel
         """
-        return ~self.ecdf.in_quantile(self._mean_r_error(data), quantile)
+        return ~self.lin_reg.lt_value(self._mean_r_error(data), quantile)
 
     def is_novel_pooled(self, data, pool_func=np.max, quantile=.99):
         """Evaluate novelty based on reconstruction error pooled per batch
@@ -92,7 +70,7 @@ class ReconstructionDet():
         Returns:
             np.ndarray: (N) Array of bools, True if data is novel
         """
-        return ~self.ecdf.in_quantile(pool_func(self._mean_r_error(data)), quantile)[:, 0]
+        return ~self.lin_reg.lt_value(pool_func(self._mean_r_error(data)), quantile)[:, 0]
 
     def _mean_r_error(self, data):
         # per image mean reconstruction error
@@ -103,8 +81,8 @@ class ReconstructionDet():
         return r_error.detach().numpy()
 
 
-def reconstruction_ecdf(model, train_loader, device="cpu"):
-    """Create an ECDF from autoencoder reconstruction error
+def reconstruction_lin_reg(model, train_loader, device="cpu"):
+    """Create an linear regularization from autoencoder reconstruction error
 
     Args:
         model (torch.nn.Module): Autoencoder to measure reconstruction error from
@@ -112,17 +90,21 @@ def reconstruction_ecdf(model, train_loader, device="cpu"):
         device (str, optional): Device tag for torch.device. Defaults to "cpu".
 
     Returns:
-        novelty.EmpiricalCDF: ECDF from autoencoder reconstruction error
+        novelty.EmpiricalCDF: Linear regularization from autoencoder reconstruction error
     """
     device = torch.device(device)
     # get reconstruction error from training data
-    r_error = torch.Tensor([])
+    train_min = None
+    train_max = None
     for data, _ in train_loader:
         data = data.to(device)
         r_data, _ = model(data)
         # gets mean reconstruction per image in data
-        data_r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
-                                  (*range(1, data.dim()),))
-        r_error = torch.cat((r_error, data_r_error))
+        r_error = torch.mean(mse_loss(data, r_data, reduction="none"), (*range(1, data.dim()),))
+        # store the min and max reconstruction errors
+        if train_min is None or train_min > torch.min(r_error):
+            train_min = torch.min(r_error).item()
+        if train_max is None or train_max < torch.max(r_error):
+            train_max = torch.max(r_error).item()
     # construct EmpiricalCDF from reconstruction error
-    return EmpiricalCDF(r_error.detach().numpy())
+    return LinearRegularization(np.array([train_min, train_max]))

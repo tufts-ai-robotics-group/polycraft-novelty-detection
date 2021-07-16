@@ -50,28 +50,6 @@ def plot_reconstruction(images, r_images):
     return fig
 
 
-def plot_empirical_cdf(ecdf, opt_thresh):
-    """Plot CDF of novelty.EmpiricalCDF
-
-    Args:
-        ecdf (novelty.EmpiricalCDF): Empirical CDF to plot
-        opt_thresh (float): Optimal threshold found by eval_calc.optimal_index
-
-    Returns:
-        plt.Figure: Figure with plot of CDFs of novelty.EmpiricalCDF
-    """
-    fig, ax = plt.subplots()
-    # copy of first entry used so plot starts at 0 probability
-    plt.plot(np.insert(ecdf.samples, 0, ecdf.samples[0]),
-             np.arange(0, ecdf.N + 1)/ecdf.N)
-    # plot the decision boundary
-    plt.scatter(ecdf.quantile(np.array([opt_thresh])), opt_thresh)
-    plt.title("Empirical CDF")
-    plt.xlabel("Reconstruction Error")
-    plt.ylabel("Training Set Percentile")
-    return fig
-
-
 def plot_per_patch_nov_det(detector, quantile, patch_array_shape, all_patches_batch):
     """Plot novelty detection for each patch of an image
 
