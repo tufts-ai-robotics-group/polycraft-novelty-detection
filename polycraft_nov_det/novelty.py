@@ -78,7 +78,7 @@ class ReconstructionDet():
         r_data, embedding = self.model(data)
         r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
                              (*range(1, data.dim()),))
-        return r_error.detach().numpy()
+        return r_error.detach().cpu().numpy()
 
 
 def reconstruction_lin_reg(model, train_loader, device="cpu"):
