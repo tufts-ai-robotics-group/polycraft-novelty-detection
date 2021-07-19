@@ -18,7 +18,7 @@ def eval_mnist(model_path, device="cpu"):
     model = model_utils.load_mnist_model(model_path, device).eval()
     dataloaders = mnist_loader.torch_mnist(include_novel=True)
     eval(model_path, model, dataloaders, mnist_loader.MNIST_NORMAL,
-         mnist_loader.MNIST_NOVEL, device)
+         mnist_loader.MNIST_NOVEL, False, device)
 
 
 def eval_polycraft(model_path, image_scale=1, device="cpu"):
@@ -32,10 +32,10 @@ def eval_polycraft(model_path, image_scale=1, device="cpu"):
     novel_targets = folder_name_to_target_list(base_dataset,
                                                polycraft_const.NOVEL_CLASSES)
     del base_dataset
-    eval(model_path, model, dataloaders, normal_targets, novel_targets, device)
+    eval(model_path, model, dataloaders, normal_targets, novel_targets, True, device)
 
 
-def eval(model_path, model, dataloaders, normal_targets, novel_targets, device="cpu"):
+def eval(model_path, model, dataloaders, normal_targets, novel_targets, pool_batches, device="cpu"):
     train_loader, valid_loader, test_loader = dataloaders
     eval_path = Path(model_path.parent, "eval_" + model_path.stem)
     eval_path.mkdir(exist_ok=True)
@@ -45,7 +45,7 @@ def eval(model_path, model, dataloaders, normal_targets, novel_targets, device="
     detector = novelty.ReconstructionDet(model, train_lin_reg, device)
     thresholds = np.linspace(0, 2, 50)
     t_pos, f_pos, t_neg, f_neg = eval_calc.confusion_stats(
-        valid_loader, detector, thresholds, normal_targets)
+        valid_loader, detector, thresholds, normal_targets, pool_batches)
     opt_index = eval_calc.optimal_index(t_pos, f_pos, t_neg, f_neg)
     opt_thresh = thresholds[opt_index]
     # plot PR and ROC curves on validation set
@@ -53,6 +53,6 @@ def eval(model_path, model, dataloaders, normal_targets, novel_targets, device="
     eval_plot.plot_roc(t_pos, f_pos, t_neg, f_neg).savefig(eval_path / Path("roc.png"))
     # plot confusion matrix on test set
     t_pos, f_pos, t_neg, f_neg = eval_calc.confusion_stats(
-        test_loader, detector, np.array([opt_thresh]), normal_targets)
+        test_loader, detector, np.array([opt_thresh]), normal_targets, pool_batches)
     con_matrix = eval_calc.optimal_con_matrix(t_pos, f_pos, t_neg, f_neg)
     eval_plot.plot_con_matrix(con_matrix).savefig(eval_path / Path("con_matrix.png"))

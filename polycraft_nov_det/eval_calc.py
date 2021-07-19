@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 
-def confusion_stats(valid_loader, detector, thresholds, normal_targets):
+def confusion_stats(valid_loader, detector, thresholds, normal_targets, pool_batches):
     """Compute confusion stats for multiple thresholds, with positives as novel
 
     Args:
@@ -10,6 +10,7 @@ def confusion_stats(valid_loader, detector, thresholds, normal_targets):
         detector (ReconstructionDet): Detector to compute statistics with
         thresholds (np.ndarray): Set of detector thresholds to evaluate
         normal_targets (list): Set of targets to use as normal
+        pool_batches (bool): Whether to used pooled detection on DataLoader batches
 
     Returns:
         tuple: 4 np.ndarray of length (N), containing following stats per threshold:
@@ -18,7 +19,11 @@ def confusion_stats(valid_loader, detector, thresholds, normal_targets):
     t_pos, f_pos, t_neg, f_neg = np.zeros((4, len(thresholds)))
     with torch.no_grad():
         for data, targets in valid_loader:
-            novel_pred = detector.is_novel(data, thresholds)
+            if pool_batches:
+                # extra axis added to match non-pooled shape for sums
+                novel_pred = detector.is_novel_pooled(data, thresholds)[:, np.newaxis]
+            else:
+                novel_pred = detector.is_novel(data, thresholds)
             novel_true = np.isin(targets.numpy(), normal_targets, invert=True)[np.newaxis]
             t_pos += np.sum(np.logical_and(novel_pred, novel_true), axis=1)
             f_pos += np.sum(np.logical_and(novel_pred, ~novel_true), axis=1)

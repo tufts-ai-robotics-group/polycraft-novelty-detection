@@ -59,7 +59,7 @@ class ReconstructionDet():
         """
         return ~self.lin_reg.lt_value(self._mean_r_error(data), quantile)
 
-    def is_novel_pooled(self, data, pool_func=np.max, quantile=.99):
+    def is_novel_pooled(self, data, quantile=.99, pool_func=np.max):
         """Evaluate novelty based on reconstruction error pooled per batch
 
         Args:
