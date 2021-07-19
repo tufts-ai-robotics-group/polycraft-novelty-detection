@@ -43,8 +43,8 @@ class ReconstructionDet():
             lin_reg (novelty.LinearRegularization): Regularization for non-novel error
             device (str, optional): Device tag for torch.device. Defaults to "cpu"
         """
-        self.model = model
         self.device = torch.device(device)
+        self.model = model.to(self.device)
         self.lin_reg = lin_reg
 
     def is_novel(self, data, quantile=.99):
