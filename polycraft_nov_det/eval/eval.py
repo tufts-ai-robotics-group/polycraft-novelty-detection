@@ -10,7 +10,7 @@ import polycraft_nov_det.eval.plot as eval_plot
 import polycraft_nov_det.eval.stats as eval_stats
 import polycraft_nov_det.mnist_loader as mnist_loader
 import polycraft_nov_det.model_utils as model_utils
-import polycraft_nov_det.novelty as novelty
+import polycraft_nov_det.detector
 
 
 def eval_mnist(model_path, device="cpu"):
@@ -42,7 +42,7 @@ def eval(model_path, model, dataloaders, normal_targets, novel_targets, pool_bat
     # construct linear regularization
     train_lin_reg = model_utils.load_cached_lin_reg(model_path, model, train_loader)
     # fit detector threshold on validation set
-    detector = novelty.ReconstructionDet(model, train_lin_reg, device)
+    detector = polycraft_nov_det.detector.ReconstructionDet(model, train_lin_reg, device)
     thresholds = np.linspace(0, 2, 50)
     t_pos, f_pos, t_neg, f_neg = eval_stats.confusion_stats(
         valid_loader, detector, thresholds, normal_targets, pool_batches)
