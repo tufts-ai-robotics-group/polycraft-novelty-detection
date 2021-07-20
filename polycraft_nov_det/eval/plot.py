@@ -1,6 +1,6 @@
 from sklearn import metrics
 
-from polycraft_nov_det.eval_calc import ratio
+from polycraft_nov_det.eval.stats import ratio
 
 
 def plot_con_matrix(con_matrix):
