@@ -5,7 +5,7 @@ from polycraft_nov_det.eval.stats import ratio
 
 def plot_con_matrix(con_matrix):
     disp = metrics.ConfusionMatrixDisplay(con_matrix, display_labels=["Novel", "Normal"])
-    disp = disp.plot(cmap="Blues")
+    disp = disp.plot(cmap="Blues", values_format=".0f")
     return disp.figure_
 
 
@@ -15,7 +15,8 @@ def plot_roc(t_pos, f_pos, t_neg, f_neg):
     """
     f_pos_rate = ratio(f_pos, t_neg)
     t_pos_rate = ratio(t_pos, f_neg)
-    disp = metrics.RocCurveDisplay(fpr=f_pos_rate, tpr=t_pos_rate)
+    roc_auc = metrics.auc(f_pos_rate, t_pos_rate)
+    disp = metrics.RocCurveDisplay(fpr=f_pos_rate, tpr=t_pos_rate, roc_auc=roc_auc)
     disp = disp.plot()
     return disp.figure_
 

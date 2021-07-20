@@ -43,7 +43,7 @@ def eval(model_path, model, dataloaders, normal_targets, novel_targets, pool_bat
     train_lin_reg = model_utils.load_cached_lin_reg(model_path, model, train_loader)
     # fit detector threshold on validation set
     detector = polycraft_nov_det.detector.ReconstructionDet(model, train_lin_reg, device)
-    thresholds = np.linspace(0, 2, 50)
+    thresholds = np.linspace(0, 2, 200)
     t_pos, f_pos, t_neg, f_neg = eval_stats.confusion_stats(
         valid_loader, detector, thresholds, normal_targets, pool_batches)
     opt_index = eval_stats.optimal_index(t_pos, f_pos, t_neg, f_neg)
