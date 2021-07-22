@@ -17,8 +17,8 @@ def eval_mnist(model_path, device="cpu"):
     model_path = Path(model_path)
     model = model_utils.load_mnist_model(model_path, device).eval()
     dataloaders = mnist_loader.torch_mnist(include_novel=True)
-    eval(model_path, model, dataloaders, mnist_loader.MNIST_NORMAL,
-         mnist_loader.MNIST_NOVEL, False, device)
+    eval_base(model_path, model, dataloaders, mnist_loader.MNIST_NORMAL,
+              mnist_loader.MNIST_NOVEL, False, device)
 
 
 def eval_polycraft(model_path, image_scale=1, device="cpu"):
@@ -32,10 +32,11 @@ def eval_polycraft(model_path, image_scale=1, device="cpu"):
     novel_targets = folder_name_to_target_list(base_dataset,
                                                polycraft_const.NOVEL_CLASSES)
     del base_dataset
-    eval(model_path, model, dataloaders, normal_targets, novel_targets, True, device)
+    eval_base(model_path, model, dataloaders, normal_targets, novel_targets, True, device)
 
 
-def eval(model_path, model, dataloaders, normal_targets, novel_targets, pool_batches, device="cpu"):
+def eval_base(model_path, model, dataloaders, normal_targets, novel_targets, pool_batches,
+              device="cpu"):
     train_loader, valid_loader, test_loader = dataloaders
     eval_path = Path(model_path.parent, "eval_" + model_path.stem)
     eval_path.mkdir(exist_ok=True)
