@@ -7,7 +7,7 @@ import polycraft_nov_data.data_const as polycraft_const
 import polycraft_nov_det.mnist_loader as mnist_loader
 from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
-from polycraft_nov_det.novelty import load_ecdf, reconstruction_ecdf
+from polycraft_nov_det.detector import load_lin_reg, reconstruction_lin_reg
 
 
 def load_model(path, model, device="cpu"):
@@ -46,19 +46,18 @@ def load_polycraft_model(path, device="cpu", latent_len=100):
     return load_model(path, model, device)
 
 
-def load_cached_ecdf(model_path, model):
+def load_cached_lin_reg(model_path, model, train_loader, device="cpu"):
     model_dir, model_name = os.path.split(model_path)
     model_name = model_name[:model_name.rfind(".")]
-    # load cached ECDF if it exists
-    ecdf_path = os.path.join(model_dir, "train_%s.npy" % (model_name))
-    if os.path.isfile(ecdf_path):
-        ecdf = load_ecdf(ecdf_path)
-    # otherwise generate ECDF and cache it for later
+    # load cached regularization if it exists
+    reg_path = os.path.join(model_dir, "train_%s.npy" % (model_name))
+    if os.path.isfile(reg_path):
+        reg = load_lin_reg(reg_path)
+    # otherwise generate regularization and cache it for later
     else:
-        train_loader, _, _ = mnist_loader.torch_mnist()
-        ecdf = reconstruction_ecdf(model, train_loader)
-        ecdf.save(ecdf_path)
-    return ecdf
+        reg = reconstruction_lin_reg(model, train_loader, device)
+        reg.save(reg_path)
+    return reg
 
 
 def calc_model_embeddings(model, data_loader):
