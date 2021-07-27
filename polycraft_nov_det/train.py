@@ -71,38 +71,37 @@ def train_autoencoder(model, model_label, train_loader, valid_loader, lr, epochs
     optimizer = optim.Adam(model.parameters(), lr)
     # train model
     for epoch in range(epochs):
-        train_loss = 0
-        train_count = 0
-        for data, target in train_loader:
-            batch_size = data.shape[0]
-            data = data.to(device)
-            optimizer.zero_grad()
-            # update weights with optimizer
-            if not train_noisy:
-                r_data, embedding = model(data)
-            else:
-                r_data, embedding = model(GaussianNoise()(data))
-            batch_loss = loss_func(data, r_data)
-            batch_loss.backward()
-            optimizer.step()
-            # logging
-            train_loss += batch_loss.item() * batch_size
-            train_count += batch_size
-        # calculate and record train loss
-        av_train_loss = train_loss / train_count
-        writer.add_scalar("Average Train Loss", av_train_loss, epoch)
-        # get validation loss
-        valid_loss = 0
-        valid_count = 0
-        for data, target in valid_loader:
-            batch_size = data.shape[0]
-            data = data.to(device)
-            r_data, embedding = model(data)
-            batch_loss = loss_func(data, r_data)
-            valid_loss += batch_loss.item() * batch_size
-            valid_count += batch_size
-        av_valid_loss = valid_loss / valid_count
-        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
+        for mode in ["train", "valid"]:
+            epoch_loss = 0
+            epoch_count = 0
+            # set per mode variables
+            if mode == "train":
+                loader = train_loader
+                tag = "Average Train Loss"
+            elif mode == "valid":
+                loader = valid_loader
+                tag = "Average Validation Loss"
+            # iterate over data
+            for data, target in loader:
+                batch_size = data.shape[0]
+                data = data.to(device)
+                if mode == "train":
+                    optimizer.zero_grad()
+                # get model outputs and update weights with optimizer if training
+                if not train_noisy or mode == "valid":
+                    r_data, embedding = model(data)
+                else:
+                    r_data, embedding = model(GaussianNoise()(data))
+                batch_loss = loss_func(data, r_data)
+                if mode == "train":
+                    batch_loss.backward()
+                    optimizer.step()
+                # logging
+                epoch_loss += batch_loss.item() * batch_size
+                epoch_count += batch_size
+            # calculate and record train loss
+            av_epoch_loss = epoch_loss / epoch_count
+            writer.add_scalar(tag, av_epoch_loss, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # get reconstruction visualization
@@ -148,40 +147,38 @@ def train_classifier(model, model_label, encoder, train_loader, valid_loader, lr
         param.requires_grad = False
     # train model
     for epoch in range(epochs):
-        train_loss = 0
-        train_count = 0
-        for data, target in train_loader:
-            batch_size = data.shape[0]
-            data = data.to(device)
-            optimizer.zero_grad()
-            # update weights with optimizer
-            if not train_noisy:
-                embedding = encoder(data)
-            else:
-                embedding = encoder(GaussianNoise()(data))
-            pred = model(embedding)
-            batch_loss = loss_func(pred, target)
-            batch_loss.backward()
-            optimizer.step()
-            # logging
-            train_loss += batch_loss.item() * batch_size
-            train_count += batch_size
-        # calculate and record train loss
-        av_train_loss = train_loss / train_count
-        writer.add_scalar("Average Train Loss", av_train_loss, epoch)
-        # get validation loss
-        valid_loss = 0
-        valid_count = 0
-        for data, target in valid_loader:
-            batch_size = data.shape[0]
-            data = data.to(device)
-            embedding = encoder(data)
-            pred = model(embedding)
-            batch_loss = loss_func(pred, target)
-            valid_loss += batch_loss.item() * batch_size
-            valid_count += batch_size
-        av_valid_loss = valid_loss / valid_count
-        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
+        for mode in ["train", "valid"]:
+            epoch_loss = 0
+            epoch_count = 0
+            # set per mode variables
+            if mode == "train":
+                loader = train_loader
+                tag = "Average Train Loss"
+            elif mode == "valid":
+                loader = valid_loader
+                tag = "Average Validation Loss"
+            # iterate over data
+            for data, target in loader:
+                batch_size = data.shape[0]
+                data = data.to(device)
+                if mode == "train":
+                    optimizer.zero_grad()
+                # get model outputs and update weights with optimizer if training
+                if not train_noisy or mode == "valid":
+                    embedding = encoder(data)
+                else:
+                    embedding = encoder(GaussianNoise()(data))
+                pred = model(embedding)
+                batch_loss = loss_func(pred, target)
+                if mode == "train":
+                    batch_loss.backward()
+                    optimizer.step()
+                # logging
+                epoch_loss += batch_loss.item() * batch_size
+                epoch_count += batch_size
+            # calculate and record train loss
+            av_epoch_loss = epoch_loss / epoch_count
+            writer.add_scalar(tag, av_epoch_loss, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # save model
