@@ -37,7 +37,6 @@ training_group.add_argument("-gpu", type=int,
                             help="Index of GPU to train on, negative int for CPU")
 args = parser.parse_args()
 
-include_classes = None
 # handle MNIST args
 if args.model == "mnist":
     # set default train kwargs
@@ -77,6 +76,6 @@ train_kwargs = {key: val if args_dict[key] is None else args_dict[key]
 if train_kwargs["gpu"] < 0:
     train_kwargs["gpu"] = None
 # start model training
-model_label = train.model_label(model, include_classes)
+model_label = train.model_label(model)
 train.train_autoencoder(model, model_label, train_loader, valid_loader,
                         train_noisy=not args.no_noise, **train_kwargs)

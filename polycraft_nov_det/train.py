@@ -11,22 +11,16 @@ from polycraft_nov_data.image_transforms import GaussianNoise
 import polycraft_nov_det.plot as plot
 
 
-def model_label(model, include_classes):
+def model_label(model):
     """Generate a label for the type of model being trained
 
     Args:
         model (torch.nn.Module): Model to generate label for.
-        include_classes (iterable): Classes model will be trained on.
 
     Returns:
         str: Label for the model.
     """
-    model_label = type(model).__name__ + "_"
-    if include_classes is None:
-        model_label += "all_classes"
-    else:
-        classes = "_".join([str(include_class) for include_class in include_classes])
-        model_label += "class_" + classes
+    model_label = type(model).__name__
     return model_label
 
 
