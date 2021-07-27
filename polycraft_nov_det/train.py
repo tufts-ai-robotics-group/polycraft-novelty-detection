@@ -85,6 +85,7 @@ def train_autoencoder(model, model_label, train_loader, valid_loader, lr, epochs
             for data, target in loader:
                 batch_size = data.shape[0]
                 data = data.to(device)
+                target = target.to(device)
                 if mode == "train":
                     optimizer.zero_grad()
                 # get model outputs and update weights with optimizer if training
@@ -161,6 +162,7 @@ def train_classifier(model, model_label, encoder, train_loader, valid_loader, lr
             for data, target in loader:
                 batch_size = data.shape[0]
                 data = data.to(device)
+                target = target.to(device)
                 if mode == "train":
                     optimizer.zero_grad()
                 # get model outputs and update weights with optimizer if training
