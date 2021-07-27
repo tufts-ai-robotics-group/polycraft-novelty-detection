@@ -78,5 +78,5 @@ if train_kwargs["gpu"] < 0:
     train_kwargs["gpu"] = None
 # start model training
 model_label = train.model_label(model, include_classes)
-train.train(model, model_label, train_loader, valid_loader, train_noisy=not args.no_noise,
-            **train_kwargs)
+train.train_autoencoder(model, model_label, train_loader, valid_loader,
+                        train_noisy=not args.no_noise, **train_kwargs)
