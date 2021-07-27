@@ -17,5 +17,6 @@ train.train_classifier(
     encoder,
     train_loader,
     valid_loader,
-    .01
+    .01,
+    gpu=1
 )
