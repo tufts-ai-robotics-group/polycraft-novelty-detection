@@ -134,8 +134,8 @@ if __name__ == '__main__':
     path1 = 'models/polycraft/no_noise/scale_1/8000.pt'
     paths = [path05, path075, path1]
     tp, fp, tn, fn = loss_vector_evaluation(paths)
-    cm = np.array([[tp, fp],
-                   [fn, tn]])
+    cm = np.array([[tp, fn],
+                   [fp, tn]])
     eval_plot.plot_con_matrix(cm).savefig(("con_matrix_ms.png"))
 
   
