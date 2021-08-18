@@ -1,22 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Aug 16 13:43:19 2021
-
-@author: SchneiderS
-"""
-
 from pathlib import Path
-from datetime import datetime
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
-from sklearn.metrics import confusion_matrix
+import numpy as np
+
 
 from polycraft_nov_data import data_const as polycraft_const
 import polycraft_nov_det.model_utils as model_utils
 from polycraft_nov_data.dataloader import polycraft_dataloaders, polycraft_dataset
 import polycraft_nov_det.eval.plot as eval_plot
+import polycraft_nov_det.eval.stats as eval_stats
 
 
 class binaryClassification(nn.Module):
@@ -38,7 +30,7 @@ class binaryClassification(nn.Module):
         output = self.sigmoid(self.llout(linear2))
     
         return output
-
+        
 
 def loss_vector_evaluation(model_paths):
     
@@ -47,7 +39,7 @@ def loss_vector_evaluation(model_paths):
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     classifier = binaryClassification()
-    bc_path = 'models/polycraft/binary_classification/threshold_selection_150.pt'
+    bc_path = 'models/polycraft/binary_classification/threshold_selection_270.pt'
     classifier.load_state_dict(torch.load(bc_path))
     classifier.eval()
     classifier.to(device)
@@ -80,6 +72,9 @@ def loss_vector_evaluation(model_paths):
     
     predictions = []
     labels = []  # label 0 --> height, label 1 --> items, label 2 --> no novelty
+    
+    tp, fp, tn, fn = 0, 0, 0, 0
+    
     
     # train model
     for epoch in range(epochs):
@@ -120,23 +115,27 @@ def loss_vector_evaluation(model_paths):
                 
             pred = classifier(torch.FloatTensor(loss_vector).to(device))
             
-            if pred >= 0.5:
-                prediction = True
-            if pred < 0.5:
-                prediction = False
-            predictions.append(prediction)
-            
+            if pred >= 0.5 and label == True:
+                tp += 1
+            if pred >= 0.5 and label == False:
+                fp += 1
+            if pred < 0.5 and label == False:
+                tn += 1
+            if pred < 0.5 and label == True:
+                fn += 1
+                
     del base_dataset
-    return labels, predictions
-
+    return tp, fp, tn, fn
+      
 
 if __name__ == '__main__':
     path05 = 'models/polycraft/no_noise/scale_0_5/8000.pt'
     path075 = 'models/polycraft/no_noise/scale_0_75/8000.pt'
     path1 = 'models/polycraft/no_noise/scale_1/8000.pt'
     paths = [path05, path075, path1]
-    y_, y = loss_vector_evaluation(paths)
-    cm = confusion_matrix(y_, y)
+    tp, fp, tn, fn = loss_vector_evaluation(paths)
+    cm = np.array([[tp, fp],
+                   [fn, tn]])
     eval_plot.plot_con_matrix(cm).savefig(("con_matrix_ms.png"))
 
   
