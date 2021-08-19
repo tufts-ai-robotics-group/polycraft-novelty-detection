@@ -21,7 +21,7 @@ def eval_polycraft_multiscale(model_paths, device="cpu"):
     thresholds = [0.003, 0.0061, 0.0144]  # not noisy
     #thresholds = [0.003, 0.0058, 0.0144]  # noisy
     fac = 0.9  # Multiply thresholds by this factor
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
     model_path05 = Path(model_paths[0])
     model05 = model_utils.load_polycraft_model(model_path05, device).eval()
@@ -50,7 +50,7 @@ def eval_polycraft_multiscale(model_paths, device="cpu"):
     
     pred = []
     labels = []  # label 0 --> height, label 1 --> items, label 2 --> no novelty
-    
+    tp, fp, tn, fn = 0, 0, 0, 0
     # shapes of "patch array" for all scales.
     ipt_shapes = [[6, 7],
                   [9, 11],
@@ -108,19 +108,29 @@ def eval_polycraft_multiscale(model_paths, device="cpu"):
             if (torch.sum(intersection1) > 0 or torch.sum(intersection2) > 0 
                                              or torch.sum(intersection3) > 0):
                 novelty_score = True
-            pred.append(novelty_score)
-            
+                
+            if novelty_score == True and label == True:
+                tp += 1
+            if novelty_score == True and label == False:
+                fp += 1
+            if novelty_score == False and label == False:
+                tn += 1
+            if novelty_score == False and label == True:
+                fn += 1
+    
+    con_mat = np.array([[tp, fn],
+                   [fp, tn]])
+        
     del base_dataset
-    return labels, pred
+    return con_mat
   
-"""          
+        
 if __name__ == '__main__':
     path05 = 'models/polycraft/no_noise/scale_0_5/8000.pt'
     path075 = 'models/polycraft/no_noise/scale_0_75/8000.pt'
     path1 = 'models/polycraft/no_noise/scale_1/8000.pt'
     paths = [path05, path075, path1]
-    y_, y = eval_polycraft_multiscale(paths)
-    cm = confusion_matrix(y_, y)
+    cm = eval_polycraft_multiscale(paths)
     eval_plot.plot_con_matrix(cm).savefig(("con_matrix_ms.png"))
-"""  
+
    
