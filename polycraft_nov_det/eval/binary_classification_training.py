@@ -4,10 +4,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import Dataset, DataLoader
 
 from polycraft_nov_data import data_const as polycraft_const
 import polycraft_nov_det.model_utils as model_utils
-from polycraft_nov_data.dataloader import polycraft_dataloaders, polycraft_dataset
+from polycraft_nov_data.dataloader import polycraft_dataset_for_ms, polycraft_dataset
 
 
 class binaryClassification(nn.Module):
@@ -29,14 +30,29 @@ class binaryClassification(nn.Module):
         output = self.sigmoid(self.llout(linear2))
     
         return output
+    
+    
+class TrippleDataset(Dataset):
+    def __init__(self, datasetA, datasetB, datasetC):
+        self.datasetA = datasetA
+        self.datasetB = datasetB
+        self.datasetC = datasetC
+        
+    def __getitem__(self, index):
+        xA = self.datasetA[index]
+        xB = self.datasetB[index]
+        xC = self.datasetC[index]
+        return xA, xB, xC
+    
+    def __len__(self):
+        return len(self.datasetA)
 
 
 def train_on_loss_vector(model_paths):
     lr = 0.003
     epochs = 300
-    b_s = 10
     
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     classifier = binaryClassification()
     classifier.to(device)
     optimizer = optim.Adam(classifier.parameters(), lr)
@@ -53,18 +69,24 @@ def train_on_loss_vector(model_paths):
     model_path1 = Path(model_paths[2])
     model1 = model_utils.load_polycraft_model(model_path1, device).eval()
 
-    _, valid_loader05, test_loader05 = polycraft_dataloaders(batch_size=b_s,
+    _, valid_set05, test_set05 = polycraft_dataset_for_ms(batch_size=1,
                                                             image_scale=0.5, 
                                                             include_novel=True, 
-                                                            shuffle=True)
-    _, valid_loader075, test_loader075 = polycraft_dataloaders(batch_size=b_s,
+                                                            shuffle=False)
+    _, valid_set075, test_set075 = polycraft_dataset_for_ms(batch_size=1,
                                                             image_scale=0.75, 
                                                             include_novel=True, 
-                                                            shuffle=True)
-    _, valid_loader1, test_loader1 = polycraft_dataloaders(batch_size=b_s,
+                                                            shuffle=False)
+    _, valid_set1, test_set1 = polycraft_dataset_for_ms(batch_size=1,
                                                             image_scale=1, 
                                                             include_novel=True, 
-                                                            shuffle=True)
+                                                            shuffle=False)
+    
+    valid_set = TrippleDataset(valid_set05, valid_set075, valid_set1)
+    valid_loader = DataLoader(valid_set, batch_size=1, shuffle=True)
+    
+    test_set = TrippleDataset(test_set05, test_set075, test_set1)
+    test_loader = DataLoader(test_set, batch_size=1, shuffle=True)
     
     # get targets determined at runtime
     base_dataset = polycraft_dataset()                                         
@@ -76,9 +98,10 @@ def train_on_loss_vector(model_paths):
         print('Epoch number  ', epoch, flush=True)
         train_loss = 0
         valid_loss = 0
+        train_acc = 0
+        valid_acc = 0
     
-        for i, samples in enumerate(zip(valid_loader05, valid_loader075, 
-                                        valid_loader1)):
+        for i, samples in enumerate(valid_loader):
             
             loss_vector = []
             
@@ -86,8 +109,8 @@ def train_on_loss_vector(model_paths):
                 
                 for n, model in enumerate(all_models):
                         
-                    patches = samples[n][0]
-                        
+                    patches = samples[n][0][0]
+                    patches = torch.flatten(patches, start_dim=0, end_dim=1)
                     _, ih, iw = polycraft_const.IMAGE_SHAPE
                     _, ph, pw = polycraft_const.PATCH_SHAPE
                         
@@ -112,18 +135,25 @@ def train_on_loss_vector(model_paths):
             loss = BCEloss(pred, target)
             loss.backward()
             optimizer.step()
+            
+            if pred >= 0.5 and target.to(device) == torch.ones(1).to(device):
+                train_acc += 1
+            if pred < 0.5 and target.to(device) == torch.zeros(1).to(device):
+                train_acc += 1
          
             # logging
-            train_loss += loss.item()*b_s
+            train_loss += loss.item()
             
-        train_loss = train_loss / (len(valid_loader05))
+        train_loss = train_loss / (len(valid_loader))
+        train_acc = train_acc / (len(valid_loader))
         writer.add_scalar("Average Train Loss", train_loss, epoch)
         print('Average training loss  ', train_loss, flush=True)
+        writer.add_scalar("Average Train Acc", train_acc, epoch)
+        print('Average training Acc  ', train_acc, flush=True)
         
         #print('Prediction', pred, 'Target', target)
             
-        for i, samples in enumerate(zip(test_loader05, test_loader075, 
-                                        test_loader1)):
+        for i, samples in enumerate(test_loader):
             
             loss_vector = []
             
@@ -131,7 +161,8 @@ def train_on_loss_vector(model_paths):
                 
                 for n, model in enumerate(all_models):
                         
-                    patches = samples[n][0]
+                    patches = samples[n][0][0]
+                    patches = torch.flatten(patches, start_dim=0, end_dim=1)
                         
                     _, ih, iw = polycraft_const.IMAGE_SHAPE
                     _, ph, pw = polycraft_const.PATCH_SHAPE
@@ -155,12 +186,21 @@ def train_on_loss_vector(model_paths):
             pred = classifier(torch.FloatTensor(loss_vector).to(device))
             loss = BCEloss(pred, target)
             
+            if pred >= 0.5 and target.to(device) == torch.ones(1).to(device):
+                valid_acc += 1
+            if pred < 0.5 and target.to(device) == torch.zeros(1).to(device):
+                valid_acc += 1
+            
             # logging
-            valid_loss += loss.item()*b_s 
+            valid_loss += loss.item()
+            
         
-        valid_loss = valid_loss / (len(test_loader05))
+        valid_loss = valid_loss / (len(test_loader))
+        valid_acc = valid_acc / (len(test_loader))
         writer.add_scalar("Average Validation Loss", valid_loss, epoch)
+        writer.add_scalar("Average Validation Acc", valid_acc, epoch)
         print('Average Validation loss  ', valid_loss, flush=True)
+        print('Average Validation Acc  ', valid_acc, flush=True)
         
         # save model
         if (epoch + 1) % (epochs // 10) == 0 or epoch == epochs - 1:
