@@ -9,7 +9,6 @@ import polycraft_nov_det.model_utils as model_utils
 from polycraft_nov_data.dataloader import polycraft_dataset_for_ms, polycraft_dataset
 import polycraft_nov_det.eval.plot as eval_plot
 import polycraft_nov_det.eval.binary_classification_training_positions as bctp
-import polycraft_nov_det.eval.binary_classification_training as bct
 
 
 def find_optimal_threshold(P, N, FP, TP, FN, TN, allts):
@@ -30,11 +29,11 @@ def find_optimal_threshold(P, N, FP, TP, FN, TN, allts):
     return tp_opt, fn_opt, fp_opt, tn_opt, optimal_threshold
 
 
-def loss_vector_evaluation(model_paths, allts):
+def loss_vector_evaluation_pos(model_paths, allts):
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    classifier = bct.binaryClassification()
-    bc_path = 'models/polycraft/binary_classification/threshold_selection_300.pt'
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    classifier = bctp.binaryClassification()
+    bc_path = 'models/polycraft/binary_classification/threshold_selection_pos_180.pt'
     classifier.load_state_dict(torch.load(bc_path))
     classifier.eval()
     classifier.to(device)
@@ -47,8 +46,8 @@ def loss_vector_evaluation(model_paths, allts):
     model1 = model_utils.load_polycraft_model(model_path1, device).eval()
 
     _, valid_set05, test_set05 = polycraft_dataset_for_ms(batch_size=1,
-                                                            image_scale=0.5, 
-                                                            include_novel=True, 
+                                                            image_scale=0.5,
+                                                            include_novel=True,
                                                             shuffle=False)
     _, valid_set075, test_set075 = polycraft_dataset_for_ms(batch_size=1,
                                                             image_scale=0.75,
@@ -74,16 +73,36 @@ def loss_vector_evaluation(model_paths, allts):
     alltns = np.zeros(len(allts))
     allfns = np.zeros(len(allts))
 
+    # shapes of "patch array" for all scales.
+    ipt_shapes = [[6, 7],
+                  [9, 11],
+                  [13, 15]]
+
+    i_ranges = []
+    j_ranges = []
+    i_ranges_norm = []
+    j_ranges_norm = []
+
+    for n, scale in enumerate(ipt_shapes):
+        ipt_shape = ipt_shapes[n]
+        i_ranges.append(np.array(range(0, ipt_shape[0])))
+        j_ranges.append(np.array(range(0, ipt_shape[1])))
+        i_ranges_norm.append(bctp.normalize_index_range(i_ranges[n]))
+        j_ranges_norm.append(bctp.normalize_index_range(j_ranges[n]))
+
     with torch.no_grad():
+
         for i, samples in enumerate(test_loader):
 
-            loss_vector = []
+            feature_vector = []
+            i_idx_norm = []
+            j_idx_norm = []
 
             for n, model in enumerate(all_models):
 
                 patches = samples[n][0][0]
                 patches = torch.flatten(patches, start_dim=0, end_dim=1)
-
+                ipt_shape = ipt_shapes[n]
                 _, ih, iw = polycraft_const.IMAGE_SHAPE
                 _, ph, pw = polycraft_const.PATCH_SHAPE
 
@@ -91,10 +110,22 @@ def loss_vector_evaluation(model_paths, allts):
                 x.requires_grad = False
                 x_rec, z = model(x)
 
-                loss2d = rec_loss2d(x_rec, x)
-                loss2d = torch.mean(loss2d, (1, 2, 3))  # avgd. per patch
-                maxloss = torch.max(loss2d)
-                loss_vector.append(maxloss.item())
+                loss1d = rec_loss2d(x_rec, x)
+                loss1d = torch.mean(loss1d, (1, 2, 3))  # avgd. per patch
+                maxloss = torch.max(loss1d)
+                loss2d = loss1d.reshape(ipt_shape[0], ipt_shape[1]).cpu()
+                max_idx = np.unravel_index(loss2d.argmax(), loss2d.shape)
+                i_idx_norm.append(i_ranges_norm[n][max_idx[0]])
+                j_idx_norm.append(j_ranges_norm[n][max_idx[1]])
+
+                feature_vector.append(maxloss)
+
+            feature_vector.append((i_idx_norm[0] - i_idx_norm[1])**2)
+            feature_vector.append((i_idx_norm[0] - i_idx_norm[2])**2)
+            feature_vector.append((i_idx_norm[1] - i_idx_norm[2])**2)
+            feature_vector.append((j_idx_norm[0] - j_idx_norm[1])**2)
+            feature_vector.append((j_idx_norm[0] - j_idx_norm[2])**2)
+            feature_vector.append((j_idx_norm[1] - j_idx_norm[2])**2)
 
             label = samples[0][1]
 
@@ -105,7 +136,7 @@ def loss_vector_evaluation(model_paths, allts):
                 target = False
                 neg += 1
 
-            pred = classifier(torch.FloatTensor(loss_vector).to(device))
+            pred = classifier(torch.FloatTensor(feature_vector).to(device))
 
             for ii, t in enumerate(allts):
 
@@ -122,10 +153,9 @@ def loss_vector_evaluation(model_paths, allts):
                                                    allfns, alltns, allts)
 
     print('Optimal threshold', t_opt)
-      
+
     con_mat = np.array([[tp, fn],
-                        [fp, tn]])
-  
+                   [fp, tn]])            
     del base_dataset
     return con_mat
 
@@ -136,8 +166,8 @@ if __name__ == '__main__':
     path1 = 'models/polycraft/no_noise/scale_1/8000.pt'
     paths = [path05, path075, path1]
     allthreshs = np.round(np.linspace(0.3, 0.7, 21), 4)
-    cm = loss_vector_evaluation(paths, allthreshs)
+    cm = loss_vector_evaluation_pos(paths, allthreshs)
     print(cm)
-    eval_plot.plot_con_matrix(cm).savefig(("con_matrix_bc.png"))
+    eval_plot.plot_con_matrix(cm).savefig(("con_matrix_bc_pos.png"))
 
   
