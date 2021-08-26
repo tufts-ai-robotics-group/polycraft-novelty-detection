@@ -64,11 +64,10 @@ class TrippleDataset(Dataset):
 
 
 def train_on_loss_vector_pos(model_paths):
-    lr = 0.001
-    epochs = 1000
-    b_s = 10
+    lr = 0.003
+    epochs = 300
     
-    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     classifier = binaryClassification()
     classifier.to(device)
     optimizer = optim.Adam(classifier.parameters(), lr)
@@ -118,9 +117,7 @@ def train_on_loss_vector_pos(model_paths):
     j_ranges = []
     i_ranges_norm = []
     j_ranges_norm = []
-    i_idx_norm = []
-    j_idx_norm = []
-        
+       
     for n, scale in enumerate(ipt_shapes):
         ipt_shape = ipt_shapes[n]  
         i_ranges.append(np.array(range(0, ipt_shape[0])))
@@ -140,6 +137,8 @@ def train_on_loss_vector_pos(model_paths):
         for i, samples in enumerate(valid_loader):
             
             feature_vector = []
+            i_idx_norm = []
+            j_idx_norm = []
             
             with torch.no_grad():
                 
@@ -177,7 +176,7 @@ def train_on_loss_vector_pos(model_paths):
                 target = torch.ones(1).to(device)
             if label == 2:
                 target = torch.zeros(1).to(device)
-                
+            
             optimizer.zero_grad()
             pred = classifier(torch.FloatTensor(feature_vector).to(device))
             loss = BCEloss(pred, target)
@@ -191,6 +190,7 @@ def train_on_loss_vector_pos(model_paths):
          
             # logging
             train_loss += loss.item()
+        
             
         train_loss = train_loss / (len(valid_loader))
         train_acc = train_acc / (len(valid_loader))
@@ -202,6 +202,8 @@ def train_on_loss_vector_pos(model_paths):
         for i, samples in enumerate(test_loader):
             
             feature_vector = []
+            i_idx_norm = []
+            j_idx_norm = []
             
             with torch.no_grad():
                 
