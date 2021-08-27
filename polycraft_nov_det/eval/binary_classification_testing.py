@@ -9,7 +9,7 @@ import polycraft_nov_det.model_utils as model_utils
 from polycraft_nov_data.dataloader import polycraft_dataset_for_ms, polycraft_dataset
 import polycraft_nov_det.eval.plot as eval_plot
 import polycraft_nov_det.eval.binary_classification_training_positions as bctp
-import polycraft_nov_det.eval.binary_classification_training as bct
+import polycraft_nov_det.models.multiscale_classifier as ms_classifier
 
 
 def find_optimal_threshold(P, N, FP, TP, FN, TN, allts):
@@ -30,14 +30,11 @@ def find_optimal_threshold(P, N, FP, TP, FN, TN, allts):
     return tp_opt, fn_opt, fp_opt, tn_opt, optimal_threshold
 
 
-def loss_vector_evaluation(model_paths, allts):
+def loss_vector_evaluation(model_paths, allts, device):
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    classifier = bct.binaryClassification()
     bc_path = 'models/polycraft/binary_classification/threshold_selection_300.pt'
-    classifier.load_state_dict(torch.load(bc_path))
-    classifier.eval()
-    classifier.to(device)
+    classifier = ms_classifier.MultiscaleClassifierFeatureVector(3)
+    classifier = model_utils.load_model(bc_path, classifier, device).eval()
 
     model_path05 = Path(model_paths[0])
     model05 = model_utils.load_polycraft_model(model_path05, device).eval()
@@ -105,7 +102,7 @@ def loss_vector_evaluation(model_paths, allts):
                 target = False
                 neg += 1
 
-            pred = classifier(torch.FloatTensor(loss_vector).to(device))
+            pred = classifier(torch.FloatTensor(loss_vector))
 
             for ii, t in enumerate(allts):
 
@@ -131,12 +128,13 @@ def loss_vector_evaluation(model_paths, allts):
 
 
 if __name__ == '__main__':
+    dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     path05 = 'models/polycraft/no_noise/scale_0_5/8000.pt'
     path075 = 'models/polycraft/no_noise/scale_0_75/8000.pt'
     path1 = 'models/polycraft/no_noise/scale_1/8000.pt'
     paths = [path05, path075, path1]
     allthreshs = np.round(np.linspace(0.3, 0.7, 21), 4)
-    cm = loss_vector_evaluation(paths, allthreshs)
+    cm = loss_vector_evaluation(paths, allthreshs, dev)
     print(cm)
     eval_plot.plot_con_matrix(cm).savefig(("con_matrix_bc.png"))
 

@@ -10,28 +10,8 @@ from torch.utils.data import Dataset, DataLoader
 from polycraft_nov_data import data_const as polycraft_const
 import polycraft_nov_det.model_utils as model_utils
 from polycraft_nov_data.dataloader import polycraft_dataset_for_ms, polycraft_dataset
+import polycraft_nov_det.models.multiscale_classifier as ms_classifier
 
-
-class binaryClassification(nn.Module):
-    def __init__(self):
-        super(binaryClassification, self).__init__()       
-        self.ll1 = nn.Linear(9, 12) 
-        self.ll2 = nn.Linear(12, 12)
-        self.llout = nn.Linear(12, 1) 
-        
-        self.relu = nn.ReLU()
-        self.leakyrelu = nn.LeakyReLU()
-        self.sigmoid = nn.Sigmoid()
-        #self.n1 = nn.InstanceNorm1d(12)
-        #self.n2 = nn.InstanceNorm1d(12)
-        
-    def forward(self, inputs):
-        linear1 = self.relu(self.ll1(inputs))
-        linear2 = self.relu(self.ll2(linear1))
-        output = self.sigmoid(self.llout(linear2))
-    
-        return output
-    
     
 def normalize_index_range(index_range):
     minval = index_range.min()
@@ -68,7 +48,7 @@ def train_on_loss_vector_pos(model_paths):
     epochs = 300
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    classifier = binaryClassification()
+    classifier = ms_classifier.MultiscaleClassifierFeatureVector(9)
     classifier.to(device)
     optimizer = optim.Adam(classifier.parameters(), lr)
     BCEloss = nn.BCELoss()

@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 
 
-class MultiscaleClassifier(nn.Module):
+class MultiscaleClassifierConv(nn.Module):
     def __init__(self):
-        super(MultiscaleClassifier, self).__init__()
+        super(MultiscaleClassifierConv, self).__init__()
         self.conv_0_5 = nn.Conv2d(1, 1, 3)
         self.conv_0_75 = nn.Conv2d(1, 1, 3)
         self.conv_1 = nn.Conv2d(1, 1, 3)
@@ -29,3 +29,23 @@ class MultiscaleClassifier(nn.Module):
         out = self.sigmoid(self.fc_out(out))
 
         return out
+
+
+class MultiscaleClassifierFeatureVector(nn.Module):
+    def __init__(self, ipt_channel):
+        super(MultiscaleClassifierFeatureVector, self).__init__()
+        self.ll1 = nn.Linear(ipt_channel, 12)
+        self.ll2 = nn.Linear(12, 12)
+        self.llout = nn.Linear(12, 1)
+
+        self.relu = nn.ReLU()
+        self.leakyrelu = nn.LeakyReLU()
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, inputs):
+        linear1 = self.relu(self.ll1(inputs))
+        linear2 = self.relu(self.ll2(linear1))
+        output = self.sigmoid(self.llout(linear2))
+
+        return output
+    
