@@ -47,4 +47,40 @@ class MultiscaleClassifierFeatureVector(nn.Module):
         output = self.sigmoid(self.llout(linear2))
 
         return output
-    
+
+
+#  More comparable to feature vecture approach
+class MultiscaleClassifierConvFeatComp(nn.Module):
+    def __init__(self, conv_output_len):
+        super(MultiscaleClassifierConvFeatComp, self).__init__()
+        self.conv_0_5 = nn.Conv2d(1, 1, 3)
+        self.conv_0_75 = nn.Conv2d(1, 1, 3)
+        self.conv_1 = nn.Conv2d(1, 1, 3)
+
+        self.fc1 = nn.Linear(conv_output_len, 256)
+        self.fc2 = nn.Linear(256, 256)
+        self.fc_out = nn.Linear(256, 9)
+
+        self.ll1 = nn.Linear(9, 12)
+        self.ll2 = nn.Linear(12, 12)
+        self.llout = nn.Linear(12, 1)
+
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, inputs):
+        input_0_5, input_0_75, input_1 = inputs
+        out_0_5 = torch.flatten(self.conv_0_5(input_0_5), start_dim=1)
+        out_0_75 = torch.flatten(self.conv_0_75(input_0_75), start_dim=1)
+        out_1 = torch.flatten(self.conv_1(input_1), start_dim=1)
+        out = self.relu(torch.cat((out_0_5, out_0_75, out_1), dim=1))
+
+        out = self.relu(self.fc1(out))
+        out = self.relu(self.fc2(out))
+        out = self.relu(self.fc_out(out))
+
+        out = self.relu(self.ll1(out))
+        out = self.relu(self.ll2(out))
+        output = self.sigmoid(self.llout(out))
+
+        return output
