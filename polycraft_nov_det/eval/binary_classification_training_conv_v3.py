@@ -15,8 +15,8 @@ import polycraft_nov_det.eval.binary_classification_training_positions as bctp
 
 
 def train_on_loss_array(model_paths):
-    lr = 0.003
-    epochs = 300
+    lr = 0.0003
+    epochs = 500
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     classifier = ms_classifier.MultiscaleClassifierConvFeatComp(429)
@@ -65,6 +65,7 @@ def train_on_loss_array(model_paths):
                   [13, 15]]
 
     # train model
+    print('Start Training', flush=True)
     for epoch in range(epochs):
         print('Epoch number  ', epoch, flush=True)
         train_loss = 0
