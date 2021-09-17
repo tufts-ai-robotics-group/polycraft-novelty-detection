@@ -51,11 +51,11 @@ class MultiscaleClassifierFeatureVector(nn.Module):
 
 #  More comparable to feature vecture approach
 class MultiscaleClassifierConvFeatComp(nn.Module):
-    def __init__(self, conv_output_len):
+    def __init__(self, nc, conv_output_len):
         super(MultiscaleClassifierConvFeatComp, self).__init__()
-        self.conv_0_5 = nn.Conv2d(1, 1, 3)
-        self.conv_0_75 = nn.Conv2d(1, 1, 3)
-        self.conv_1 = nn.Conv2d(1, 1, 3)
+        self.conv_0_5 = nn.Conv2d(nc, 1, 3)
+        self.conv_0_75 = nn.Conv2d(nc, 1, 3)
+        self.conv_1 = nn.Conv2d(nc, 1, 3)
 
         self.fc1 = nn.Linear(conv_output_len, 256)
         self.fc2 = nn.Linear(256, 256)

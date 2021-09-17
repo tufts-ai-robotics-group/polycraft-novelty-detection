@@ -15,17 +15,17 @@ import polycraft_nov_det.eval.binary_classification_training_positions as bctp
 
 
 def train_on_loss_array(model_paths):
-    lr = 0.0005
+    lr = 0.0003
     epochs = 500
 
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-    classifier = ms_classifier.MultiscaleClassifierConvFeatComp(1, 429)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    classifier = ms_classifier.MultiscaleClassifierConvFeatComp(3, 429)
     classifier.to(device)
     optimizer = optim.Adam(classifier.parameters(), lr)
     BCEloss = nn.BCELoss()
 
     # get Tensorboard writer
-    writer = SummaryWriter("runs_binary_class_conv_v3_diff/" +
+    writer = SummaryWriter("runs_binary_class_conv_v3_rgb/" +
                            datetime.now().strftime("%Y.%m.%d.%H.%M.%S"))
 
     model_path05 = Path(model_paths[0])
@@ -91,13 +91,17 @@ def train_on_loss_array(model_paths):
                     x.requires_grad = False
                     x_rec, z = model(x)
 
-                    #loss2d = rec_loss2d(x_rec, x)
-                    loss2d = x_rec - x
-                    loss2d = torch.mean(loss2d, (1, 2, 3))  # avgd. per patch
+                    loss2d = rec_loss2d(x_rec, x)  # #patches x 3 x 32 x 32
+                    loss2d = torch.mean(loss2d, (2, 3))  # avgd. per patch
                     # Reshape loss values from flattened to "squared shape"
-                    loss2d = loss2d.reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                    loss2d_r = loss2d[:, 0].reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                    loss2d_g = loss2d[:, 1].reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                    loss2d_b = loss2d[:, 2].reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                    # Concatenate to a "3 channel" loss array
+                    loss2d_rgb = torch.cat((loss2d_r, loss2d_g), 1)
+                    loss2d_rgb = torch.cat((loss2d_rgb, loss2d_b), 1)
                     # Interpolate smaller scales such that they match scale 1
-                    loss2d = functional.resize(loss2d, (13, 15))
+                    loss2d = functional.resize(loss2d_rgb, (13, 15))
                     loss_arrays = loss_arrays + (loss2d,)
 
             label = samples[0][1]
@@ -146,13 +150,17 @@ def train_on_loss_array(model_paths):
                     x.requires_grad = False
                     x_rec, z = model(x)
 
-                    #loss2d = rec_loss2d(x_rec, x)
-                    loss2d = x_rec - x
-                    loss2d = torch.mean(loss2d, (1, 2, 3))  # avgd. per patch
+                    loss2d = rec_loss2d(x_rec, x)  # #patches x 3 x 32 x 32
+                    loss2d = torch.mean(loss2d, (2, 3))  # avgd. per patch
                     # Reshape loss values from flattened to "squared shape"
-                    loss2d = loss2d.reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                    loss2d_r = loss2d[:, 0].reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                    loss2d_g = loss2d[:, 1].reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                    loss2d_b = loss2d[:, 2].reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                    # Concatenate to a "3 channel" loss array
+                    loss2d_rgb = torch.cat((loss2d_r, loss2d_g), 1)
+                    loss2d_rgb = torch.cat((loss2d_rgb, loss2d_b), 1)
                     # Interpolate smaller scales such that they match scale 1
-                    loss2d = functional.resize(loss2d, (13, 15))
+                    loss2d = functional.resize(loss2d_rgb, (13, 15))
                     loss_arrays = loss_arrays + (loss2d,)
 
             label = samples[0][1]
@@ -183,7 +191,7 @@ def train_on_loss_array(model_paths):
         # save model
         if (epoch + 1) % (epochs // 10) == 0 or epoch == epochs - 1:
             torch.save(classifier.state_dict(),
-                       "threshold_selection_conv_v3_diff_%d.pt" % (epoch + 1,))
+                       "threshold_selection_conv_v3_rgb_%d.pt" % (epoch + 1,))
 
     del base_dataset
     return
@@ -195,3 +203,5 @@ if __name__ == '__main__':
     path1 = 'models/polycraft/no_noise/scale_1/8000.pt'
     paths = [path05, path075, path1]
     train_on_loss_array(paths)
+
+   
