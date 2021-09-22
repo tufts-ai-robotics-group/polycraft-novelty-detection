@@ -23,7 +23,7 @@ def find_optimal_threshold(P, N, FP, TP, FN, TN, allts):
     positives and false negatives using cost function.
     """
     frac_FP, frac_TP, frac_TN, frac_FN = FP/N, TP/P, TN/N, FN/P
-    cost_FP, cost_TP, cost_TN, cost_FN = 1, 0, 0, 1
+    cost_FP, cost_TP, cost_TN, cost_FN = 1, 0, 0, 2
     total_cost = (cost_FP * frac_FP + cost_TP * frac_TP + 
                   cost_TN * frac_TN + cost_FN * frac_FN)
     optimal_idx = np.argmin(total_cost)
@@ -246,7 +246,7 @@ def loss_vector_evaluation(model_paths, allts, plot_problematics=True):
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     bc_path = 'models/polycraft/binary_classification/threshold_selection_conv_v3_500.pt'
-    classifier = ms_classifier.MultiscaleClassifierConvFeatComp(429)
+    classifier = ms_classifier.MultiscaleClassifierConvFeatComp(1, 429)
     classifier = model_utils.load_model(bc_path, classifier, device).eval()
     classifier.to(device)
 
@@ -357,8 +357,8 @@ if __name__ == '__main__':
     path075 = 'models/polycraft/no_noise/scale_0_75/8000.pt'
     path1 = 'models/polycraft/no_noise/scale_1/8000.pt'
     paths = [path05, path075, path1]
-    allthreshs = np.round(np.linspace(0.3, 0.7, 21), 4)
-    cm = loss_vector_evaluation(paths, allthreshs, plot_problematics=True)
+    allthreshs = np.round(np.linspace(0.3, 1, 21), 4)
+    cm = loss_vector_evaluation(paths, allthreshs, plot_problematics=False)
     print(cm)
     eval_plot.plot_con_matrix(cm).savefig(("con_matrix_conv_v3.png"))
   
