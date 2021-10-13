@@ -1,3 +1,6 @@
 # resolve import errors for unmodified code
+from pathlib import Path
 import sys
-sys.path.append("polycraft_nov_det/models/lsa/unmodified")
+
+
+sys.path.append(str((Path(__file__).parent / "unmodified").absolute()))
