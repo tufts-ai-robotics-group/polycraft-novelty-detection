@@ -18,7 +18,10 @@ class LinearRegularization():
         self.slope = self.max - self.min
 
     def value(self, x):
-        return x * self.slope + self.min
+        out = np.array(x * self.slope + self.min)
+        if len(out.shape) == 0:
+            out = out[np.newaxis]
+        return out
 
     def lt_value(self, data, x):
         y = self.value(x)
