@@ -8,6 +8,7 @@ import polycraft_nov_det.mnist_loader as mnist_loader
 from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
 from polycraft_nov_det.detector import load_lin_reg, reconstruction_lin_reg
+import polycraft_nov_det.models.multiscale_classifier as ms_classifier
 
 
 def load_model(path, model, device="cpu"):
@@ -44,6 +45,29 @@ def load_polycraft_model(path, device="cpu", latent_len=100):
     """
     model = LSACIFAR10NoEst(polycraft_const.PATCH_SHAPE, latent_len)
     return load_model(path, model, device)
+
+
+def load_polycraft_classifier(path, device="cpu", add_16x16_model=False):
+    """Load the binary classifier trained on rec.-error arrays
+
+    Args:
+        path (str): Path to saved model state_dict
+        device (str, optional): Device tag for torch.device. Defaults to "cpu".
+        add_16x16_model (bool, optional): If True, the additional 3x16x16 model
+        is additionally considered.
+
+    Returns:
+        Binary classifier trained on rec.-error-arrays at each scale
+    """
+    
+    # If we use additional model trained on 3x16x16 patches at scale 1 as well
+    if add_16x16_model:
+        classifier = ms_classifier.MultiscaleClassifierConvFeatComp4Models(3, 572)  
+    # Otherwise just use models trained on 3x32x32 patches at each scale  
+    else:
+        classifier = ms_classifier.MultiscaleClassifierConvFeatComp3Models(3, 429)
+       
+    return load_model(path, classifier, device)
 
 
 def load_cached_lin_reg(model_path, model, train_loader, device="cpu"):

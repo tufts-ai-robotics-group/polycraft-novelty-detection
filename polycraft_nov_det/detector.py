@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 from torch.nn.functional import mse_loss
+from polycraft_nov_data.data_const import PATCH_SHAPE, IMAGE_SHAPE
+from torchvision.transforms import functional
 
 
 class LinearRegularization():
@@ -79,6 +81,75 @@ class ReconstructionDet():
         r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
                              (*range(1, data.dim()),))
         return r_error.detach().cpu().numpy()
+    
+    
+class ReconstructionDetMultiScale():
+    """Multiscale reconstruction error novelty detector
+    """
+    def __init__(self, classifier, models_allscales, device="cpu", add_16x16_model=False):
+        """Multiscale reconstruction error novelty detector
+        Previously trained binary classifier is applied on the rec.error -
+        arrays of each scale.
+
+        Args:
+            classifier (torch.nn.Module): Trained binary classifier
+            models_allscales (torch.nn.Module): List of autoencoder to measure reconstruction error from
+            device (str, optional): Device tag for torch.device. Defaults to "cpu"
+            add_16x16_model (bool, optional): If set to True, the additional
+            autoencoder model trained at scale 1 and 3x15x16 patches is used
+        """
+        self.device = torch.device(device)
+        self.classifier = classifier
+        self.models_allscales = models_allscales
+        self.add_16x16_model = add_16x16_model
+        
+    def is_novel(self, data_multiscale):
+        """Evaluate novelty based on reconstruction error per image at each scale
+
+        Args:
+            data_multiscale (list of torch.tensor): Data to use as input to autoencoder,
+            the image is represented in patches at each scale (0.5, 0.75, 1)
+        Returns:
+            novelty_score (float): float value in range [0, 1]. The higher, the
+            "more novel"
+        """
+        # shapes of "patch array" for all scales + one for the 16x16 model
+        ipt_shapes = [[6, 7],  # Scale 0.5, patch size 3x32x32
+                      [9, 11],  # Scale 0.75, patch size 3x32x32
+                      [13, 15],  # Scale 1, patch size 3x32x32
+                      [28, 31]]  # Scale 1, patch size 3x16x316
+        
+        with torch.no_grad():
+            
+            loss_arrays = ()
+
+            for n, model in enumerate(self.models_allscales):
+                
+                data = data_multiscale[n][0][0].float().to(self.device)
+                data = torch.flatten(data, start_dim=0, end_dim=1)
+                _, ih, iw = IMAGE_SHAPE
+                _, ph, pw = PATCH_SHAPE
+                ipt_shape = ipt_shapes[n]
+                
+                r_data, z = model(data)
+                # #patches x 3 x 32 x 32
+                loss2d = mse_loss(data, r_data, reduction="none")
+                loss2d = torch.mean(loss2d, (2, 3))  # avgd. per patch
+                # Reshape loss values from flattened to "squared shape"
+                loss2d_r = loss2d[:, 0].reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                loss2d_g = loss2d[:, 1].reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                loss2d_b = loss2d[:, 2].reshape(1, 1, ipt_shape[0], ipt_shape[1])
+                # Concatenate to a "3 channel" loss array
+                loss2d_rgb = torch.cat((loss2d_r, loss2d_g), 1)
+                loss2d_rgb = torch.cat((loss2d_rgb, loss2d_b), 1)
+                # Interpolate smaller scales such that they match scale 1
+                loss2d = functional.resize(loss2d_rgb, (13, 15))
+                loss_arrays = loss_arrays + (loss2d,)
+        
+            # Classifier was trained over array of RGB losses
+            novelty_score = self.classifier(loss_arrays)
+        
+        return novelty_score
 
 
 def reconstruction_lin_reg(model, train_loader, device="cpu"):
