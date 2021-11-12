@@ -38,7 +38,7 @@ class OSRNetCNN(resnet.ResNet):
 
 
 class OSRNetCS(nn.Module):
-    def __init__(self, fc_dim=128) -> None:
+    def __init__(self, fc_dim=128):
         super().__init__()
         self.fc1 = nn.Linear(fc_dim, fc_dim)
         self.fc2 = nn.Linear(fc_dim, 1)
@@ -47,3 +47,14 @@ class OSRNetCS(nn.Module):
         x = self.fc1(x)
         x = self.fc2(x)
         return x
+
+
+class OSRNet():
+    def __init__(self, cnn, cs):
+        self.cnn = cnn
+        self.cs = cs
+
+    def __call__(self, x):
+        cnn_out, fc1 = self.cnn(x, return_fc1=True)
+        cs_out = self.cs(fc1)
+        return cnn_out, cs_out
