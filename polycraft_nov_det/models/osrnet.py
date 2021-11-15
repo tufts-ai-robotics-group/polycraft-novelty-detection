@@ -49,10 +49,14 @@ class OSRNetCS(nn.Module):
         return x
 
 
-class OSRNet():
+class OSRNet(nn.Module):
     def __init__(self, cnn, cs):
+        super().__init__()
         self.cnn = cnn
         self.cs = cs
+        # disable grad for CNN
+        for param in self.cnn.parameters():
+            param.requires_grad = False
 
     def __call__(self, x):
         cnn_out, fc1 = self.cnn(x, return_fc1=True)
