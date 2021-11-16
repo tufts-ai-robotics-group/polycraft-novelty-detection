@@ -86,7 +86,7 @@ class ReconstructionDet():
 class ReconstructionDetMultiScale():
     """Multiscale reconstruction error novelty detector
     """
-    def __init__(self, classifier, models_allscales, device="cpu", add_16x16_model=False):
+    def __init__(self, classifier, models_allscales, device="cpu"):
         """Multiscale reconstruction error novelty detector
         Previously trained binary classifier is applied on the rec.error -
         arrays of each scale.
@@ -95,13 +95,11 @@ class ReconstructionDetMultiScale():
             classifier (torch.nn.Module): Trained binary classifier
             models_allscales (torch.nn.Module): List of autoencoder to measure reconstruction error from
             device (str, optional): Device tag for torch.device. Defaults to "cpu"
-            add_16x16_model (bool, optional): If set to True, the additional
             autoencoder model trained at scale 1 and 3x15x16 patches is used
         """
         self.device = torch.device(device)
         self.classifier = classifier
         self.models_allscales = models_allscales
-        self.add_16x16_model = add_16x16_model
         
     def is_novel(self, data_multiscale):
         """Evaluate novelty based on reconstruction error per image at each scale

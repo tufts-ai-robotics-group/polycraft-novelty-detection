@@ -84,47 +84,10 @@ def eval_polycraft_multiscale(model_paths, device="cpu", add_16x16_model=False):
         # model_paths[2] --> scale 0.75 autoencoder model
         # model_paths[3] --> scale 1 autoencoder model
         # model_paths[4] --> scale 1 autoencoder model (additional, optional)
-        
-
+       
     eval_path = Path(Path(model_paths[0]).parent, "eval_" + Path(model_paths[0]).stem)
     eval_path.mkdir(exist_ok=True)
-
-    # Use the model trained on rec.-loss error
-    bc_path = model_paths[0]
-    classifier = model_utils.load_polycraft_classifier(bc_path, device=device, 
-                                                       add_16x16_model=add_16x16_model)
     
-    # Use 3x32x32 patch based model on all three scales (for now)
-    model_path05 = Path(model_paths[1])
-    model05 = model_utils.load_polycraft_model(model_path05, device).eval()
-    model_path075 = Path(model_paths[2])
-    model075 = model_utils.load_polycraft_model(model_path075, device).eval()
-    model_path1 = Path(model_paths[3])
-    model1 = model_utils.load_polycraft_model(model_path1, device).eval()
-    
-    all_models = [model05.to(device), model075.to(device), model1.to(device)]
-    
-    # If we use additional model trained on 3x16x16 patches at scale 1 
-    if add_16x16_model:
-        
-        # we need this additonal model
-        model_path1_16 = Path(model_paths[4])
-        model1_16 = LSACIFAR10NoEst((3, 16, 16), 25)
-        model1_16.load_state_dict(torch.load(model_path1_16, map_location=device))
-        model1_16.eval()
-        
-        all_models.append(model1_16.to(device))
-        
-    detector = polycraft_nov_det.detector.ReconstructionDetMultiScale(
-                                                    classifier, 
-                                                    all_models, 
-                                                    device=device, 
-                                                    add_16x16_model=False)
-
-    classifier.to(device)
-
-    
-
     _, _, test_set05 = dataloader.polycraft_dataset_for_ms(batch_size=1,
                                                             image_scale=0.5, 
                                                             patch_shape=PATCH_SHAPE,
@@ -140,60 +103,78 @@ def eval_polycraft_multiscale(model_paths, device="cpu", add_16x16_model=False):
                                                             patch_shape=PATCH_SHAPE,
                                                             include_novel=True, 
                                                             shuffle=False)
+        
 
-    # Construct a dataset with the same images at each scale
-    test_set = dataloader.TrippleDataset(test_set05, test_set075, test_set1)
-    test_loader = DataLoader(test_set, batch_size=1, shuffle=False)
 
-    # get targets determined at runtime
-    base_dataset = polycraft_dataset()
-    rec_loss2d = nn.MSELoss(reduction='none')
+    # Use the model trained on rec.-loss error
+    bc_path = model_paths[0]
+    classifier = model_utils.load_polycraft_classifier(bc_path, device=device, 
+                                                       add_16x16_model=add_16x16_model)
+    classifier.to(device)
+    
+    # Use 3x32x32 patch based model on all three scales (for now)
+    model_path05 = Path(model_paths[1])
+    model05 = model_utils.load_polycraft_model(model_path05, device).eval()
+    model_path075 = Path(model_paths[2])
+    model075 = model_utils.load_polycraft_model(model_path075, device).eval()
+    model_path1 = Path(model_paths[3])
+    model1 = model_utils.load_polycraft_model(model_path1, device).eval()
+    
     all_models = [model05.to(device), model075.to(device), model1.to(device)]
-
+    
     # shapes of "patch array" for all scales.
     ipt_shapes = [[6, 7],  # Scale 0.5, patch size 3x32x32
                   [9, 11],  # Scale 0.75, patch size 3x32x32
                   [13, 15]]  # Scale 1, patch size 3x32x32
-
+    
     # If we use additional model trained on 3x16x16 patches at scale 1 
     if add_16x16_model:
-
+        
         # we need this additonal model
         model_path1_16 = Path(model_paths[4])
         model1_16 = LSACIFAR10NoEst((3, 16, 16), 25)
         model1_16.load_state_dict(torch.load(model_path1_16, map_location=device))
         model1_16.eval()
-
+        
+        all_models.append(model1_16.to(device))
+        
         # and patches of scale 1 of size 3x16x16
         _, _, test_set1_16 = dataloader.polycraft_dataset_for_ms(batch_size=1,
                                                             image_scale=1, 
                                                             patch_shape=(3, 16, 16),
                                                             include_novel=True, 
                                                             shuffle=False)
+        
         # Construct a dataset with the same images at each scale
         test_set = dataloader.QuattroDataset(test_set05, test_set075, 
                                              test_set1, test_set1_16)
         test_loader = DataLoader(test_set, batch_size=1, shuffle=False)
+        ipt_shapes.append([28, 31]) # Scale 1, patch size 3x16x316
         
-        all_models = [model05.to(device), model075.to(device), 
-                      model1.to(device), model1_16.to(device)]
+    else:
+        # Construct a dataset with the same images at each scale
+        test_set = dataloader.TrippleDataset(test_set05, test_set075, test_set1)
+        test_loader = DataLoader(test_set, batch_size=1, shuffle=False)
         
-        # shapes of "patch array" for all scales + one for the 16x16 model
-        ipt_shapes = [[6, 7],  # Scale 0.5, patch size 3x32x32
-                      [9, 11],  # Scale 0.75, patch size 3x32x32
-                      [13, 15],  # Scale 1, patch size 3x32x32
-                      [28, 31]]  # Scale 1, patch size 3x16x316
         
+    detector = polycraft_nov_det.detector.ReconstructionDetMultiScale(
+                                                    classifier, 
+                                                    all_models, 
+                                                    device=device)
+
+    # get targets determined at runtime
+    base_dataset = polycraft_dataset()
+    
     pos, neg = 0, 0  # total number of novel (pos) and non-novel (neg) images
     thresholds = np.round(np.linspace(0.01, 1, 21), 4)
     alltps = np.zeros(len(thresholds))
     allfps = np.zeros(len(thresholds))
     alltns = np.zeros(len(thresholds))
     allfns = np.zeros(len(thresholds))
-
+    
     with torch.no_grad():
         for i, samples in enumerate(test_loader):
-            print(type(samples))
+    
             pred = detector.is_novel(samples)
             label = samples[0][1]
 
@@ -220,12 +201,12 @@ def eval_polycraft_multiscale(model_paths, device="cpu", add_16x16_model=False):
     opt_thresh = thresholds[opt_index]
    
     eval_plot.plot_con_matrix(con_matrix).savefig(eval_path / Path("con_matrix.png"))
-
     del base_dataset
     
     return samples
 
 
+"""
 if __name__ == '__main__':
 
     dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -242,6 +223,7 @@ if __name__ == '__main__':
     path1_16 = 'models/polycraft/no_noise/scale_1_16/8000.pt'
     paths = [path_classifier_16, path05, path075, path1, path1_16]
     sam = eval_polycraft_multiscale(paths, device=dev, add_16x16_model=True)
+"""
     
   
    
