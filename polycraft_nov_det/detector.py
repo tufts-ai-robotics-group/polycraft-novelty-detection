@@ -95,7 +95,6 @@ class ReconstructionDetMultiScale():
             classifier (torch.nn.Module): Trained binary classifier
             models_allscales (torch.nn.Module): List of autoencoder to measure reconstruction error from
             device (str, optional): Device tag for torch.device. Defaults to "cpu"
-            autoencoder model trained at scale 1 and 3x15x16 patches is used
         """
         self.device = torch.device(device)
         self.classifier = classifier
