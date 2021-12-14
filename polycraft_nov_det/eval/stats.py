@@ -63,8 +63,8 @@ def optimal_con_matrix(t_pos, f_pos, t_neg, f_neg):
         np.ndarray: Confusion matrix of threshold minimizing false positives and negatives
     """
     opt_ind = optimal_index(t_pos, f_pos, t_neg, f_neg)
-    return np.array([[t_pos[opt_ind], f_pos[opt_ind]],
-                     [f_neg[opt_ind], t_neg[opt_ind]]])
+    return np.array([[t_pos[opt_ind], f_neg[opt_ind]],
+                     [f_pos[opt_ind], t_neg[opt_ind]]])
 
 
 def ratio(a, b):
