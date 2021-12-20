@@ -1,35 +1,34 @@
 from importlib.resources import path
 
-from torchvision.datasets import CIFAR10, CIFAR100
+from torchvision.datasets import MNIST
 from torchvision import transforms
 
 from polycraft_nov_det.data.base_loader import base_loader
 
 
 # data shape constant
-CIFAR_SHAPE = (3, 32, 32)
+MNIST_SHAPE = (1, 28, 28)
 
 
-def torch_cifar(batch_size=32, include_novel=False, shuffle=True, use_10=True,
+def torch_mnist(batch_size=32, include_novel=False, shuffle=True,
                 split_seed=42):
-    """torch DataLoaders for CIFAR10 and CIFAR100
+    """torch DataLoaders for MNIST
 
     Args:
         batch_size (int, optional): batch_size for DataLoaders. Defaults to 32.
         include_novel (bool, optional): Whether to include novelties in non-train sets.
                                         Defaults to False.
         shuffle (bool, optional): shuffle for DataLoaders. Defaults to True.
-        use_10 (bool, optional): Use CIFAR10 if True, otherwise CIFAR100. Defaults to True.
         split_seed (int, optional): Seed for splitting normal and novel classes.
                                     Defaults to 42.
 
     Returns:
-        (DataLoader, DataLoader, DataLoader): CIFAR train, validation, and test sets.
-                                              Contains batches of (3, 32, 32) images,
+        (DataLoader, DataLoader, DataLoader): MNIST train, validation, and test sets.
+                                              Contains batches of (1, 28, 28) images,
                                               with values 0-1.
     """
-    dataset_class = CIFAR10 if use_10 else CIFAR100
-    num_normal = 5 if use_10 else 50
+    dataset_class = MNIST
+    num_normal = 5
     with path("polycraft_nov_det", "base_data") as data_path:
         train_kwargs = {
             "root": data_path,

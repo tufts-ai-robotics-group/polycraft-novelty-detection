@@ -3,7 +3,7 @@ import torch
 
 from polycraft_nov_data.dataloader import polycraft_dataloaders
 
-from polycraft_nov_det.mnist_loader import torch_mnist, MNIST_SHAPE
+from polycraft_nov_det.data.mnist_loader import torch_mnist, MNIST_SHAPE
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
 from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 
@@ -40,7 +40,8 @@ class TestMNIST():
         model(torch.zeros((batch_size,) + MNIST_SHAPE))
 
     def test_dataloader_mnist(self, model):
-        train_loader, _, _ = torch_mnist(batch_size)
+        _, _, dataloaders = torch_mnist(batch_size)
+        train_loader, _, _ = dataloaders
         for data, _ in train_loader:
             model(data)
             break

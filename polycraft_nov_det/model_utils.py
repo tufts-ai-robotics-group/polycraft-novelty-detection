@@ -4,7 +4,7 @@ import torch
 
 import polycraft_nov_data.data_const as polycraft_const
 
-import polycraft_nov_det.mnist_loader as mnist_loader
+import polycraft_nov_det.data.mnist_loader as mnist_loader
 from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
 from polycraft_nov_det.detector import load_lin_reg, reconstruction_lin_reg

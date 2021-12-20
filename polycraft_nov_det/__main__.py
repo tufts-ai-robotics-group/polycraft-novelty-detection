@@ -3,7 +3,7 @@ import argparse
 from polycraft_nov_data.data_const import PATCH_SHAPE
 from polycraft_nov_data.dataloader import polycraft_dataloaders
 
-import polycraft_nov_det.mnist_loader as mnist_loader
+import polycraft_nov_det.data.mnist_loader as mnist_loader
 import polycraft_nov_det.models.lsa.LSA_cifar10_no_est as LSA_cifar10_no_est
 import polycraft_nov_det.models.lsa.LSA_mnist_no_est as LSA_mnist_no_est
 import polycraft_nov_det.train as train
@@ -48,7 +48,8 @@ if args.model == "mnist":
     }
     # get dataloaders
     batch_size = 256 if args.batch_size is None else args.batch_size
-    train_loader, valid_loader, _ = mnist_loader.torch_mnist(batch_size)
+    _, _, dataloaders = mnist_loader.torch_mnist(batch_size)
+    train_loader, valid_loader, _ = dataloaders
     # get model instance
     latent_len = 64 if args.latent_len is None else args.latent_len
     model = LSA_mnist_no_est.LSAMNISTNoEst(mnist_loader.MNIST_SHAPE, latent_len)
