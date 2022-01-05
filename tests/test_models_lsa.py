@@ -9,7 +9,7 @@ from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 
 
 cifar_input_shape = (3, 32, 32)
-batch_size = 256
+batch_size = 64
 
 
 class TestCIFAR10():
