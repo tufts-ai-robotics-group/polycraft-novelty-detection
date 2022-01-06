@@ -11,7 +11,7 @@ CIFAR_SHAPE = (3, 32, 32)
 
 
 def torch_cifar(batch_size=32, include_novel=False, shuffle=True, use_10=True,
-                split_seed=42):
+                split_seed=42, rot_loader=False):
     """torch DataLoaders for CIFAR10 and CIFAR100
 
     Args:
@@ -22,6 +22,7 @@ def torch_cifar(batch_size=32, include_novel=False, shuffle=True, use_10=True,
         use_10 (bool, optional): Use CIFAR10 if True, otherwise CIFAR100. Defaults to True.
         split_seed (int, optional): Seed for splitting normal and novel classes.
                                     Defaults to 42.
+        rot_loader (bool, optional): Whether to use RotNet transform. Defaults to False.
 
     Returns:
         (DataLoader, DataLoader, DataLoader): CIFAR train, validation, and test sets.
@@ -47,5 +48,5 @@ def torch_cifar(batch_size=32, include_novel=False, shuffle=True, use_10=True,
             "batch_size": batch_size,
             "shuffle": shuffle,
         }
-        return base_loader(dataset_class, train_kwargs, test_kwargs, dataloader_kwargs,
-                           split_seed, num_normal, include_novel)
+        return base_loader(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal,
+                           include_novel, dataloader_kwargs, rot_loader)

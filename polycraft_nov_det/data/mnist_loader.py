@@ -46,5 +46,5 @@ def torch_mnist(batch_size=32, include_novel=False, shuffle=True,
             "batch_size": batch_size,
             "shuffle": shuffle,
         }
-        return base_loader(dataset_class, train_kwargs, test_kwargs, dataloader_kwargs,
-                           split_seed, num_normal, include_novel)
+        return base_loader(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal,
+                           include_novel, dataloader_kwargs)

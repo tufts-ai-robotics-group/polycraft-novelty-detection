@@ -3,6 +3,8 @@ from torch.utils import data
 
 import polycraft_nov_data.dataset_transforms as dataset_transforms
 
+from polycraft_nov_det.data.rot_dataset import RotDataset
+
 
 def base_dataset(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal, include_novel):
     """Base dataset generator for novelty related tasks
@@ -43,7 +45,7 @@ def base_dataset(dataset_class, train_kwargs, test_kwargs, split_seed, num_norma
 
 
 def base_loader(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal, include_novel,
-                dataloader_kwargs):
+                dataloader_kwargs, rot_loader=False):
     """Base DataLoader generator for novelty related tasks
 
     Args:
@@ -54,6 +56,7 @@ def base_loader(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal
         num_normal (int): Number of classes to label normal
         include_novel (bool): Whether to include novel data in validation set
         dataloader_kwargs (dict): kwargs for all dataloaders
+        rot_loader (bool, optional): Whether to use RotNet transform. Defaults to False.
 
     Returns:
         tuple: Returns (norm_targets, novel_targets, dataloaders),
@@ -62,6 +65,10 @@ def base_loader(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal
     """
     norm_targets, novel_targets, (train_set, valid_set, test_set) = base_dataset(
         dataset_class, train_kwargs, test_kwargs, split_seed, num_normal, include_novel)
+    if rot_loader:
+        train_set = RotDataset(train_set)
+        valid_set = RotDataset(valid_set)
+        test_set = RotDataset(test_set)
     # get DataLoaders for datasets
     dataloaders = (data.DataLoader(train_set, **dataloader_kwargs),
                    data.DataLoader(valid_set, **dataloader_kwargs),
