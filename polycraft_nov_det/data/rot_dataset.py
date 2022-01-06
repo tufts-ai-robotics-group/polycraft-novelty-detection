@@ -13,7 +13,7 @@ class RotDataset(Dataset):
 
     def __getitem__(self, index):
         data, _ = self.dataset[index]
-        target = torch.randint(0, 3)
+        target = torch.randint(0, 3, (1,))
         if target == 1:
             data = rotate(data, 90)
         elif target == 2:
