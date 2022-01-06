@@ -42,5 +42,5 @@ class DiscResNet(resnet.ResNet):
         # save fc1 features and return if requested
         feats = x
         label_pred = self.fc(x)
-        unlabeld_pred = self.fc_unlabeled(x)
-        return label_pred, unlabeld_pred, feats
+        unlabeled_pred = self.fc_unlabeled(x)
+        return label_pred, unlabeled_pred, feats
