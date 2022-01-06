@@ -165,7 +165,7 @@ def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1,
         valid_loss = 0
         for data, target in valid_loader:
             batch_size = data.shape[0]
-            data = data.to(device)
+            data, target = data.to(device), target.to(device)
             label_pred, _, _ = model(data)
             batch_loss = loss_func(label_pred, target)
             valid_loss += batch_loss.item() * batch_size
