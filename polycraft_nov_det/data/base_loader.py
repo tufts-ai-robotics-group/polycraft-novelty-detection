@@ -4,23 +4,21 @@ from torch.utils import data
 import polycraft_nov_data.dataset_transforms as dataset_transforms
 
 
-def base_loader(dataset_class, train_kwargs, test_kwargs, dataloader_kwargs, split_seed,
-                num_normal, include_novel):
-    """Base DataLoader generator for novelty related tasks
+def base_dataset(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal, include_novel):
+    """Base dataset generator for novelty related tasks
 
     Args:
         dataset_class (class): Dataset class to use
         train_kwargs (dict): kwargs for train dataset
         test_kwargs (dict): kwargs for test dataset
-        dataloader_kwargs (dict): kwargs for all dataloaders
         split_seed (int): Seed for splitting normal and novel classes
         num_normal (int): Number of classes to label normal
         include_novel (bool): Whether to include novel data in validation set
 
     Returns:
-        tuple: Returns (norm_targets, novel_targets, dataloaders),
-               where dataloaders is a tuple with
-               (train_loader, valid_loader, test_loader)
+        tuple: Returns (norm_targets, novel_targets, datasets),
+               where datasets is a tuple with
+               (train_set, valid_set, test_set)
     """
     # initialize seed
     split_gen = torch.manual_seed(split_seed)
@@ -41,6 +39,29 @@ def base_loader(dataset_class, train_kwargs, test_kwargs, dataloader_kwargs, spl
         test_set = dataset_transforms.filter_dataset(test_set, norm_targets)
     else:
         test_set = dataset_transforms.filter_dataset(test_set, targets)
+    return norm_targets, novel_targets, (train_set, valid_set, test_set)
+
+
+def base_loader(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal, include_novel,
+                dataloader_kwargs):
+    """Base DataLoader generator for novelty related tasks
+
+    Args:
+        dataset_class (class): Dataset class to use
+        train_kwargs (dict): kwargs for train dataset
+        test_kwargs (dict): kwargs for test dataset
+        split_seed (int): Seed for splitting normal and novel classes
+        num_normal (int): Number of classes to label normal
+        include_novel (bool): Whether to include novel data in validation set
+        dataloader_kwargs (dict): kwargs for all dataloaders
+
+    Returns:
+        tuple: Returns (norm_targets, novel_targets, dataloaders),
+               where dataloaders is a tuple with
+               (train_loader, valid_loader, test_loader)
+    """
+    norm_targets, novel_targets, (train_set, valid_set, test_set) = base_dataset(
+        dataset_class, train_kwargs, test_kwargs, split_seed, num_normal, include_novel)
     # get DataLoaders for datasets
     dataloaders = (data.DataLoader(train_set, **dataloader_kwargs),
                    data.DataLoader(valid_set, **dataloader_kwargs),
