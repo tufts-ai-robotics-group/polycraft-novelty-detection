@@ -112,3 +112,67 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
             # save model
             save_model(model, session_path, epoch)
     return model
+
+
+def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1, epochs=200,
+                          gpu=None):
+    """Train a model on self-supervised dataset.
+
+    Args:
+        model (torch.nn.Module): Model to train.
+        model_label (str): Label for model type, preferably from model_label function.
+        train_loader (torch.utils.data.DataLoader): Training set for model.
+        valid_loader (torch.utils.data.DataLoader): Validation set for model.
+        lr (float): Learning rate.
+        epochs (int, optional): Number of epochs to train for. Defaults to 500.
+        gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
+
+    Returns:
+        torch.nn.Module: Trained model.
+    """
+    # get a unique path for this session to prevent overwriting
+    start_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+    session_path = pathlib.Path(model_label) / pathlib.Path(start_time)
+    # get Tensorboard writer
+    writer = SummaryWriter(pathlib.Path("runs") / session_path)
+    # define training constants
+    loss_func = nn.CrossEntropyLoss()
+    device = torch.device(gpu if gpu is not None else "cpu")
+    # move model to device
+    model.to(device)
+    # construct optimizer and lr scheduler
+    optimizer = optim.SGD(model.parameters(), lr, momentum=.9, weight_decay=5e-4, nesterov=True)
+    lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160, 200], gamma=0.2)
+    # train model
+    for epoch in range(epochs):
+        train_loss = 0
+        for data, target in train_loader:
+            batch_size = data.shape[0]
+            data = data.to(device)
+            optimizer.zero_grad()
+            # update weights with optimizer
+            label_pred, _, _ = model(data)
+            batch_loss = loss_func(label_pred, target)
+            batch_loss.backward()
+            optimizer.step()
+            lr_sched.step()
+            # logging
+            train_loss += batch_loss.item() * batch_size
+        # calculate and record train loss
+        av_train_loss = train_loss / len(train_loader)
+        writer.add_scalar("Average Train Loss", av_train_loss, epoch)
+        # get validation loss
+        valid_loss = 0
+        for data, target in valid_loader:
+            batch_size = data.shape[0]
+            data = data.to(device)
+            label_pred, _, _ = model(data)
+            batch_loss = loss_func(label_pred, target)
+            valid_loss += batch_loss.item() * batch_size
+        av_valid_loss = valid_loss / len(valid_loader)
+        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
+        # updates every 10% of training time
+        if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
+            # save model
+            save_model(model, session_path, epoch)
+    return model

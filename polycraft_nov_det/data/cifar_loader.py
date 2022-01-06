@@ -25,9 +25,10 @@ def torch_cifar(batch_size=32, include_novel=False, shuffle=True, use_10=True,
         rot_loader (bool, optional): Whether to use RotNet transform. Defaults to False.
 
     Returns:
-        (DataLoader, DataLoader, DataLoader): CIFAR train, validation, and test sets.
-                                              Contains batches of (3, 32, 32) images,
-                                              with values 0-1.
+        tuple: Returns (norm_targets, novel_targets, dataloaders),
+               where dataloaders is a tuple with
+               (train_loader, valid_loader, test_loader)
+               containing batches of (3, 32, 32) images, with values 0-1.
     """
     dataset_class = CIFAR10 if use_10 else CIFAR100
     num_normal = 5 if use_10 else 50
