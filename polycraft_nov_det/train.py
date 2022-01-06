@@ -148,7 +148,7 @@ def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1,
         train_loss = 0
         for data, target in train_loader:
             batch_size = data.shape[0]
-            data = data.to(device)
+            data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
             # update weights with optimizer
             label_pred, _, _ = model(data)
