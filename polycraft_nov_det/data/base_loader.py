@@ -35,6 +35,13 @@ def base_dataset(dataset_class, train_kwargs, test_kwargs, split_seed, num_norma
     class_splits = {key: [.9, .1] for key in norm_targets}
     if include_novel:
         class_splits.update({key: [0, 1] for key in novel_targets})
+    # reorder targets for cross entropy loss
+    target_map = {int(target): i for i, target in enumerate(targets)}
+
+    def reorder_targets(target):
+        return target_map[target]
+    train_set.target_transform = reorder_targets
+    test_set.target_transform = reorder_targets
     # select only included classes and split the train set to get a validation set
     train_set, valid_set = dataset_transforms.filter_split(train_set, class_splits)
     if not include_novel:

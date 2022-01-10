@@ -150,7 +150,7 @@ def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1,
         train_loader (torch.utils.data.DataLoader): Training set for model.
         valid_loader (torch.utils.data.DataLoader): Validation set for model.
         lr (float): Learning rate.
-        epochs (int, optional): Number of epochs to train for. Defaults to 500.
+        epochs (int, optional): Number of epochs to train for. Defaults to 200.
         gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
 
     Returns:
@@ -169,6 +169,51 @@ def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1,
     # construct optimizer and lr scheduler
     optimizer = optim.SGD(model.parameters(), lr, momentum=.9, weight_decay=5e-4, nesterov=True)
     lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160, 200], gamma=0.2)
+    # train model
+    for epoch in range(epochs):
+        # calculate average train loss for epoch
+        av_train_loss = run_epoch(
+            train_loader, model, loss_func, device, optimizer, lr_sched)
+        writer.add_scalar("Average Train Loss", av_train_loss, epoch)
+        # get validation loss
+        av_valid_loss = run_epoch(
+            valid_loader, model, loss_func, device)
+        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
+        # updates every 10% of training time
+        if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
+            # save model
+            save_model(model, session_path, epoch)
+    return model
+
+
+def train_supervised(model, model_label, train_loader, valid_loader, lr=.1, epochs=100, gpu=None):
+    """Train a model on supervised dataset.
+
+    Args:
+        model (torch.nn.Module): Model to train.
+        model_label (str): Label for model type, preferably from model_label function.
+        train_loader (torch.utils.data.DataLoader): Training set for model.
+        valid_loader (torch.utils.data.DataLoader): Validation set for model.
+        lr (float): Learning rate.
+        epochs (int, optional): Number of epochs to train for. Defaults to 100.
+        gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
+
+    Returns:
+        torch.nn.Module: Trained model.
+    """
+    # get a unique path for this session to prevent overwriting
+    start_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+    session_path = pathlib.Path(model_label) / pathlib.Path(start_time)
+    # get Tensorboard writer
+    writer = SummaryWriter(pathlib.Path("runs") / session_path)
+    # define training constants
+    loss_func = nn.CrossEntropyLoss()
+    device = torch.device(gpu if gpu is not None else "cpu")
+    # move model to device
+    model.to(device)
+    # construct optimizer and lr scheduler
+    optimizer = optim.SGD(model.parameters(), lr, momentum=.9, weight_decay=1e-4)
+    lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
     # train model
     for epoch in range(epochs):
         # calculate average train loss for epoch
