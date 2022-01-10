@@ -114,6 +114,32 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
     return model
 
 
+def run_epoch(loader, model, loss_func, device, optimizer=None, lr_sched=None):
+    is_train = optimizer is not None and lr_sched is not None
+    if is_train:
+        model.train()
+    else:
+        model.eval()
+    loss = 0
+    for data, target in loader:
+        batch_size = data.shape[0]
+        data, target = data.to(device), target.to(device)
+        if is_train:
+            optimizer.zero_grad()
+        # calculate loss and backprop if training
+        label_pred, _, _ = model(data)
+        batch_loss = loss_func(label_pred, target)
+        if is_train:
+            batch_loss.backward()
+            optimizer.step()
+            lr_sched.step()
+        # record loss without averaging
+        loss += batch_loss.item() * batch_size
+    # calculate average loss
+    av_loss = loss / len(loader)
+    return av_loss
+
+
 def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1, epochs=200,
                           gpu=None):
     """Train a model on self-supervised dataset.
@@ -145,31 +171,13 @@ def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1,
     lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160, 200], gamma=0.2)
     # train model
     for epoch in range(epochs):
-        train_loss = 0
-        for data, target in train_loader:
-            batch_size = data.shape[0]
-            data, target = data.to(device), target.to(device)
-            optimizer.zero_grad()
-            # update weights with optimizer
-            label_pred, _, _ = model(data)
-            batch_loss = loss_func(label_pred, target)
-            batch_loss.backward()
-            optimizer.step()
-            lr_sched.step()
-            # logging
-            train_loss += batch_loss.item() * batch_size
-        # calculate and record train loss
-        av_train_loss = train_loss / len(train_loader)
+        # calculate average train loss for epoch
+        av_train_loss = run_epoch(
+            train_loader, model, loss_func, device, optimizer, lr_sched)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
         # get validation loss
-        valid_loss = 0
-        for data, target in valid_loader:
-            batch_size = data.shape[0]
-            data, target = data.to(device), target.to(device)
-            label_pred, _, _ = model(data)
-            batch_loss = loss_func(label_pred, target)
-            valid_loss += batch_loss.item() * batch_size
-        av_valid_loss = valid_loss / len(valid_loader)
+        av_valid_loss = run_epoch(
+            valid_loader, model, loss_func, device)
         writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
