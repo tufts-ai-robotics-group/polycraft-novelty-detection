@@ -5,6 +5,7 @@ import torch
 import polycraft_nov_data.data_const as polycraft_const
 
 import polycraft_nov_det.data.mnist_loader as mnist_loader
+from polycraft_nov_det.models.disc_resnet import DiscResNet
 from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
 from polycraft_nov_det.detector import load_lin_reg, reconstruction_lin_reg
@@ -44,6 +45,21 @@ def load_polycraft_model(path, device="cpu", latent_len=100):
     """
     model = LSACIFAR10NoEst(polycraft_const.PATCH_SHAPE, latent_len)
     return load_model(path, model, device)
+
+
+def load_disc_resnet(path, num_labeled_classes, num_unlabeled_classes, device="cpu",
+                     reset_head=False, strict=True):
+    model = DiscResNet(num_labeled_classes, num_unlabeled_classes)
+    state_dict = torch.load(path, map_location=device)
+    # reset weights for labeled head for self-supervised -> supervised learning
+    if reset_head:
+        del state_dict["fc.weight"]
+        del state_dict["fc.bias"]
+    model.load_state_dict(state_dict, strict)
+    # freeze layer parameters if transferring knowledge
+    if strict is False:
+        model.freeze_layers()
+    return model
 
 
 def load_cached_lin_reg(model_path, model, train_loader, device="cpu"):

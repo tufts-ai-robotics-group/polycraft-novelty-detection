@@ -1,5 +1,6 @@
 from polycraft_nov_det.data.cifar_loader import torch_cifar
 from polycraft_nov_det.models.disc_resnet import DiscResNet
+from polycraft_nov_det.model_utils import load_disc_resnet
 import polycraft_nov_det.train as train
 
 mode = "supervised"
@@ -19,7 +20,8 @@ elif mode == "supervised":
     batch_size = 128
     norm_targets, _, (train_loader, valid_loader, _) = torch_cifar(batch_size)
     # get model instance
-    model = DiscResNet(len(norm_targets), 0)
+    model = load_disc_resnet("models/CIFAR10/self_supervised/200.pt", len(norm_targets), 0,
+                             reset_head=True, strict=False)
     # start model training
     model_label = train.model_label(model, norm_targets)
     train.train_supervised(model, model_label, train_loader, valid_loader, gpu=1)

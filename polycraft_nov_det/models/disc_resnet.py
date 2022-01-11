@@ -25,6 +25,11 @@ class DiscResNet(resnet.ResNet):
         self.fc.bias.data[:] = torch.min(save_bias) - 1
         self.fc.bias.data[:self.num_labeled_classes] = save_bias
 
+    def freeze_layers(self):
+        for name, param in self.named_parameters():
+            if 'head' not in name and 'layer4' not in name:
+                param.requires_grad = False
+
     def forward(self, x):
         # based on parent's implementation
         x = self.conv1(x)
