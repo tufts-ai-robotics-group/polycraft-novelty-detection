@@ -27,7 +27,7 @@ class DiscResNet(resnet.ResNet):
 
     def freeze_layers(self):
         for name, param in self.named_parameters():
-            if 'head' not in name and 'layer4' not in name:
+            if 'fc' not in name and 'layer4' not in name:
                 param.requires_grad = False
 
     def forward(self, x):
