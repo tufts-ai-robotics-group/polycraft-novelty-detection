@@ -3,14 +3,17 @@ import torch.nn as nn
 from torch.nn.functional import binary_cross_entropy
 
 
-class Similar_BCE(nn.Module):
+class SimilarBCE(nn.Module):
     def is_similar(self, norm_desc_1, norm_desc_2, k=5):
-        """Return 1 if top K dimensions are the same, otherwise 0.
+        """Determine if two embeddings have same top K ranking
 
         Args:
             norm_desc_1 (torch.Tensor): Descriptor for normal classes (B, D).
             norm_desc_2 (torch.Tensor): Descriptor for normal classes (B, D).
             k (int, optional): Number of dimensions to match. Defaults to 5.
+
+        Returns:
+            torch.Tensor: Return 1 if top K dimensions are the same, otherwise 0. (B,)
         """
         # get top K dimensions
         top_k_1 = torch.argsort(norm_desc_1, dim=1, descending=True)[:, :k]
