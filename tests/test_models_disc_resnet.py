@@ -26,8 +26,17 @@ class TestCIFAR10():
 
     def test_dataloader_rot_cifar(self, model):
         norm_targets, novel_targets, dataloaders = cifar_loader.torch_cifar(
-            batch_size=batch_size, shuffle=False, rot_loader=True)
+            batch_size=batch_size, shuffle=False, rot_loader="rotnet")
         train_loader, valid_loader, test_loader = dataloaders
         for data, target in train_loader:
             model(data)
+            break
+
+    def test_dataloader_rot_const_cifar(self, model):
+        norm_targets, novel_targets, dataloaders = cifar_loader.torch_cifar(
+            batch_size=batch_size, shuffle=False, rot_loader="consistent")
+        train_loader, valid_loader, test_loader = dataloaders
+        for data, rot_data, target in train_loader:
+            model(data)
+            model(rot_data)
             break
