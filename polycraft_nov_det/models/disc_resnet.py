@@ -44,8 +44,8 @@ class DiscResNet(resnet.ResNet):
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
-        # save fc1 features and return if requested
-        feats = x
+        # save fc1 features
+        feat = x
         label_pred = self.fc(x)
-        unlabeled_pred = self.fc_unlabeled(x)
-        return label_pred, unlabeled_pred, feats
+        unlabel_pred = self.fc_unlabeled(x)
+        return label_pred, unlabel_pred, feat

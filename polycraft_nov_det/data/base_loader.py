@@ -34,7 +34,7 @@ def base_dataset(dataset_class, train_kwargs, test_kwargs, split_seed, num_norma
     novel_targets = targets[num_normal:]
     class_splits = {key: [.9, .1] for key in norm_targets}
     if include_novel:
-        class_splits.update({key: [0, 1] for key in novel_targets})
+        class_splits.update({key: [.9, .1] for key in novel_targets})
     # reorder targets for cross entropy loss
     target_map = {int(target): i for i, target in enumerate(targets)}
 

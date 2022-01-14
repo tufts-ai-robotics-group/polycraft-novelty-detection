@@ -48,17 +48,28 @@ def load_polycraft_model(path, device="cpu", latent_len=100):
 
 
 def load_disc_resnet(path, num_labeled_classes, num_unlabeled_classes, device="cpu",
-                     reset_head=False, strict=True):
+                     reset_head=False, strict=True, incremental=False):
     model = DiscResNet(num_labeled_classes, num_unlabeled_classes)
     state_dict = torch.load(path, map_location=device)
     # reset weights for labeled head for self-supervised -> supervised learning
     if reset_head:
         del state_dict["fc.weight"]
         del state_dict["fc.bias"]
-    model.load_state_dict(state_dict, strict)
+    # remove empty tensors to stop errors when strict=False
+    if strict is False:
+        keys = [key for key in state_dict]  # copy keys so dict can be modified in place
+        for key in keys:
+            val = state_dict[key]
+            if len(val.shape) > 0 and len(val) == 0:
+                del state_dict[key]
+    # load parameters
+    model.load_state_dict(state_dict, strict=strict)
     # freeze layer parameters if transferring knowledge
     if strict is False:
         model.freeze_layers()
+    # init incremental learning head
+    if incremental:
+        model.init_incremental()
     return model
 
 
@@ -79,8 +90,8 @@ def load_cached_lin_reg(model_path, model, train_loader, device="cpu"):
 def calc_model_embeddings(model, data_loader):
     embeddings = torch.Tensor([])
     targets = torch.Tensor([])
-    for data, target in data_loader:
+    for data, targets in data_loader:
         _, embedding = model(data)
         embeddings = torch.cat((embeddings, embedding))
-        targets = torch.cat((targets, target))
+        targets = torch.cat((targets, targets))
     return embeddings, targets
