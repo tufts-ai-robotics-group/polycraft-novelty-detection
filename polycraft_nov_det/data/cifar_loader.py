@@ -32,6 +32,7 @@ def torch_cifar(batch_size=32, include_novel=False, shuffle=True, use_10=True,
                (train_loader, valid_loader, test_loader)
                containing batches of (3, 32, 32) images, with values 0-1.
     """
+    # TODO need to revise with closer look at data augmentations at each phase
     dataset_class = CIFAR10 if use_10 else CIFAR100
     num_normal = 5 if use_10 else 50
     with path("polycraft_nov_det", "base_data") as data_path:
