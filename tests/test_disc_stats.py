@@ -1,6 +1,6 @@
 import numpy as np
 
-import polycraft_nov_det.eval.discovery_stats as stats
+import polycraft_nov_det.eval.stats as stats
 
 
 def test_assign():

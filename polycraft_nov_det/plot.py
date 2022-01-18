@@ -1,84 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn import metrics
 from sklearn.decomposition import PCA
 
 
-def plot_reconstruction(images, r_images):
-    """Plot sample of image reconstructions
-
-    Args:
-        images (torch.tensor): Images input to autoencoder
-        r_images (torch.tensor): Reconstructed images output from autoencoder
-
-    Returns:
-        plt.Figure: Figure with plot of sample of image reconstructions
-    """
-    # set number of images for plot
-    num_images = 5
-    if images.shape[0] < num_images:
-        num_images = images.shape[0]
-    # determine the color map to use
-    if images.shape[1] == 1:
-        cmap = "gray"
-    else:
-        cmap = "rgb"
-    # remove grad from tensors for numpy conversion
-    images = np.clip(images.detach().cpu(), 0, 1)
-    r_images = np.clip(r_images.detach().cpu(), 0, 1)
-    # set up axes
-    fig, ax = plt.subplots(nrows=2, ncols=num_images)
-    ax[0][num_images // 2].set_title("Input")
-    ax[1][num_images // 2].set_title("Reconstruction")
-    # set up imshow keyword args
-    imshow_kwargs = {
-        "vmin": 0,
-        "vmax": 1,
-    }
-    # plot the image and reconstruction side by side
-    for i in range(num_images):
-        if cmap == "gray":
-            ax[0][i].imshow(images[i, 0], cmap=cmap, **imshow_kwargs)
-            ax[1][i].imshow(r_images[i, 0], cmap=cmap, **imshow_kwargs)
-        else:
-            # Transpose images in (C, H, W) format to matplotlib's (H, W, C) format
-            ax[0][i].imshow(np.transpose(images[i, :], (1, 2, 0)), **imshow_kwargs)
-            ax[1][i].imshow(np.transpose(r_images[i, :], (1, 2, 0)), **imshow_kwargs)
-    # disable tick marks
-    for axis in ax.flat:
-        axis.set_xticks([])
-        axis.set_yticks([])
-    return fig
-
-
-def plot_per_patch_nov_det(detector, quantile, patch_array_shape, all_patches_batch):
-    """Plot novelty detection for each patch of an image
-
-    Args:
-        detector (novelty.ReconstructionDet): Detector to make novelty decisions
-        quantile (float): Quantile to use for detector
-        patch_array_shape (tuple): Shape of the output of ToPatches, (PH, PW, C, H, W)
-        all_patches_batch (torch.Tensor): Batch from a DataLoader with all_patches=True,
-                                          shape (PH * PW, C, H, W)
-
-    Returns:
-        plt.Figure: Figure with plot of novelty detection for each patch of an image
-    """
-    patch_h, patch_w, _, _, _ = patch_array_shape
-    fig = plt.figure()
-    # get novelty detections
-    is_novel = detector.is_novel(all_patches_batch, quantile)
-    for i in range(all_patches_batch.shape[0]):
-        # create patch subplot with detection as title
-        ax = fig.add_subplot(patch_h, patch_w, i + 1)
-        ax.set_title(is_novel[i])
-        # plot the patch
-        img = all_patches_batch[i]
-        plt.imshow(np.transpose(img.detach().numpy(), (1, 2, 0)))
-        plt.subplots_adjust(hspace=1)
-        plt.tick_params(top=False, bottom=False, left=False,
-                        right=False, labelleft=False, labelbottom=False)
-    fig.suptitle("Patches with Novelty Labels")
-    return fig
+def plot_con_matrix(con_matrix):
+    disp = metrics.ConfusionMatrixDisplay(con_matrix, display_labels=["Novel", "Normal"])
+    disp = disp.plot(cmap="Blues", values_format=".0f")
+    return disp.figure_
 
 
 def plot_embedding(embeddings, targets):
