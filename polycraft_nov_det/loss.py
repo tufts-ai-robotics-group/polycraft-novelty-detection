@@ -29,7 +29,7 @@ class SimilarBCE(nn.Module):
         prod = unlabel_prob @ rot_unlabel_prob.T
         # get similarity labels for pairs of features of unlabeled images
         similar_label = self.is_similar(unlabel_feat)
-        return F.binary_cross_entropy(prod, similar_label)
+        return F.binary_cross_entropy(prod, similar_label.to(prod.device))
 
 
 class AutoNovelLoss(nn.Module):
