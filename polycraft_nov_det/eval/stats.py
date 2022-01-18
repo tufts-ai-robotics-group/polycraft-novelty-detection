@@ -18,6 +18,7 @@ def assign_clusters(y_pred, y_true):
                assignment.
                np.array of weight matrix used for assignment.
     """
+    y_pred = y_pred.astype(np.int64)
     y_true = y_true.astype(np.int64)
     assert y_pred.size == y_true.size
     # add 1 because of zero indexing
