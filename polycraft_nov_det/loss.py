@@ -33,7 +33,7 @@ class SimilarBCE(nn.Module):
 
 
 class AutoNovelLoss(nn.Module):
-    def __init__(self, norm_targets, consist_coef=50, il_coef=.05, ramp_len=150):
+    def __init__(self, norm_targets, consist_coef=5, il_coef=.05, ramp_len=50):
         super().__init__()
         self.consist_coef = consist_coef
         self.il_coef = il_coef
