@@ -23,7 +23,7 @@ def model_label(model, include_classes):
     if include_classes is None:
         model_label += "all_classes"
     else:
-        classes = "_".join([str(include_class) for include_class in include_classes])
+        classes = "_".join([str(int(include_class)) for include_class in include_classes])
         model_label += "class_" + classes
     return model_label
 
