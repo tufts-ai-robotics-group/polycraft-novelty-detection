@@ -32,7 +32,8 @@ elif mode == "autonovel":
         batch_size, include_novel=True, rot_loader="consistent")
     # get model instance
     model = load_disc_resnet("models/CIFAR10/supervised/100.pt", len(norm_targets),
-                             len(novel_targets), reset_head=False, strict=False, incremental=True)
+                             len(novel_targets), reset_head=False, strict=False,
+                             to_incremental=True)
     # start model training
     model_label = train.model_label(model, norm_targets)
     train.train_autonovel(model, model_label, train_loader, valid_loader, norm_targets, gpu=1)

@@ -10,7 +10,7 @@ def load_model(path, model, device="cpu"):
 
 
 def load_disc_resnet(path, num_labeled_classes, num_unlabeled_classes, device="cpu",
-                     reset_head=False, strict=True, incremental=False):
+                     reset_head=False, strict=True, to_incremental=False):
     model = DiscResNet(num_labeled_classes, num_unlabeled_classes)
     state_dict = torch.load(path, map_location=device)
     # reset weights for labeled head for self-supervised -> supervised learning
@@ -26,10 +26,8 @@ def load_disc_resnet(path, num_labeled_classes, num_unlabeled_classes, device="c
                 del state_dict[key]
     # load parameters
     model.load_state_dict(state_dict, strict=strict)
-    # freeze layer parameters if transferring knowledge
-    if strict is False:
+    # to transfer to incremental learning freeze most parameters and intialize labeled head
+    if to_incremental:
         model.freeze_layers()
-    # init incremental learning head
-    if incremental:
         model.init_incremental()
     return model
