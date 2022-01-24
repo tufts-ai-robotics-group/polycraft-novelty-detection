@@ -1,5 +1,6 @@
 import torch
 
+from polycraft_nov_det.models.autonovel_resnet import AutoNovelResNet
 from polycraft_nov_det.models.disc_resnet import DiscResNet
 
 
@@ -30,4 +31,19 @@ def load_disc_resnet(path, num_labeled_classes, num_unlabeled_classes, device="c
     if to_incremental:
         model.freeze_layers()
         model.init_incremental()
+    return model
+
+
+def load_autonovel_pretrained(path, num_labeled_classes, num_unlabeled_classes, device="cpu"):
+    model = AutoNovelResNet(num_labeled_classes, num_unlabeled_classes)
+    state_dict = torch.load(path, map_location=device)
+    # swap name of first head
+    state_dict["head1.weight"] = state_dict.pop("linear.weight")
+    state_dict["head1.bias"] = state_dict.pop("linear.bias")
+    # add empty params for second head if loading a self-supervised model
+    if num_unlabeled_classes == 0:
+        state_dict["head2.weight"] = model.state_dict()["head2.weight"]
+        state_dict["head2.bias"] = model.state_dict()["head2.bias"]
+    # load parameters
+    model.load_state_dict(state_dict)
     return model
