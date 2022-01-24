@@ -2,6 +2,11 @@ import numpy as np
 import scipy.optimize as optimize
 
 
+def classification_acc(y_pred, y_true):
+    assert y_pred.size == y_true.size
+    num_correct = (y_pred == y_true).astype(np.int64).sum()
+    return float(num_correct) / len(y_pred)
+
 # cluster functions based on:
 # https://github.com/k-han/AutoNovel/blob/5eda7e45898cf3fbcde4c34b9c14c743082abd94/utils/util.py#L19\
 
@@ -43,7 +48,7 @@ def cluster_acc(row_ind, col_ind, weight):
     Returns:
         float: accuracy, in [0,1]
     """
-    return weight[row_ind, col_ind].sum() * 1.0 / weight.sum()
+    return float(weight[row_ind, col_ind].sum()) / weight.sum()
 
 
 def cluster_confusion(row_ind, col_ind, weight):
