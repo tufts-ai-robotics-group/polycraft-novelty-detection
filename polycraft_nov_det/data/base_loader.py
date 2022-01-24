@@ -3,18 +3,17 @@ from torch.utils import data
 
 import polycraft_nov_data.dataset_transforms as dataset_transforms
 
-from polycraft_nov_det.data.rot_dataset import RotDataset, RotConsistentDataset
+from polycraft_nov_det.data.rot_dataset import RotDataset
 
 
-def base_dataset(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal, include_novel):
+def base_dataset(dataset_class, train_kwargs, test_kwargs, norm_targets, include_novel):
     """Base dataset generator for novelty related tasks
 
     Args:
         dataset_class (class): Dataset class to use
         train_kwargs (dict): kwargs for train dataset
         test_kwargs (dict): kwargs for test dataset
-        split_seed (int): Seed for splitting normal and novel classes
-        num_normal (int): Number of classes to label normal
+        norm_targets (iterable): iterable of ints denoting which targets are in normal set
         include_novel (bool): Whether to include novel data in validation set
 
     Returns:
@@ -22,16 +21,12 @@ def base_dataset(dataset_class, train_kwargs, test_kwargs, split_seed, num_norma
                where datasets is a tuple with
                (train_set, valid_set, test_set)
     """
-    # initialize seed
-    split_gen = torch.manual_seed(split_seed)
     # load datasets
     train_set = dataset_class(**train_kwargs)
     test_set = dataset_class(**test_kwargs)
     # split targets
-    targets = torch.Tensor(list(train_set.targets)).unique()
-    targets = targets[torch.randperm(len(targets), generator=split_gen)]
-    norm_targets = targets[:num_normal]
-    novel_targets = targets[num_normal:]
+    targets = [int(target) for target in torch.Tensor(list(train_set.targets)).unique()]
+    novel_targets = [target for target in targets if target not in norm_targets]
     class_splits = {key: [.9, .1] for key in norm_targets}
     if include_novel:
         class_splits.update({key: [.9, .1] for key in novel_targets})
@@ -51,7 +46,7 @@ def base_dataset(dataset_class, train_kwargs, test_kwargs, split_seed, num_norma
     return norm_targets, novel_targets, (train_set, valid_set, test_set)
 
 
-def base_loader(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal, include_novel,
+def base_loader(dataset_class, train_kwargs, test_kwargs, norm_targets, include_novel,
                 dataloader_kwargs, rot_loader=None):
     """Base DataLoader generator for novelty related tasks
 
@@ -59,13 +54,9 @@ def base_loader(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal
         dataset_class (class): Dataset class to use
         train_kwargs (dict): kwargs for train dataset
         test_kwargs (dict): kwargs for test dataset
-        split_seed (int): Seed for splitting normal and novel classes
-        num_normal (int): Number of classes to label normal
+        norm_targets (iterable): iterable of ints denoting which targets are in normal set
         include_novel (bool): Whether to include novel data in validation set
         dataloader_kwargs (dict): kwargs for all dataloaders
-        rot_loader (str, optional): Whether to use RotNet transform. Defaults to None.
-                                    "rotnet" applies random rotation and with rotation labels.
-                                    "consistent" provides (image, rotated image, original label)
         rot_loader (bool, optional): Whether to use RotNet transform. Defaults to False.
 
     Returns:
@@ -74,19 +65,12 @@ def base_loader(dataset_class, train_kwargs, test_kwargs, split_seed, num_normal
                (train_loader, valid_loader, test_loader)
     """
     norm_targets, novel_targets, (train_set, valid_set, test_set) = base_dataset(
-        dataset_class, train_kwargs, test_kwargs, split_seed, num_normal, include_novel)
-    if rot_loader is None:
-        pass
-    elif rot_loader == "rotnet":
+        dataset_class, train_kwargs, test_kwargs, norm_targets, include_novel)
+    # change into RotNet dataset
+    if rot_loader is True:
         train_set = RotDataset(train_set)
         valid_set = RotDataset(valid_set)
         test_set = RotDataset(test_set)
-    elif rot_loader == "consistent":
-        train_set = RotConsistentDataset(train_set)
-        valid_set = RotConsistentDataset(valid_set)
-        test_set = RotConsistentDataset(test_set)
-    else:
-        raise Exception("Unexpected rot_loader value: " + str(rot_loader))
     # get DataLoaders for datasets
     dataloaders = (data.DataLoader(train_set, **dataloader_kwargs),
                    data.DataLoader(valid_set, **dataloader_kwargs),

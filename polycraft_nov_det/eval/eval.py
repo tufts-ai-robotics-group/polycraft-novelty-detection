@@ -8,7 +8,7 @@ from polycraft_nov_det.model_utils import load_disc_resnet
 def eval_cifar10_self_supervised():
     # get dataloader
     norm_targets, novel_targets, (_, valid_loader, _) = torch_cifar(
-        batch_size=128, include_novel=True, rot_loader="rotnet")
+        range(5), batch_size=128, include_novel=True, rot_loader="rotnet")
     # get model instance
     model = load_disc_resnet("models/CIFAR10/self_supervised/200.pt", 4, 0)
     model.eval()
@@ -29,7 +29,7 @@ def eval_cifar10_self_supervised():
 def eval_cifar10_clustering():
     # get dataloader
     norm_targets, novel_targets, (_, valid_loader, _) = torch_cifar(
-        batch_size=128, include_novel=True)
+        range(5), batch_size=128, include_novel=True)
     # get model instance
     model = load_disc_resnet("models/CIFAR10/discovery/200.pt",
                              len(norm_targets) + len(novel_targets), len(novel_targets))

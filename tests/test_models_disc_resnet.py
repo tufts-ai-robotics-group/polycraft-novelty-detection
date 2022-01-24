@@ -18,7 +18,7 @@ class TestCIFAR10():
 
     def test_dataloader_cifar(self, model):
         norm_targets, novel_targets, dataloaders = cifar_loader.torch_cifar(
-            batch_size=batch_size, shuffle=False)
+            range(5), batch_size=batch_size, shuffle=False)
         train_loader, valid_loader, test_loader = dataloaders
         for data, targets in train_loader:
             model(data)
@@ -26,7 +26,7 @@ class TestCIFAR10():
 
     def test_dataloader_rot_cifar(self, model):
         norm_targets, novel_targets, dataloaders = cifar_loader.torch_cifar(
-            batch_size=batch_size, shuffle=False, rot_loader="rotnet")
+            range(5), batch_size=batch_size, shuffle=False, rot_loader="rotnet")
         train_loader, valid_loader, test_loader = dataloaders
         for data, targets in train_loader:
             model(data)
@@ -34,9 +34,9 @@ class TestCIFAR10():
 
     def test_dataloader_rot_const_cifar(self, model):
         norm_targets, novel_targets, dataloaders = cifar_loader.torch_cifar(
-            batch_size=batch_size, shuffle=False, rot_loader="consistent")
+            range(5), batch_size=batch_size, shuffle=False, rot_loader="consistent")
         train_loader, valid_loader, test_loader = dataloaders
-        for data, rot_data, targets in train_loader:
+        for (data, rot_data), targets in train_loader:
             model(data)
             model(rot_data)
             break

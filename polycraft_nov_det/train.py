@@ -168,7 +168,7 @@ def run_epoch_autonovel(loader, model, loss_func, device, epoch, optimizer=None,
     else:
         model.eval()
     loss = 0
-    for data, rot_data, targets in loader:
+    for (data, rot_data), targets in loader:
         batch_size = data.shape[0]
         data, rot_data, targets = data.to(device), rot_data.to(device), targets.to(device)
         if is_train:
