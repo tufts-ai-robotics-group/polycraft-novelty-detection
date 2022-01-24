@@ -5,7 +5,28 @@ import polycraft_nov_det.eval.stats as stats
 from polycraft_nov_det.model_utils import load_disc_resnet
 
 
-def eval_cifar10():
+def eval_cifar10_self_supervised():
+    # get dataloader
+    norm_targets, novel_targets, (_, valid_loader, _) = torch_cifar(
+        batch_size=128, include_novel=True, rot_loader="rotnet")
+    # get model instance
+    model = load_disc_resnet("models/CIFAR10/self_supervised/200.pt", 4, 0)
+    model.eval()
+    # get model predictions
+    device = "cpu"
+    y_true = np.zeros((0,))
+    y_pred = np.zeros((0,))
+    for data, targets in valid_loader:
+        data, targets = data.to(device), targets.to(device)
+        label_pred, unlabel_pred, feat = model(data)
+        label_pred_max = np.argmax(label_pred.detach().numpy(), axis=1)
+        # store outputs and targets
+        y_true = np.hstack((y_true, targets.numpy()))
+        y_pred = np.hstack((y_pred, label_pred_max))
+    print(stats.classification_acc(y_pred, y_true))
+
+
+def eval_cifar10_clustering():
     # get dataloader
     norm_targets, novel_targets, (_, valid_loader, _) = torch_cifar(
         batch_size=128, include_novel=True)
