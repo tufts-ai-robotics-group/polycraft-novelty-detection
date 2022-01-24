@@ -1,7 +1,6 @@
 import torch
 
 from polycraft_nov_det.models.autonovel_resnet import AutoNovelResNet
-from polycraft_nov_det.models.disc_resnet import DiscResNet
 
 
 def load_model(path, model, device="cpu"):
@@ -10,14 +9,14 @@ def load_model(path, model, device="cpu"):
     return model
 
 
-def load_disc_resnet(path, num_labeled_classes, num_unlabeled_classes, device="cpu",
-                     reset_head=False, strict=True, to_incremental=False):
-    model = DiscResNet(num_labeled_classes, num_unlabeled_classes)
+def load_autonovel_resnet(path, num_labeled_classes, num_unlabeled_classes, device="cpu",
+                          reset_head=False, strict=True, to_incremental=False):
+    model = AutoNovelResNet(num_labeled_classes, num_unlabeled_classes)
     state_dict = torch.load(path, map_location=device)
     # reset weights for labeled head for self-supervised -> supervised learning
     if reset_head:
-        del state_dict["fc.weight"]
-        del state_dict["fc.bias"]
+        del state_dict["head1.weight"]
+        del state_dict["head1.bias"]
     # remove empty tensors to stop errors when strict=False
     if strict is False:
         keys = [key for key in state_dict]  # copy keys so dict can be modified in place

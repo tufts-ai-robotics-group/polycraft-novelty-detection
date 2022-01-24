@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class ResNet(nn.Module):
+class _ResNet(nn.Module):
     def __init__(self, block, num_blocks, num_labeled_classes=5, num_unlabeled_classes=5):
-        super(ResNet, self).__init__()
+        super().__init__()
         self.in_planes = 64
 
         # smaller kernel, less stride, less padding than normal conv1
@@ -40,6 +40,22 @@ class ResNet(nn.Module):
         out2 = self.head2(out)
         return out1, out2, out
 
+    def init_incremental(self):
+        # copy current labeled head weights
+        save_weight = self.head1.weight.data.clone()
+        save_bias = self.head1.bias.data.clone()
+        # expand labeled head to include unlabeled class outputs
+        self.head1 = nn.Linear(512*BasicBlock.expansion, self.num_classes)
+        # load labeled head weights, initializing unlabeled bias to just below the min
+        self.head1.weight.data[:self.num_labeled_classes] = save_weight
+        self.head1.bias.data[:] = torch.min(save_bias) - 1
+        self.head1.bias.data[:self.num_labeled_classes] = save_bias
+
+    def freeze_layers(self):
+        for name, param in self.named_parameters():
+            if 'head' not in name and 'layer4' not in name:
+                param.requires_grad = False
+
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -73,7 +89,7 @@ class BasicBlock(nn.Module):
         return out
 
 
-class AutoNovelResNet(ResNet):
+class AutoNovelResNet(_ResNet):
     def __init__(self, num_labeled_classes, num_unlabeled_classes):
         super().__init__(BasicBlock, [2, 2, 2, 2], num_labeled_classes, num_unlabeled_classes)
         self.num_labeled_classes = num_labeled_classes
