@@ -3,7 +3,7 @@ from torch.utils import data
 
 import polycraft_nov_data.dataset_transforms as dataset_transforms
 
-from polycraft_nov_det.data.rot_dataset import RotDataset
+import polycraft_nov_det.data.rotnet as rotnet
 
 
 def base_dataset(dataset_class, train_kwargs, test_kwargs, norm_targets, include_novel):
@@ -68,9 +68,10 @@ def base_loader(dataset_class, train_kwargs, test_kwargs, norm_targets, include_
         dataset_class, train_kwargs, test_kwargs, norm_targets, include_novel)
     # change into RotNet dataset
     if rot_loader is True:
-        train_set = RotDataset(train_set)
-        valid_set = RotDataset(valid_set)
-        test_set = RotDataset(test_set)
+        train_set = rotnet.RotDataset(train_set)
+        valid_set = rotnet.RotDataset(valid_set)
+        test_set = rotnet.RotDataset(test_set)
+        dataloader_kwargs["collate_fn"] = rotnet.collate_fn
     # get DataLoaders for datasets
     dataloaders = (data.DataLoader(train_set, **dataloader_kwargs),
                    data.DataLoader(valid_set, **dataloader_kwargs),
