@@ -13,7 +13,7 @@ class RotDataset(data.Dataset):
 
     def __getitem__(self, index):
         img, _ = self.dataset[index]
-        target = torch.Tensor([0, 1, 2, 3])
+        target = torch.LongTensor([0, 1, 2, 3])
         img = torch.stack([
             img,
             rotate(img, 90),
