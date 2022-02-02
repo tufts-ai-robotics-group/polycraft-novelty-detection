@@ -2,17 +2,14 @@ import numpy as np
 
 from polycraft_nov_det.data.cifar_loader import torch_cifar
 import polycraft_nov_det.eval.stats as stats
-from polycraft_nov_det.model_utils import load_disc_resnet
 
 
-def eval_cifar10_self_supervised():
+def cifar10_self_supervised(model):
     # get dataloader
     norm_targets, novel_targets, (_, valid_loader, _) = torch_cifar(
         range(5), batch_size=128, include_novel=True, rot_loader="rotnet")
-    # get model instance
-    model = load_disc_resnet("models/CIFAR10/self_supervised/200.pt", 4, 0)
-    model.eval()
     # get model predictions
+    model.eval()
     device = "cpu"
     y_true = np.zeros((0,))
     y_pred = np.zeros((0,))
@@ -26,15 +23,12 @@ def eval_cifar10_self_supervised():
     print(stats.classification_acc(y_pred, y_true))
 
 
-def eval_cifar10_clustering():
+def cifar10_clustering(model):
     # get dataloader
     norm_targets, novel_targets, (_, valid_loader, _) = torch_cifar(
         range(5), batch_size=128, include_novel=True)
-    # get model instance
-    model = load_disc_resnet("models/CIFAR10/discovery/200.pt",
-                             len(norm_targets) + len(novel_targets), len(novel_targets))
-    model.eval()
     # get model predictions
+    model.eval()
     device = "cpu"
     y_true = np.zeros((0,))
     y_pred = np.zeros((0,))
