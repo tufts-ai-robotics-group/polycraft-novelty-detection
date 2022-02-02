@@ -36,11 +36,12 @@ def load_autonovel_resnet(path, num_labeled_classes, num_unlabeled_classes, devi
 def load_autonovel_pretrained(path, num_labeled_classes, num_unlabeled_classes, device="cpu"):
     model = AutoNovelResNet(num_labeled_classes, num_unlabeled_classes)
     state_dict = torch.load(path, map_location=device)
-    # swap name of first head
-    state_dict["head1.weight"] = state_dict.pop("linear.weight")
-    state_dict["head1.bias"] = state_dict.pop("linear.bias")
-    # add empty params for second head if loading a self-supervised model
+    # if loading a self-supervised model
     if num_unlabeled_classes == 0:
+        # swap name of first head
+        state_dict["head1.weight"] = state_dict.pop("linear.weight")
+        state_dict["head1.bias"] = state_dict.pop("linear.bias")
+        # add empty params for second head
         state_dict["head2.weight"] = model.state_dict()["head2.weight"]
         state_dict["head2.bias"] = model.state_dict()["head2.bias"]
     # load parameters
