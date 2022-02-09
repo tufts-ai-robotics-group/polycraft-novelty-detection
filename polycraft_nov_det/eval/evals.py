@@ -15,7 +15,7 @@ def cifar10_self_supervised(model, device="cpu"):
     for data, targets in test_loader:
         data, targets = data.to(device), targets.to(device)
         label_pred, unlabel_pred, feat = model(data)
-        label_pred_max = np.argmax(label_pred.detach().numpy(), axis=1)
+        label_pred_max = np.argmax(label_pred.detach().cpu().numpy(), axis=1)
         # store outputs and targets
         y_true = np.hstack((y_true, targets.numpy()))
         y_pred = np.hstack((y_pred, label_pred_max))
