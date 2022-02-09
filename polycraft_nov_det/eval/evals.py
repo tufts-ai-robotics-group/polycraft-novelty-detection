@@ -4,13 +4,12 @@ from polycraft_nov_det.data.cifar_loader import torch_cifar
 import polycraft_nov_det.eval.stats as stats
 
 
-def cifar10_self_supervised(model):
+def cifar10_self_supervised(model, device="cpu"):
     # get dataloader
     norm_targets, novel_targets, (_, _, test_loader) = torch_cifar(
         range(5), batch_size=128, include_novel=True, rot_loader="rotnet")
     # get model predictions
     model.eval()
-    device = "cpu"
     y_true = np.zeros((0,))
     y_pred = np.zeros((0,))
     for data, targets in test_loader:
@@ -20,7 +19,9 @@ def cifar10_self_supervised(model):
         # store outputs and targets
         y_true = np.hstack((y_true, targets.numpy()))
         y_pred = np.hstack((y_pred, label_pred_max))
-    print(stats.classification_acc(y_pred, y_true))
+    acc = stats.classification_acc(y_pred, y_true)
+    print(acc)
+    return acc
 
 
 def cifar10_clustering(model):

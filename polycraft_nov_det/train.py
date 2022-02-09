@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
+import polycraft_nov_det.eval.evals as evals
 from polycraft_nov_det.loss import AutoNovelLoss
 
 
@@ -106,9 +107,8 @@ def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1,
             train_loader, model, loss_func, device, optimizer, lr_sched)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
         # get validation loss
-        av_valid_loss = run_epoch(
-            valid_loader, model, loss_func, device)
-        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
+        valid_acc = evals.cifar10_self_supervised(model, device=device)
+        writer.add_scalar("Average Validation Loss", valid_acc, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # save model
