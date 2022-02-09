@@ -6,14 +6,14 @@ import polycraft_nov_det.eval.stats as stats
 
 def cifar10_self_supervised(model):
     # get dataloader
-    norm_targets, novel_targets, (_, valid_loader, _) = torch_cifar(
+    norm_targets, novel_targets, (_, _, test_loader) = torch_cifar(
         range(5), batch_size=128, include_novel=True, rot_loader="rotnet")
     # get model predictions
     model.eval()
     device = "cpu"
     y_true = np.zeros((0,))
     y_pred = np.zeros((0,))
-    for data, targets in valid_loader:
+    for data, targets in test_loader:
         data, targets = data.to(device), targets.to(device)
         label_pred, unlabel_pred, feat = model(data)
         label_pred_max = np.argmax(label_pred.detach().numpy(), axis=1)
@@ -25,14 +25,14 @@ def cifar10_self_supervised(model):
 
 def cifar10_clustering(model):
     # get dataloader
-    norm_targets, novel_targets, (_, valid_loader, _) = torch_cifar(
+    norm_targets, novel_targets, (_, _, test_loader) = torch_cifar(
         range(5), batch_size=128, include_novel=True)
     # get model predictions
     model.eval()
     device = "cpu"
     y_true = np.zeros((0,))
     y_pred = np.zeros((0,))
-    for data, targets in valid_loader:
+    for data, targets in test_loader:
         data, targets = data.to(device), targets.to(device)
         label_pred, unlabel_pred, feat = model(data)
         unlabel_pred_max = np.argmax(unlabel_pred.detach().numpy(), axis=1)

@@ -9,7 +9,7 @@ if mode == "self_supervised":
     # get dataloaders
     batch_size = 128
     _, _, (train_loader, valid_loader, _) = torch_cifar(
-        range(10), batch_size, include_novel=True, rot_loader="rotnet")
+        range(5), batch_size, include_novel=True, rot_loader="rotnet")
     # get model instance
     model = AutoNovelResNet(4, 0)
     # start model training
@@ -29,7 +29,7 @@ elif mode == "autonovel":
     # get dataloaders
     batch_size = 128
     norm_targets, novel_targets, (train_loader, valid_loader, _) = torch_cifar(
-        range(10), batch_size, include_novel=True, rot_loader="consistent")
+        range(5), batch_size, include_novel=True, rot_loader="consistent")
     # get model instance
     model = load_autonovel_resnet(
         "models/CIFAR10/supervised/100.pt", len(norm_targets), len(novel_targets), reset_head=False,

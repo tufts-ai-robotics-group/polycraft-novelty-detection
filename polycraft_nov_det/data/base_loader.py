@@ -27,9 +27,9 @@ def base_dataset(dataset_class, train_kwargs, test_kwargs, norm_targets, include
     # split targets
     targets = [int(target) for target in torch.Tensor(list(train_set.targets)).unique()]
     novel_targets = [target for target in targets if target not in norm_targets]
-    class_splits = {key: [.9, .1] for key in norm_targets}
+    class_splits = {key: [1, 0] for key in norm_targets}
     if include_novel:
-        class_splits.update({key: [.9, .1] for key in novel_targets})
+        class_splits.update({key: [1, 0] for key in novel_targets})
     # reorder targets for cross entropy loss
     target_map = {int(target): i for i, target in enumerate(targets)}
 
