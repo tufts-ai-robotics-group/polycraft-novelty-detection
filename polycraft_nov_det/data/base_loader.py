@@ -74,6 +74,6 @@ def base_loader(dataset_class, train_kwargs, test_kwargs, norm_targets, include_
         dataloader_kwargs["collate_fn"] = rotnet.collate_fn
     # get DataLoaders for datasets
     dataloaders = (data.DataLoader(train_set, **dataloader_kwargs),
-                   data.DataLoader(valid_set, **dataloader_kwargs),
+                   data.DataLoader(valid_set, **dataloader_kwargs) if len(valid_set) > 0 else None,
                    data.DataLoader(test_set, **dataloader_kwargs))
     return norm_targets, novel_targets, dataloaders
