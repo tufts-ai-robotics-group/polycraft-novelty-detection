@@ -7,7 +7,7 @@ mode = "self_supervised"
 
 if mode == "self_supervised":
     # get dataloaders
-    batch_size = 128
+    batch_size = 32
     _, _, (train_loader, _, test_loader) = torch_cifar(
         range(5), batch_size, include_novel=True, rot_loader="rotnet")
     # get model instance
