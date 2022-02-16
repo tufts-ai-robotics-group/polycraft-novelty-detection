@@ -37,27 +37,33 @@ def torch_cifar(norm_targets, batch_size=32, include_novel=False, shuffle=True, 
     # TODO need to revise with closer look at data augmentations at each phase
     dataset_class = CIFAR10 if use_10 else CIFAR100
     with path("polycraft_nov_det", "base_data") as data_path:
-        transform = transforms.Compose([
+        test_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
         if rot_loader == "consistent":
-            transform = TransformTwice(transforms.Compose([
+            train_transform = TransformTwice(transforms.Compose([
                 transforms.RandomAffine(0, (.125, .125)),
                 transforms.RandomHorizontalFlip(),
-                transform,
+                test_transform,
             ]))
+        else:
+            train_transform = transforms.Compose([
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
+                test_transform,
+            ])
         train_kwargs = {
             "root": data_path,
             "train": True,
             "download": True,
-            "transform": transform
+            "transform": train_transform
         }
         test_kwargs = {
             "root": data_path,
             "train": False,
             "download": True,
-            "transform": transform
+            "transform": test_transform
         }
         dataloader_kwargs = {
             "batch_size": batch_size,
