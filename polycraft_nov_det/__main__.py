@@ -6,7 +6,7 @@ import polycraft_nov_det.train as train
 mode = "self_supervised"
 
 if mode == "self_supervised":
-    # get dataloaders
+    # get dataloaders, note that batch is effectively 128 becuase of 4 rotations per image
     batch_size = 32
     _, _, (train_loader, _, test_loader) = torch_cifar(
         range(5), batch_size, include_novel=True, rot_loader="rotnet")
@@ -27,6 +27,7 @@ elif mode == "supervised":
     train.train_supervised(model, model_label, train_loader, test_loader, gpu=1)
 elif mode == "autonovel":
     # get dataloaders
+    # TODO test whether this should be 64 due to transform twice
     batch_size = 128
     norm_targets, novel_targets, (train_loader, _, test_loader) = torch_cifar(
         range(5), batch_size, include_novel=True, rot_loader="consistent")
