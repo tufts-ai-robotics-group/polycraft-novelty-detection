@@ -65,7 +65,7 @@ def torch_cifar(norm_targets, batch_size=32, include_novel=False, shuffle=True, 
             "download": True,
             "transform": test_transform
         }
-        num_workers = 4
+        num_workers = min(4, batch_size)
         dataloader_kwargs = {
             "num_workers": num_workers,
             "prefetch_factor": batch_size//num_workers,

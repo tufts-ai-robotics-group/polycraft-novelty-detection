@@ -1,9 +1,15 @@
+import functools
+
 import torch
 from torch.utils import data
 
 import polycraft_nov_data.dataset_transforms as dataset_transforms
 
 import polycraft_nov_det.data.rotnet as rotnet
+
+
+def reorder_targets(target, target_map):
+    return target_map[target]
 
 
 def base_dataset(dataset_class, train_kwargs, test_kwargs, norm_targets, include_novel):
@@ -32,11 +38,8 @@ def base_dataset(dataset_class, train_kwargs, test_kwargs, norm_targets, include
         class_splits.update({key: [1, 0] for key in novel_targets})
     # reorder targets for cross entropy loss
     target_map = {int(target): i for i, target in enumerate(targets)}
-
-    def reorder_targets(target):
-        return target_map[target]
-    train_set.target_transform = reorder_targets
-    test_set.target_transform = reorder_targets
+    train_set.target_transform = functools.partial(reorder_targets, target_map=target_map)
+    test_set.target_transform = functools.partial(reorder_targets, target_map=target_map)
     # select only included classes and split the train set to get a validation set
     train_set, valid_set = dataset_transforms.filter_split(train_set, class_splits)
     if not include_novel:
