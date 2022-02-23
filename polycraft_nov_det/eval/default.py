@@ -30,7 +30,7 @@ def cifar10_self_supervised():
 
 def cifar10_supervised():
     evals.cifar10_supervised(
-        load_autonovel_resnet("models/CIFAR10/supervised/200.pt", 5, 0))
+        load_autonovel_resnet("models/CIFAR10/supervised/100.pt", 5, 0))
 
 
 def cifar10_clustering():
