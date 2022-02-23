@@ -22,6 +22,7 @@ elif mode == "supervised":
     # get model instance
     model = load_autonovel_resnet("models/CIFAR10/self_supervised/200.pt", len(norm_targets), 0,
                                   reset_head=True, strict=False)
+    model.freeze_layers()
     # start model training
     model_label = train.model_label(model, norm_targets)
     train.train_supervised(model, model_label, train_loader, test_loader, gpu=1)
