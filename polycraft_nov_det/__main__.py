@@ -27,8 +27,8 @@ elif mode == "supervised":
     train.train_supervised(model, model_label, train_loader, test_loader, gpu=1)
 elif mode == "autonovel":
     # get dataloaders
-    # TODO test whether this should be 64 due to transform twice
-    batch_size = 128
+    # TODO test this should be 64 and not 128 due to transform twice
+    batch_size = 64
     norm_targets, novel_targets, (train_loader, _, test_loader) = torch_cifar(
         range(5), batch_size, include_novel=True, rot_loader="consistent")
     # get model instance
