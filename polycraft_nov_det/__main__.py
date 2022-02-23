@@ -18,7 +18,7 @@ if mode == "self_supervised":
 elif mode == "supervised":
     # get dataloaders
     batch_size = 128
-    norm_targets, _, (train_loader, _, test_loader) = torch_cifar(batch_size)
+    norm_targets, _, (train_loader, _, test_loader) = torch_cifar(range(5), batch_size)
     # get model instance
     model = load_autonovel_resnet("models/CIFAR10/self_supervised/200.pt", len(norm_targets), 0,
                                   reset_head=True, strict=False)
