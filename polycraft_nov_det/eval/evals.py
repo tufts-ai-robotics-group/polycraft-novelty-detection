@@ -44,13 +44,12 @@ def cifar10_supervised(model, device="cpu"):
     return acc
 
 
-def cifar10_clustering(model):
+def cifar10_clustering(model, device="cpu"):
     # get dataloader
     norm_targets, novel_targets, (_, _, test_loader) = torch_cifar(
         range(5), batch_size=128, include_novel=True)
     # get model predictions
     model.eval()
-    device = "cpu"
     y_true = np.zeros((0,))
     y_pred = np.zeros((0,))
     for data, targets in test_loader:
