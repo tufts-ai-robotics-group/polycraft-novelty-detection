@@ -55,10 +55,10 @@ def cifar10_clustering(model, device="cpu"):
     for data, targets in test_loader:
         data, targets = data.to(device), targets.to(device)
         label_pred, unlabel_pred, feat = model(data)
-        unlabel_pred_max = np.argmax(unlabel_pred.detach().numpy(), axis=1)
+        unlabel_pred_max = np.argmax(unlabel_pred.detach().cpu().numpy(), axis=1)
         # select only unlabeled data
         norm_mask = targets < len(norm_targets)
-        y_true = np.hstack((y_true, targets.numpy()[~norm_mask] - len(norm_targets)))
+        y_true = np.hstack((y_true, targets.cpu().numpy()[~norm_mask] - len(norm_targets)))
         y_pred = np.hstack((y_pred, unlabel_pred_max[~norm_mask]))
     row_ind, col_ind, weight = stats.assign_clusters(y_pred, y_true)
     acc = stats.cluster_acc(row_ind, col_ind, weight)
