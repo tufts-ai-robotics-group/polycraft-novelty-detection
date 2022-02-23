@@ -71,7 +71,7 @@ def run_epoch(loader, model, loss_func, device, optimizer=None, lr_sched=None):
     return av_loss
 
 
-def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1, epochs=200,
+def train_self_supervised(model, model_label, train_loader, lr=.1, epochs=200,
                           gpu=None):
     """Train a model on self-supervised dataset.
 
@@ -79,7 +79,6 @@ def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1,
         model (torch.nn.Module): Model to train.
         model_label (str): Label for model type, preferably from model_label function.
         train_loader (torch.utils.data.DataLoader): Training set for model.
-        valid_loader (torch.utils.data.DataLoader): Validation set for model.
         lr (float): Learning rate.
         epochs (int, optional): Number of epochs to train for. Defaults to 200.
         gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
@@ -106,9 +105,9 @@ def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1,
         av_train_loss = run_epoch(
             train_loader, model, loss_func, device, optimizer, lr_sched)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
-        # get validation loss
+        # get validation accuracy
         valid_acc = evals.cifar10_self_supervised(model, device=device)
-        writer.add_scalar("Average Validation Loss", valid_acc, epoch)
+        writer.add_scalar("Average Validation Accuracy", valid_acc, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # save model
@@ -116,14 +115,13 @@ def train_self_supervised(model, model_label, train_loader, valid_loader, lr=.1,
     return model
 
 
-def train_supervised(model, model_label, train_loader, valid_loader, lr=.1, epochs=100, gpu=None):
+def train_supervised(model, model_label, train_loader, lr=.1, epochs=100, gpu=None):
     """Train a model on supervised dataset.
 
     Args:
         model (torch.nn.Module): Model to train.
         model_label (str): Label for model type, preferably from model_label function.
         train_loader (torch.utils.data.DataLoader): Training set for model.
-        valid_loader (torch.utils.data.DataLoader): Validation set for model.
         lr (float): Learning rate.
         epochs (int, optional): Number of epochs to train for. Defaults to 100.
         gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
@@ -150,10 +148,9 @@ def train_supervised(model, model_label, train_loader, valid_loader, lr=.1, epoc
         av_train_loss = run_epoch(
             train_loader, model, loss_func, device, optimizer, lr_sched)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
-        # get validation loss
-        av_valid_loss = run_epoch(
-            valid_loader, model, loss_func, device)
-        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
+        # get validation accuracy
+        valid_acc = evals.cifar10_self_supervised(model, device=device)
+        writer.add_scalar("Average Validation Accuracy", valid_acc, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # save model
@@ -224,10 +221,9 @@ def train_autonovel(model, model_label, train_loader, valid_loader, norm_targets
         av_train_loss = run_epoch_autonovel(
             train_loader, model, loss_func, device, epoch, optimizer, lr_sched)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
-        # get validation loss
-        av_valid_loss = run_epoch_autonovel(
-            valid_loader, model, loss_func, device, epoch)
-        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
+        # get validation accuracy
+        valid_acc = evals.cifar10_clustering(model, device=device)
+        writer.add_scalar("Average Validation Accuracy", valid_acc, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # save model
