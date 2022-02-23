@@ -21,7 +21,7 @@ elif mode == "supervised":
     norm_targets, _, (train_loader, _, test_loader) = torch_cifar(batch_size)
     # get model instance
     model = load_autonovel_resnet("models/CIFAR10/self_supervised/200.pt", len(norm_targets), 0,
-                                  range(5), reset_head=True, strict=False)
+                                  reset_head=True, strict=False)
     # start model training
     model_label = train.model_label(model, norm_targets)
     train.train_supervised(model, model_label, train_loader, test_loader, gpu=1)
