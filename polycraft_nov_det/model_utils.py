@@ -1,6 +1,7 @@
 import torch
 
 from polycraft_nov_det.models.autonovel_resnet import AutoNovelResNet
+from polycraft_nov_det.models.dino.hubconf import dino_vitb16
 
 
 def load_model(path, model, device="cpu"):
@@ -46,4 +47,10 @@ def load_autonovel_pretrained(path, num_labeled_classes, num_unlabeled_classes, 
         state_dict["head2.bias"] = model.state_dict()["head2.bias"]
     # load parameters
     model.load_state_dict(state_dict)
+    return model
+
+
+def load_dino_pretrained(device="cpu"):
+    model = dino_vitb16()
+    model.to(device)
     return model
