@@ -186,7 +186,7 @@ def run_epoch_autonovel(loader, model, loss_func, device, epoch, optimizer=None,
     return av_loss
 
 
-def train_autonovel(model, model_label, train_loader, valid_loader, norm_targets, lr=.1, epochs=200,
+def train_autonovel(model, model_label, train_loader, norm_targets, lr=.1, epochs=200,
                     gpu=None):
     """Train a model for novel category discovery.
 
@@ -194,7 +194,6 @@ def train_autonovel(model, model_label, train_loader, valid_loader, norm_targets
         model (torch.nn.Module): Model to train.
         model_label (str): Label for model type, preferably from model_label function.
         train_loader (torch.utils.data.DataLoader): Training set for model.
-        valid_loader (torch.utils.data.DataLoader): Validation set for model.
         lr (float): Learning rate.
         epochs (int, optional): Number of epochs to train for. Defaults to 200.
         gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
