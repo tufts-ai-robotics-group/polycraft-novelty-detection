@@ -72,3 +72,45 @@ class AutoNovelLoss(nn.Module):
         w_consistency = self.gaus_ramp(self.consist_coef, epoch)
         w_il = self.gaus_ramp(self.il_coef, epoch)
         return loss_ce + loss_bce + w_il * loss_il_ce + w_consistency * loss_consistency
+
+
+class GCDLoss(nn.Module):
+    def __init__(self, norm_targets, supervised_weight=.35):
+        super().__init__()
+        self.sup_weight = supervised_weight
+        self.num_norm_targets = len(norm_targets)
+        self.unsup_temp = .1
+        self.sup_temp = .1
+
+    def forward(self, embeds, t_embeds, targets):
+        # select labeled images according to the class reordering of base_dataset
+        norm_mask = targets < self.num_norm_targets
+        unsup_loss = self.unsup_contrast_loss(embeds, t_embeds)
+        sup_loss = self.sup_contrast_loss(embeds[norm_mask], targets[norm_mask])
+        return (1 - self.sup_weight) * unsup_loss + self.sup_weight * sup_loss
+
+    def dot_others(self, embeds):
+        # return dot product with each other embedding, excluding self * self
+        return (embeds @ embeds.T).fill_diagonal_(0)
+
+    def unsup_contrast_loss(self, embeds, t_embeds):
+        # dot product of transformed image over dot product over other images
+        nums = torch.inner(embeds, t_embeds) / self.unsup_temp
+        denom_prods = self.dot_others(embeds) / self.unsup_temp
+        denoms = torch.logsumexp(denom_prods, dim=1)
+        losses = denoms - nums
+        return torch.sum(losses)
+
+    def sup_contrast_loss(self, embeds, targets):
+        unique_targets = torch.unique(targets)
+        loss = 0
+        # denominator calculation is the same regardless of class
+        denom_prods = self.dot_others(embeds) / self.sup_temp
+        denoms = torch.logsumexp(denom_prods, dim=1)
+        for target in unique_targets:
+            # dot product of same class over dot product over all classes
+            target_embeds = embeds[targets == target]
+            target_denoms = denoms[targets == target]
+            nums = torch.sum(self.dot_others(target_embeds) / self.sup_temp, dim=1)
+            loss += torch.sum((target_denoms - nums) / len(nums))
+        return loss
