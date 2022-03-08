@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
 import polycraft_nov_det.eval.evals as evals
-from polycraft_nov_det.loss import AutoNovelLoss
+from polycraft_nov_det.loss import AutoNovelLoss, GCDLoss
 
 
 def model_label(model, include_classes):
@@ -223,6 +223,74 @@ def train_autonovel(model, model_label, train_loader, norm_targets, lr=.1, epoch
         # get validation accuracy
         valid_acc = evals.cifar10_clustering(model, device=device)
         writer.add_scalar("Average Validation Accuracy", valid_acc, epoch)
+        # updates every 10% of training time
+        if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
+            # save model
+            save_model(model, session_path, epoch)
+    return model
+
+
+def run_epoch_gcd(loader, model, loss_func, device, optimizer=None, lr_sched=None):
+    is_train = optimizer is not None and lr_sched is not None
+    if is_train:
+        model.train()
+    else:
+        model.eval()
+    loss = 0
+    for (data, t_data), targets in loader:
+        batch_size = data.shape[0]
+        data, t_data, targets = data.to(device), t_data.to(device), targets.to(device)
+        if is_train:
+            optimizer.zero_grad()
+        # calculate loss and backprop if training
+        embeds, t_embeds = model(data), model(t_data)
+        batch_loss = loss_func(embeds, t_embeds, targets)
+        if is_train:
+            batch_loss.backward()
+            optimizer.step()
+            lr_sched.step()
+        # record loss without averaging
+        loss += batch_loss.item() * batch_size
+    # calculate average loss
+    av_loss = loss / len(loader)
+    return av_loss
+
+
+def train_gcd(model, model_label, train_loader, norm_targets, lr=.1, epochs=200,
+              gpu=None):
+    """Train a model for generalized category discovery.
+
+    Args:
+        model (torch.nn.Module): Model to train.
+        model_label (str): Label for model type, preferably from model_label function.
+        train_loader (torch.utils.data.DataLoader): Training set for model.
+        train_loader (torch.utils.data.DataLoader): Validation set for model.
+        lr (float): Learning rate.
+        epochs (int, optional): Number of epochs to train for. Defaults to 200.
+        gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
+
+    Returns:
+        torch.nn.Module: Trained model.
+    """
+    # get a unique path for this session to prevent overwriting
+    start_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+    session_path = pathlib.Path(model_label) / pathlib.Path(start_time)
+    # get Tensorboard writer
+    writer = SummaryWriter(pathlib.Path("runs") / session_path)
+    # define training constants
+    loss_func = GCDLoss(norm_targets)
+    device = torch.device(gpu if gpu is not None else "cpu")
+    # move model to device
+    model.to(device)
+    # construct optimizer and lr scheduler
+    optimizer = optim.SGD(model.parameters(), lr, momentum=.9, weight_decay=1e-4)
+    lr_sched = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.1)
+    # train model
+    for epoch in range(epochs):
+        # calculate average train loss for epoch
+        av_train_loss = run_epoch_gcd(
+            train_loader, model, loss_func, device, optimizer, lr_sched)
+        writer.add_scalar("Average Train Loss", av_train_loss, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # save model

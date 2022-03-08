@@ -1,9 +1,10 @@
 from polycraft_nov_det.data.cifar_loader import torch_cifar
 from polycraft_nov_det.models.autonovel_resnet import AutoNovelResNet
-from polycraft_nov_det.model_utils import load_autonovel_resnet
+from polycraft_nov_det.model_utils import load_autonovel_resnet, load_dino_pretrained
+from polycraft_nov_det.models.dino_train import DinoWithHead
 import polycraft_nov_det.train as train
 
-mode = "self_supervised"
+mode = "gcd"
 
 if mode == "self_supervised":
     # get dataloaders, note that batch is effectively 128 becuase of 4 rotations per image
@@ -39,3 +40,12 @@ elif mode == "autonovel":
     # start model training
     model_label = train.model_label(model, norm_targets)
     train.train_autonovel(model, model_label, train_loader, norm_targets, gpu=1)
+elif mode == "gcd":
+    batch_size = 64
+    norm_targets, novel_targets, (train_loader, _, _) = torch_cifar(
+        range(5), batch_size, include_novel=True, rot_loader="consistent")
+    # get model instance
+    model = DinoWithHead(load_dino_pretrained())
+    # start model training
+    model_label = train.model_label(model, norm_targets)
+    train.train_gcd(model, model_label, train_loader, norm_targets, gpu=1)
