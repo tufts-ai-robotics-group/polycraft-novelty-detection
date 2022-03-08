@@ -19,5 +19,5 @@ class DinoWithHead(nn.Module):
 
     def forward(self, x):
         out = self.backbone(x)
-        out = self.head(x)
+        out = self.head(out)
         return out
