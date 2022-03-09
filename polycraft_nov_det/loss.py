@@ -91,7 +91,9 @@ class GCDLoss(nn.Module):
 
     def dot_others(self, embeds):
         # return dot product with each other embedding, excluding self * self
-        return (embeds @ embeds.T).fill_diagonal_(0)
+        # output is N x N - 1 due to exclusion
+        n = embeds.shape[0]
+        return (embeds @ embeds.T)[~torch.eye(n, dtype=bool)].reshape((n, n - 1))
 
     def unsup_contrast_loss(self, embeds, t_embeds):
         # dot product of transformed image over dot product over other images
@@ -99,18 +101,20 @@ class GCDLoss(nn.Module):
         denom_prods = self.dot_others(embeds) / self.unsup_temp
         denoms = torch.logsumexp(denom_prods, dim=1)
         losses = denoms - nums
-        return torch.sum(losses)
+        return torch.mean(losses)
 
     def sup_contrast_loss(self, embeds, targets):
         unique_targets = torch.unique(targets)
-        loss = 0
+        losses = torch.Tensor([])
         # denominator calculation is the same regardless of class
         denom_prods = self.dot_others(embeds) / self.sup_temp
         denoms = torch.logsumexp(denom_prods, dim=1)
         for target in unique_targets:
             # dot product of same class over dot product over all classes
-            target_embeds = embeds[targets == target]
-            target_denoms = denoms[targets == target]
+            target_mask = targets == target
+            target_embeds = embeds[target_mask]
+            target_denoms = denoms[target_mask]
             nums = torch.sum(self.dot_others(target_embeds) / self.sup_temp, dim=1)
-            loss += torch.sum((target_denoms - nums) / len(nums))
-        return loss
+            # only dividing nums since otherwise target_denoms needs to be repeated in above sum
+            losses = torch.cat((losses, target_denoms - (nums / len(nums))))
+        return torch.mean(losses)
