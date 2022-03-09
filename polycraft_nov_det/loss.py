@@ -105,7 +105,7 @@ class GCDLoss(nn.Module):
 
     def sup_contrast_loss(self, embeds, targets):
         unique_targets = torch.unique(targets)
-        losses = torch.Tensor([])
+        losses = torch.Tensor([]).to(embeds.device)
         # denominator calculation is the same regardless of class
         denom_prods = self.dot_others(embeds) / self.sup_temp
         denoms = torch.logsumexp(denom_prods, dim=1)
