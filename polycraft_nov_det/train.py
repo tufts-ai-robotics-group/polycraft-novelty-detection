@@ -63,9 +63,11 @@ def run_epoch(loader, model, loss_func, device, optimizer=None, lr_sched=None):
         if is_train:
             batch_loss.backward()
             optimizer.step()
-            lr_sched.step()
         # record loss without averaging
         loss += batch_loss.item() * batch_size
+    # update lr scheduler
+    if is_train:
+        lr_sched.step()
     # calculate average loss
     av_loss = loss / len(loader)
     return av_loss
@@ -178,9 +180,11 @@ def run_epoch_autonovel(loader, model, loss_func, device, epoch, optimizer=None,
         if is_train:
             batch_loss.backward()
             optimizer.step()
-            lr_sched.step()
         # record loss without averaging
         loss += batch_loss.item() * batch_size
+    # update lr scheduler
+    if is_train:
+        lr_sched.step()
     # calculate average loss
     av_loss = loss / len(loader)
     return av_loss
@@ -248,9 +252,11 @@ def run_epoch_gcd(loader, model, loss_func, device, optimizer=None, lr_sched=Non
         if is_train:
             batch_loss.backward()
             optimizer.step()
-            lr_sched.step()
         # record loss without averaging
         loss += batch_loss.item() * batch_size
+    # update lr scheduler
+    if is_train:
+        lr_sched.step()
     # calculate average loss
     av_loss = loss / len(loader)
     return av_loss
