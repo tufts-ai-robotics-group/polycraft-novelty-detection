@@ -97,7 +97,7 @@ class GCDLoss(nn.Module):
 
     def unsup_contrast_loss(self, embeds, t_embeds):
         # dot product of transformed image over dot product over other images
-        nums = torch.inner(embeds, t_embeds) / self.unsup_temp
+        nums = torch.sum(embeds * t_embeds, dim=1) / self.unsup_temp
         denom_prods = self.dot_others(embeds) / self.unsup_temp
         denoms = torch.logsumexp(denom_prods, dim=1)
         losses = denoms - nums
