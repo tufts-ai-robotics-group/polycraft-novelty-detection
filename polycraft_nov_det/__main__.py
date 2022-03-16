@@ -41,7 +41,7 @@ elif mode == "autonovel":
     model_label = train.model_label(model, norm_targets)
     train.train_autonovel(model, model_label, train_loader, norm_targets, gpu=1)
 elif mode == "gcd":
-    batch_size = 64
+    batch_size = 128
     norm_targets, novel_targets, (train_loader, _, _) = torch_cifar(
         range(5), batch_size, include_novel=True, rot_loader="consistent")
     # get model instance
