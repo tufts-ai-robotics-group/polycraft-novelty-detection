@@ -234,13 +234,14 @@ def train_autonovel(model, model_label, train_loader, norm_targets, lr=.1, epoch
     return model
 
 
-def run_epoch_gcd(loader, model, loss_func, device, optimizer=None, lr_sched=None):
+def run_epoch_gcd(loader, model, loss_func, device, epoch, optimizer=None, lr_sched=None):
     is_train = optimizer is not None and lr_sched is not None
     if is_train:
         model.train()
     else:
         model.eval()
     loss = 0
+    batch_num = 0
     for (data, t_data), targets in loader:
         batch_size = data.shape[0]
         data, t_data, targets = data.to(device), t_data.to(device), targets.to(device)
@@ -254,9 +255,10 @@ def run_epoch_gcd(loader, model, loss_func, device, optimizer=None, lr_sched=Non
             optimizer.step()
         # record loss without averaging
         loss += batch_loss.item() * batch_size
-    # update lr scheduler
-    if is_train:
-        lr_sched.step()
+        # update lr scheduler
+        if is_train:
+            lr_sched.step(epoch + (batch_num / len(loader)))
+            batch_num += 1
     # calculate average loss
     av_loss = loss / len(loader)
     return av_loss
@@ -295,7 +297,7 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=.1, epochs=200,
     for epoch in range(epochs):
         # calculate average train loss for epoch
         av_train_loss = run_epoch_gcd(
-            train_loader, model, loss_func, device, optimizer, lr_sched)
+            train_loader, model, loss_func, device, epoch, optimizer, lr_sched)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
