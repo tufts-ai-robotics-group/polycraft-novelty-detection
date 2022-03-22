@@ -1,3 +1,4 @@
+import collections
 from datetime import datetime
 import pathlib
 
@@ -8,6 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import polycraft_nov_det.eval.evals as evals
 from polycraft_nov_det.loss import AutoNovelLoss, GCDLoss
+from polycraft_nov_det.models.dino_train import DinoWithHead
 
 
 def model_label(model, include_classes):
@@ -43,6 +45,30 @@ def save_model(model, session_path, epoch):
     # make directory and save model
     model_dir.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), model_dir / model_fname)
+
+
+def save_model_dino(model: DinoWithHead, session_path, epoch):
+    """Save a fintuned DINO model. Separates head and last block weights.
+
+    Args:
+        model (DinoWithHead): Model to save.
+        session_path (pathlib.Path): Unique path segment for the training session from train.
+        epoch (int): Training epoch to label saved model with.
+    """
+    # construct paths
+    model_dir = pathlib.Path("models") / session_path
+    head_fname = pathlib.Path("head%d.pt" % (epoch + 1,))
+    block_fname = pathlib.Path("block%d.pt" % (epoch + 1,))
+    # extract state_dicts
+    head_dict = model.head.state_dict()
+    block_dict = collections.OrderedDict()
+    for name, param in model.backbone.named_parameters():
+        if "blocks.11" in name or "norm." in name:
+            block_dict[name] = param
+    # make directory and save model
+    model_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(head_dict, model_dir / head_fname)
+    torch.save(block_dict, model_dir / block_fname)
 
 
 def run_epoch(loader, model, loss_func, device, optimizer=None, lr_sched=None):
@@ -302,5 +328,5 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=0.0005, epochs=
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # save model
-            save_model(model, session_path, epoch)
+            save_model_dino(model, session_path, epoch)
     return model

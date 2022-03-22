@@ -54,3 +54,10 @@ def load_dino_pretrained(device="cpu"):
     model = dino_vitb16()
     model.to(device)
     return model
+
+
+def load_dino_block(path, device="cpu"):
+    model = dino_vitb16()
+    model.to(device)
+    model.load_state_dict(torch.load(path, map_location=device), strict=False)
+    return model
