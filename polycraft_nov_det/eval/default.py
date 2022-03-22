@@ -1,5 +1,5 @@
 import polycraft_nov_det.eval.evals as evals
-from polycraft_nov_det.model_utils import load_autonovel_resnet, load_autonovel_pretrained
+from polycraft_nov_det.model_load import load_autonovel_resnet, load_autonovel_pretrained
 
 
 # pretrained models

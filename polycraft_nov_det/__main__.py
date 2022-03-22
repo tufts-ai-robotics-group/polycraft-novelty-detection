@@ -1,6 +1,6 @@
 from polycraft_nov_det.data.cifar_loader import torch_cifar
 from polycraft_nov_det.models.autonovel_resnet import AutoNovelResNet
-from polycraft_nov_det.model_utils import load_autonovel_resnet, load_dino_pretrained
+from polycraft_nov_det.model_load import load_autonovel_resnet, load_dino_pretrained
 from polycraft_nov_det.models.dino_train import DinoWithHead
 import polycraft_nov_det.train as train
 

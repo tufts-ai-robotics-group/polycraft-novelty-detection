@@ -3,7 +3,7 @@ import torch
 
 import polycraft_nov_det.data.cifar_loader as cifar_loader
 from polycraft_nov_det.models.dino_train import DinoWithHead
-from polycraft_nov_det.model_utils import load_dino_pretrained
+from polycraft_nov_det.model_load import load_dino_pretrained
 
 
 batch_size = 64
