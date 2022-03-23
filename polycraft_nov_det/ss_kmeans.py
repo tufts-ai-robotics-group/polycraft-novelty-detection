@@ -36,9 +36,6 @@ def ss_kmeans_plusplus(
     -------
     centers : ndarray of shape (n_clusters, n_features)
         The initial centers for k-means.
-    indices : ndarray of shape (n_clusters,)
-        The index location of the chosen centers in the data array X. For a
-        given index and center, X[index] = center.
     """
     # Check data
     check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
@@ -70,11 +67,11 @@ def ss_kmeans_plusplus(
     random_state = check_random_state(random_state)
 
     # Call private semi-supervised k-means++
-    centers, indices = _ss_kmeans_plusplus(
+    centers = _ss_kmeans_plusplus(
         X, y, X_unlabeled, n_clusters_unlabled, x_squared_norms, random_state, n_local_trials
     )
 
-    return centers, indices
+    return centers
 
 
 def _ss_kmeans_plusplus(
