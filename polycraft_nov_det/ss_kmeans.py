@@ -38,7 +38,8 @@ def ss_kmeans_plusplus(
         The initial centers for k-means.
     """
     # Check data
-    check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+    X = check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+    X_unlabeled = check_array(X_unlabeled, accept_sparse="csr", dtype=[np.float64, np.float32])
 
     n_unlabeled = X_unlabeled.shape[0]
     if n_unlabeled < n_clusters_unlabled:
