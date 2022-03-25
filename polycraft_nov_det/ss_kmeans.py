@@ -123,9 +123,10 @@ def _ss_kmeans_plusplus(
         centers_labeled[i] = np.mean(X[y == target], axis=0)
 
     # Initialize list of closest distances and calculate current potential
-    closest_dist_sq = euclidean_distances(
+    closest_dist_sqs = euclidean_distances(
         centers_labeled, X_unlabeled, Y_norm_squared=x_squared_norms, squared=True
     )
+    closest_dist_sq = np.min(closest_dist_sqs, axis=0)
     current_pot = closest_dist_sq.sum()
 
     # Pick the remaining n_clusters_unlabled points
