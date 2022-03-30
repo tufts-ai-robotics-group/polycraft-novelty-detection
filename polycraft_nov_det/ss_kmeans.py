@@ -20,8 +20,15 @@ class SSKMeans(KMeans):
                  random_state=None, copy_x=True):
         super().__init__(n_clusters, n_init=n_init, max_iter=max_iter, tol=tol,
                          verbose=verbose, random_state=random_state, copy_x=copy_x)
-        self.X_labeled = X_labeled
-        self.y = y
+        self.X_labeled = self._validate_data(
+            X_labeled,
+            accept_sparse="csr",
+            dtype=[np.float64, np.float32],
+            order="C",
+            copy=self.copy_x,
+            accept_large_sparse=False,
+        )
+        self.y = np.array(y)
 
     def fit(self, X_unlabeled, y=None, sample_weight=None):
         """Compute k-means clustering.
@@ -82,8 +89,10 @@ class SSKMeans(KMeans):
 
         for i in range(self._n_init):
             # Initialize centers
-            centers_init = ss_kmeans_plusplus(self.X_labeled, self.y, X_unlabeled, self.n_clusters,
-                                              x_squared_norms, random_state)
+            centers_init = ss_kmeans_plusplus(
+                self.X_labeled, self.y, X_unlabeled, self.n_clusters - len(np.unique(self.y)),
+                x_squared_norms=x_squared_norms, random_state=random_state
+            )
             if self.verbose:
                 print("Initialization complete")
 
@@ -238,7 +247,7 @@ class SSKMeans(KMeans):
                 for j in range(len(targets)):
                     weight_in_clusters[j] += weight_in_clusters_labeled[j]
                     centers_new[j] += centers_labeled[j]
-                centers_new = centers_new / weight_in_clusters
+                centers_new = centers_new / weight_in_clusters[:, np.newaxis]
 
                 if verbose:
                     inertia = _inertia(X_unlabeled, sample_weight, centers, labels, n_threads)
