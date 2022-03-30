@@ -71,6 +71,17 @@ class ReconstructionDet():
         """
         return ~self.lin_reg.lt_value(pool_func(self._mean_r_error(data)), quantile)[:, 0]
 
+    def novel_score_pooled(self, data, quantile=.99, pool_func=np.max):
+        """Evaluate novelty based on reconstruction error pooled per batch
+        Args:
+            data (torch.tensor): Data to use as input to autoencoder and then pool
+            quantile (np.ndarray): (N) elements in [0, 1], determines quantile for each output row
+            pool_func (func): Function applied to mean reconstruction errors
+        Returns:
+            np.ndarray: (N) Array of scores
+        """
+        return ~self.lin_reg.value(pool_func(self._mean_r_error(data)), quantile)[:, 0]
+
     def _mean_r_error(self, data):
         # per image mean reconstruction error
         data = data.to(self.device)
