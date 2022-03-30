@@ -3,11 +3,13 @@ import warnings
 import numpy as np
 import scipy.sparse as sp
 from sklearn.cluster import KMeans
-from sklearn.cluster._k_means_common import _is_same_clustering
+from sklearn.cluster._k_means_common import _inertia_dense, _inertia_sparse, _is_same_clustering
+from sklearn.cluster._k_means_lloyd import lloyd_iter_chunked_dense, lloyd_iter_chunked_sparse
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_array, check_random_state
 from sklearn.utils.extmath import stable_cumsum, row_norms
+from sklearn.utils.fixes import threadpool_limits
 from sklearn.utils.validation import _check_sample_weight
 from sklearn.utils._openmp_helpers import _openmp_effective_n_threads
 
@@ -74,11 +76,7 @@ class SSKMeans(KMeans):
         # precompute squared norms of data points
         x_squared_norms = row_norms(X_unlabeled, squared=True)
 
-        if self._algorithm == "full":
-            kmeans_single = _kmeans_single_lloyd
-            self._check_mkl_vcomp(X_unlabeled, X_unlabeled.shape[0])
-        else:
-            kmeans_single = _kmeans_single_elkan
+        self._check_mkl_vcomp(X_unlabeled, X_unlabeled.shape[0])
 
         best_inertia, best_labels = None, None
 
@@ -90,8 +88,7 @@ class SSKMeans(KMeans):
                 print("Initialization complete")
 
             # run a k-means once
-            # TODO SS KMeans single
-            labels, inertia, centers, n_iter_ = kmeans_single(
+            labels, inertia, centers, n_iter_ = self._ss_kmeans_single_lloyd(
                 X_unlabeled,
                 sample_weight,
                 centers_init,
@@ -136,6 +133,156 @@ class SSKMeans(KMeans):
         self.inertia_ = best_inertia
         self.n_iter_ = best_n_iter
         return self
+
+    def _ss_kmeans_single_lloyd(
+        self,
+        X_unlabeled,
+        sample_weight,
+        centers_init,
+        max_iter=300,
+        verbose=False,
+        x_squared_norms=None,
+        tol=1e-4,
+        n_threads=1,
+    ):
+        """A single run of semi-supervised k-means lloyd, assumes preparation completed prior.
+        Parameters
+        ----------
+        X_unlabeled : {ndarray, sparse matrix} of shape (n_samples, n_features)
+                      The observations to cluster. If sparse matrix, must be in CSR format.
+        sample_weight : ndarray of shape (n_samples,)
+            The weights for each observation in X.
+        centers_init : ndarray of shape (n_clusters, n_features)
+            The initial centers.
+        max_iter : int, default=300
+            Maximum number of iterations of the k-means algorithm to run.
+        verbose : bool, default=False
+            Verbosity mode
+        x_squared_norms : ndarray of shape (n_samples,), default=None
+            Precomputed x_squared_norms.
+        tol : float, default=1e-4
+            Relative tolerance with regards to Frobenius norm of the difference
+            in the cluster centers of two consecutive iterations to declare
+            convergence.
+            It's not advised to set `tol=0` since convergence might never be
+            declared due to rounding errors. Use a very small number instead.
+        n_threads : int, default=1
+            The number of OpenMP threads to use for the computation. Parallelism is
+            sample-wise on the main cython loop which assigns each sample to its
+            closest center.
+        Returns
+        -------
+        centroid : ndarray of shape (n_clusters, n_features)
+            Centroids found at the last iteration of k-means.
+        label : ndarray of shape (n_samples,)
+            label[i] is the code or index of the centroid the
+            i'th observation is closest to.
+        inertia : float
+            The final value of the inertia criterion (sum of squared distances to
+            the closest centroid for all observations in the training set).
+        n_iter : int
+            Number of iterations run.
+        """
+        n_clusters = centers_init.shape[0]
+
+        # Buffers to avoid new allocations at each iteration.
+        centers = centers_init
+        centers_new = np.zeros_like(centers)
+        labels = np.full(X_unlabeled.shape[0], -1, dtype=np.int32)
+        labels_old = labels.copy()
+        weight_in_clusters = np.zeros(n_clusters, dtype=X_unlabeled.dtype)
+        center_shift = np.zeros(n_clusters, dtype=X_unlabeled.dtype)
+
+        if sp.issparse(X_unlabeled):
+            lloyd_iter = lloyd_iter_chunked_sparse
+            _inertia = _inertia_sparse
+        else:
+            lloyd_iter = lloyd_iter_chunked_dense
+            _inertia = _inertia_dense
+
+        strict_convergence = False
+
+        # calculate supervised data contribution to centers
+        targets = np.unique(self.y)
+        centers_labeled = np.zeros((len(targets), self.X_labeled.shape[1]),
+                                   dtype=self.X_labeled.dtype)
+        weight_in_clusters_labeled = np.zeros((len(targets),), dtype=self.X_labeled.dtype)
+        for i, target in enumerate(targets):
+            centers_labeled[i] = np.sum(self.X_labeled[self.y == target], axis=0)
+            weight_in_clusters_labeled[i] = np.sum(self.y == target)
+
+        # Threadpoolctl context to limit the number of threads in second level of
+        # nested parallelism (i.e. BLAS) to avoid oversubsciption.
+        with threadpool_limits(limits=1, user_api="blas"):
+            for i in range(max_iter):
+                lloyd_iter(
+                    X_unlabeled,
+                    sample_weight,
+                    x_squared_norms,
+                    centers,
+                    centers_new,
+                    weight_in_clusters,
+                    labels,
+                    center_shift,
+                    n_threads,
+                    False  # do not update centers, done manually
+                )
+
+                # update centers manually from unsupervised data
+                weight_in_clusters.fill(0)
+                centers_new.fill(0)
+                for j, label in enumerate(labels):
+                    weight_in_clusters[label] += sample_weight[j]
+                    centers_new[label] += X_unlabeled[j] * sample_weight[j]
+                # add supervised data to clusters
+                for j in range(len(targets)):
+                    weight_in_clusters[j] += weight_in_clusters_labeled[j]
+                    centers_new[j] += centers_labeled[j]
+                centers_new = centers_new / weight_in_clusters
+
+                if verbose:
+                    inertia = _inertia(X_unlabeled, sample_weight, centers, labels, n_threads)
+                    print(f"Iteration {i}, inertia {inertia}.")
+
+                centers, centers_new = centers_new, centers
+
+                if np.array_equal(labels, labels_old):
+                    # First check the labels for strict convergence.
+                    if verbose:
+                        print(f"Converged at iteration {i}: strict convergence.")
+                    strict_convergence = True
+                    break
+                else:
+                    # No strict convergence, check for tol based convergence.
+                    center_shift_tot = (center_shift ** 2).sum()
+                    if center_shift_tot <= tol:
+                        if verbose:
+                            print(
+                                f"Converged at iteration {i}: center shift "
+                                f"{center_shift_tot} within tolerance {tol}."
+                            )
+                        break
+
+                labels_old[:] = labels
+
+            if not strict_convergence:
+                # rerun E-step so that predicted labels match cluster centers
+                lloyd_iter(
+                    X_unlabeled,
+                    sample_weight,
+                    x_squared_norms,
+                    centers,
+                    centers,
+                    weight_in_clusters,
+                    labels,
+                    center_shift,
+                    n_threads,
+                    update_centers=False,
+                )
+
+        inertia = _inertia(X_unlabeled, sample_weight, centers, labels, n_threads)
+
+        return labels, inertia, centers, i + 1
 
 
 def ss_kmeans_plusplus(
