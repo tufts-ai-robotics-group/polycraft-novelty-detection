@@ -18,15 +18,21 @@ class LinearRegularization():
         self.max = extrema[1]
         self.slope = self.max - self.min
 
-    def value(self, x):
-        out = np.array(x * self.slope + self.min)
+    def value(self, q):
+        out = np.array(q * self.slope + self.min)
         if len(out.shape) == 0:
             out = out[np.newaxis]
         return out
 
-    def lt_value(self, data, x):
-        y = self.value(x)
-        return data[np.newaxis] < y[:, np.newaxis]
+    def lt_value(self, data, q):
+        thresh_val = self.value(q)
+        return data[np.newaxis] < thresh_val[:, np.newaxis]
+
+    def quantile(self, data):
+        out = (np.clip(data, self.min, self.max) - self.min) / self.slope
+        if len(out.shape) == 0:
+            out = out[np.newaxis]
+        return out
 
     def save(self, file):
         np.save(file, self.extrema)
@@ -80,7 +86,7 @@ class ReconstructionDet():
         Returns:
             np.ndarray: (N) Array of scores
         """
-        return ~self.lin_reg.value(pool_func(self._mean_r_error(data)), quantile)[:, 0]
+        return self.lin_reg.quantile(pool_func(self._mean_r_error(data)))
 
     def _mean_r_error(self, data):
         # per image mean reconstruction error
