@@ -44,7 +44,7 @@ def cifar10_supervised(model, device="cpu"):
     return acc
 
 
-def cifar10_clustering(model, device="cpu"):
+def cifar10_autonovel(model, device="cpu"):
     # get dataloader
     norm_targets, novel_targets, (_, _, test_loader) = torch_cifar(
         range(5), batch_size=128, include_novel=True)

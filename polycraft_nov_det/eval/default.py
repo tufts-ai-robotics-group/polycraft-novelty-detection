@@ -15,8 +15,8 @@ def cifar10_supervised_pretrained():
         load_autonovel_pretrained("models/AutoNovel/supervised/resnet_rotnet_cifar10.pth", 5, 0))
 
 
-def cifar10_clustering_pretrained():
-    evals.cifar10_clustering(
+def cifar10_autonovel_pretrained():
+    evals.cifar10_autonovel(
         load_autonovel_pretrained("models/AutoNovel/discovery/resnet_IL_cifar10.pth", 10, 5))
 
 
@@ -33,6 +33,6 @@ def cifar10_supervised():
         load_autonovel_resnet("models/CIFAR10/supervised/100.pt", 5, 0))
 
 
-def cifar10_clustering():
-    evals.cifar10_clustering(
+def cifar10_autonovel():
+    evals.cifar10_autonovel(
         load_autonovel_resnet("models/CIFAR10/discovery/200.pt", 10, 5))
