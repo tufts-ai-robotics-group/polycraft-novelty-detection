@@ -283,7 +283,7 @@ def run_epoch_gcd(loader, model, loss_func, device, epoch, optimizer=None, lr_sc
         loss += batch_loss.item() * batch_size
         # update lr scheduler
         if is_train:
-            lr_sched.step(epoch + (batch_num / len(loader)))
+            lr_sched.step()
             batch_num += 1
     # calculate average loss
     av_loss = loss / len(loader)
@@ -316,9 +316,9 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=0.0005, epochs=
     device = torch.device(gpu if gpu is not None else "cpu")
     # move model to device
     model.to(device)
-    # construct optimizer and lr scheduler
+    # construct optimizer and lr scheduler (with per batch steps)
     optimizer = optim.AdamW(model.parameters(), lr=lr)
-    lr_sched = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, 1e-6)
+    lr_sched = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs * len(train_loader), 1e-6)
     # train model
     for epoch in range(epochs):
         # calculate average train loss for epoch
