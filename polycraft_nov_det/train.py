@@ -326,7 +326,7 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=0.0005, epochs=
             train_loader, model, loss_func, device, epoch, optimizer, lr_sched)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
         # get validation accuracy
-        valid_acc = evals.cifar10_gcd(model, device=device)
+        valid_acc = evals.cifar10_gcd(model.backbone, device=device)
         writer.add_scalar("Average Validation Accuracy", valid_acc, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
