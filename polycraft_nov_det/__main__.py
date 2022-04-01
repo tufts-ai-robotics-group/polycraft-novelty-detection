@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(description="Polycraft Novelty Detection Model 
 # add args
 parser.add_argument("-model", choices=["self_supervised", "supervised", "autonovel", "gcd"],
                     default="gcd", help="Model to train")
+parser.add_argument("-name", default=None, help="Name for model run")
 parser.add_argument("-gpu", type=int, default=1,
                     help="Index of GPU to train on, negative int for CPU")
 args = parser.parse_args()
@@ -26,7 +27,7 @@ if args.model == "self_supervised":
     # get model instance
     model = AutoNovelResNet(4, 0)
     # start model training
-    model_label = train.model_label(model, range(4))
+    model_label = args.name if args.name is not None else train.model_label(model, range(4))
     train.train_self_supervised(model, model_label, train_loader, gpu=args.gpu)
 elif args.model == "supervised":
     # get dataloaders
@@ -37,7 +38,7 @@ elif args.model == "supervised":
                                   reset_head=True, strict=False)
     model.freeze_layers()
     # start model training
-    model_label = train.model_label(model, norm_targets)
+    model_label = args.name if args.name is not None else train.model_label(model, norm_targets)
     train.train_supervised(model, model_label, train_loader, gpu=args.gpu)
 elif args.model == "autonovel":
     # get dataloaders
@@ -50,7 +51,7 @@ elif args.model == "autonovel":
         "models/CIFAR10/supervised/100.pt", len(norm_targets), len(novel_targets), reset_head=False,
         strict=False, to_incremental=True)
     # start model training
-    model_label = train.model_label(model, norm_targets)
+    model_label = args.name if args.name is not None else train.model_label(model, norm_targets)
     train.train_autonovel(model, model_label, train_loader, norm_targets, gpu=args.gpu)
 elif args.model == "gcd":
     batch_size = 128
@@ -59,5 +60,5 @@ elif args.model == "gcd":
     # get model instance
     model = DinoWithHead(load_dino_pretrained())
     # start model training
-    model_label = train.model_label(model, norm_targets)
+    model_label = args.name if args.name is not None else train.model_label(model, norm_targets)
     train.train_gcd(model, model_label, train_loader, norm_targets, gpu=args.gpu)
