@@ -99,6 +99,8 @@ class GCDLoss(nn.Module):
         # dot product of transformed image over dot product over other images
         nums = torch.sum(embeds * t_embeds, dim=1) / self.unsup_temp
         denom_prods = self.dot_others(embeds) / self.unsup_temp
+        # TODO test this use of normalization via nums in the denom
+        denom_prods = torch.cat((denom_prods, nums.unsqueeze(dim=1)), dim=1)
         denoms = torch.logsumexp(denom_prods, dim=1)
         losses = denoms - nums
         return torch.mean(losses)
