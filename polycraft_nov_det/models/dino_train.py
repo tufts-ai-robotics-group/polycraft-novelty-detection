@@ -1,3 +1,4 @@
+import torch.linalg
 import torch.nn as nn
 
 from polycraft_nov_det.models.dino.vision_transformer import DINOHead, VisionTransformer
@@ -20,4 +21,5 @@ class DinoWithHead(nn.Module):
     def forward(self, x):
         out = self.backbone(x)
         out = self.head(out)
-        return out
+        # TODO test L2 normalized vectors
+        return out / torch.linalg.norm(out, dim=1, keepdim=True)
