@@ -29,6 +29,8 @@ class SSKMeans(KMeans):
             accept_large_sparse=False,
         )
         self.y = np.array(y)
+        self.n_clusters_unlabeled = self.n_clusters - len(np.unique(self.y))
+        self.sample_weight_labeled = np.ones_like(self.X_labeled[:, 0])
 
     def fit(self, X_unlabeled, y=None, sample_weight=None):
         """Compute k-means clustering.
@@ -73,9 +75,10 @@ class SSKMeans(KMeans):
 
         # subtract of mean of x for more accurate distance computations
         if not sp.issparse(X_unlabeled):
-            X_mean = X_unlabeled.mean(axis=0)
+            X_mean = np.vstack([self.X_labeled, X_unlabeled]).mean(axis=0)
             # The copy was already done above
             X_unlabeled -= X_mean
+            self.X_labeled -= X_mean
 
             if hasattr(init, "__array__"):
                 init -= X_mean
@@ -90,7 +93,7 @@ class SSKMeans(KMeans):
         for i in range(self._n_init):
             # Initialize centers
             centers_init = ss_kmeans_plusplus(
-                self.X_labeled, self.y, X_unlabeled, self.n_clusters - len(np.unique(self.y)),
+                self.X_labeled, self.y, X_unlabeled, self.n_clusters_unlabeled,
                 x_squared_norms=x_squared_norms, random_state=random_state
             )
             if self.verbose:
@@ -125,14 +128,15 @@ class SSKMeans(KMeans):
         if not sp.issparse(X_unlabeled):
             if not self.copy_x:
                 X_unlabeled += X_mean
+                self.X_labeled += X_mean
             best_centers += X_mean
 
         distinct_clusters = len(set(best_labels))
-        if distinct_clusters < self.n_clusters:
+        if distinct_clusters < self.n_clusters_unlabeled:
             warnings.warn(
                 "Number of distinct clusters ({}) found smaller than "
                 "n_clusters ({}). Possibly due to duplicate points "
-                "in X.".format(distinct_clusters, self.n_clusters),
+                "in X.".format(distinct_clusters, self.n_clusters_unlabeled),
                 ConvergenceWarning,
                 stacklevel=2,
             )
@@ -240,9 +244,11 @@ class SSKMeans(KMeans):
                 # update centers manually from unsupervised data
                 weight_in_clusters.fill(0)
                 centers_new.fill(0)
-                for j, label in enumerate(labels):
-                    weight_in_clusters[label] += sample_weight[j]
-                    centers_new[label] += X_unlabeled[j] * sample_weight[j]
+                for label in np.unique(labels):
+                    label_mask = labels == label
+                    weight_in_clusters[label] += np.sum(sample_weight[label_mask], axis=0)
+                    centers_new[label] += np.sum(
+                        X_unlabeled[label_mask] * sample_weight[label_mask, np.newaxis], axis=0)
                 # add supervised data to clusters
                 for j in range(len(targets)):
                     weight_in_clusters[j] += weight_in_clusters_labeled[j]
@@ -250,7 +256,10 @@ class SSKMeans(KMeans):
                 centers_new = centers_new / weight_in_clusters[:, np.newaxis]
 
                 if verbose:
-                    inertia = _inertia(X_unlabeled, sample_weight, centers, labels, n_threads)
+                    inertia = _inertia(
+                        np.vstack((self.X_labeled, X_unlabeled)),
+                        np.hstack((self.sample_weight_labeled, sample_weight)),
+                        centers, np.hstack((self.y, labels)), n_threads)
                     print(f"Iteration {i}, inertia {inertia}.")
 
                 centers, centers_new = centers_new, centers
@@ -289,7 +298,10 @@ class SSKMeans(KMeans):
                     update_centers=False,
                 )
 
-        inertia = _inertia(X_unlabeled, sample_weight, centers, labels, n_threads)
+        inertia = _inertia(
+            np.vstack((self.X_labeled, X_unlabeled)),
+            np.hstack((self.sample_weight_labeled, sample_weight)),
+            centers, np.hstack((self.y, labels)), n_threads)
 
         return labels, inertia, centers, i + 1
 
