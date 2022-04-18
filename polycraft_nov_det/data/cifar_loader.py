@@ -4,7 +4,7 @@ from torchvision.datasets import CIFAR10, CIFAR100
 from torchvision import transforms
 
 from polycraft_nov_det.data.base_loader import base_loader
-from polycraft_nov_det.data.loader_trans import TransformTwice
+from polycraft_nov_det.data.loader_trans import GaussianBlur, TransformTwice
 
 
 # data shape constant
@@ -34,22 +34,45 @@ def torch_cifar(norm_targets, batch_size=32, include_novel=False, shuffle=True, 
                (train_loader, valid_loader, test_loader)
                containing batches of (3, 32, 32) images, with values 0-1.
     """
-    # TODO need to revise with closer look at data augmentations at each phase
     dataset_class = CIFAR10 if use_10 else CIFAR100
     with path("polycraft_nov_det", "base_data") as data_path:
         test_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
+        interp = transforms.InterpolationMode.BICUBIC
         if rot_loader == "consistent":
+            # based on DINO global transforms
+            # https://github.com/facebookresearch/dino/blob/main/main_dino.py
+            flip_and_color_jitter = transforms.Compose([
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomApply(
+                    [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1)],
+                    p=0.8
+                ),
+                transforms.RandomGrayscale(p=0.2),
+            ])
+            # guaranteed blur transform
+            blur_transform = transforms.Compose([
+                transforms.RandomResizedCrop(CIFAR_SHAPE[1], scale=(.4, 1), interpolation=interp),
+                flip_and_color_jitter,
+                GaussianBlur(1.0),
+            ])
+            # chance of blur and/or solarize transform
+            blur_solarize_transform = transforms.Compose([
+                transforms.RandomResizedCrop(CIFAR_SHAPE[1], scale=(.4, 1), interpolation=interp),
+                flip_and_color_jitter,
+                GaussianBlur(0.1),
+                transforms.RandomSolarize(128, p=.2),
+            ])
+            # randomly apply one of two above
             train_transform = TransformTwice(transforms.Compose([
-                transforms.RandomAffine(0, (.125, .125)),
-                transforms.RandomHorizontalFlip(),
+                transforms.RandomChoice([blur_transform, blur_solarize_transform]),
                 test_transform,
             ]))
         else:
             train_transform = transforms.Compose([
-                transforms.RandomCrop(32, padding=4),
+                transforms.RandomResizedCrop(CIFAR_SHAPE[1], scale=(.4, 1), interpolation=interp),
                 transforms.RandomHorizontalFlip(),
                 test_transform,
             ])
