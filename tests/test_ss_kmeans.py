@@ -1,6 +1,8 @@
 import numpy as np
 
+import polycraft_nov_det.eval.evals as evals
 import polycraft_nov_det.eval.stats as stats
+from polycraft_nov_det.model_load import load_dino_pretrained
 from polycraft_nov_det.ss_kmeans import SSKMeans, ss_kmeans_plusplus
 
 
@@ -39,3 +41,7 @@ def test_ss_kmeans():
     row_ind, col_ind, weight = stats.assign_clusters(y_pred, y_true)
     acc = stats.cluster_acc(row_ind, col_ind, weight)
     assert acc == 1
+
+
+def test_ss_kmeans_gcd():
+    evals.cifar10_gcd(load_dino_pretrained())

@@ -28,7 +28,7 @@ class SSKMeans(KMeans):
             copy=self.copy_x,
             accept_large_sparse=False,
         )
-        self.y = np.array(y)
+        self.y = np.array(y).astype(int)
         self.n_clusters_unlabeled = self.n_clusters - len(np.unique(self.y))
         self.sample_weight_labeled = np.ones_like(self.X_labeled[:, 0])
 
