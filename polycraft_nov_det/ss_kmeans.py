@@ -301,7 +301,7 @@ class SSKMeans(KMeans):
         inertia = _inertia(
             np.vstack((self.X_labeled, X_unlabeled)),
             np.hstack((self.sample_weight_labeled, sample_weight)),
-            centers, np.hstack((self.y, labels)), n_threads)
+            centers, np.hstack((self.y, labels)).astype(np.int32), n_threads)
 
         return labels, inertia, centers, i + 1
 
