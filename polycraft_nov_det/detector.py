@@ -8,6 +8,7 @@ from polycraft_nov_data import data_const as polycraft_const
 class LinearRegularization():
     """Linear regularization for thresholding reconstruction error
     """
+
     def __init__(self, extrema):
         """Linear regularization for thresholding reconstruction error
         Args:
@@ -45,6 +46,7 @@ def load_lin_reg(file):
 class ReconstructionDet():
     """Reconstruction error novelty detector
     """
+
     def __init__(self, model, lin_reg, device="cpu"):
         """Reconstruction error novelty detector
         Args:
@@ -95,38 +97,38 @@ class ReconstructionDet():
         r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
                              (*range(1, data.dim()),))
         return r_error.detach().cpu().numpy()
-    
+
     def localization(self, data, scale):
-        """Evaluate where something (potentially) novel appeared based on where the 
-           maximum reconstruction error (per patch) appears. Returns 0 if the error 
+        """Evaluate where something (potentially) novel appeared based on where the
+           maximum reconstruction error (per patch) appears. Returns 0 if the error
            is highest in the leftmost column/third of the image, 1 if the error is highest in
            the central column/third of the image, 2 if it the error is highest in the
-           rightmost column/third. 
+           rightmost column/third.
 
         Args:
             data (torch.tensor): Data to use as input to autoencoder and then pool
-            
+
         Returns:
-            column (int): 0 --> leftmost column, 1 --> central column, 
+            column (int): 0 --> leftmost column, 1 --> central column,
             2 --> rightmost column
         """
-        r_error_per_patch = self._mean_r_error(data)  
+        r_error_per_patch = self._mean_r_error(data)
         # amount of patches per image width
         pw = polycraft_const.IMAGE_SHAPE[1]*scale/(polycraft_const.PATCH_SHAPE[1]//2) - 1
         # amount of patches per image height and width
-        twoD_patches_shape = [int(data.shape[0]//pw), int(pw)] 
-        # reshape flattened patch error array to 2d 
-        r_error_per_patch = r_error_per_patch.reshape(twoD_patches_shape)
-        first_col_idx = int(np.round(twoD_patches_shape[1]/3))
-        second_col_idx = int(np.round(twoD_patches_shape[1] - first_col_idx))
+        two_d_patches_shape = [int(data.shape[0]//pw), int(pw)]
+        # reshape flattened patch error array to 2d
+        r_error_per_patch = r_error_per_patch.reshape(two_d_patches_shape)
+        first_col_idx = int(np.round(two_d_patches_shape[1]/3))
+        second_col_idx = int(np.round(two_d_patches_shape[1] - first_col_idx))
         # Average the per patch rec. errors over each corresponding column
         r_error_per_column = np.zeros(3)
         r_error_per_column[0] = np.mean(r_error_per_patch[:, 0:first_col_idx])
         r_error_per_column[1] = np.mean(r_error_per_patch[:, first_col_idx:second_col_idx])
-        r_error_per_column[2] = np.mean(r_error_per_patch[:, second_col_idx:twoD_patches_shape[1]])
+        r_error_per_column[2] = np.mean(r_error_per_patch[:, second_col_idx:two_d_patches_shape[1]])
         # column where maximum rec. error appears
         column = np.argmax(r_error_per_column)
-        return column # 0 --> 1st column, 1 --> 2nd column, 2 --> 3rd column
+        return column  # 0 --> 1st column, 1 --> 2nd column, 2 --> 3rd column
 
 
 def reconstruction_lin_reg(model, train_loader, device="cpu"):
