@@ -156,3 +156,14 @@ def reconstruction_lin_reg(model, train_loader, device="cpu"):
             train_max = torch.max(r_error).item()
     # construct EmpiricalCDF from reconstruction error
     return LinearRegularization(np.array([train_min, train_max]))
+
+
+class NoveltyDetector:
+    def __init__(self):
+        pass
+
+    def novelty_score(self, data):
+        return 0
+
+    def is_novel(self, data, thresh):
+        return self.novelty_score(data) > thresh
