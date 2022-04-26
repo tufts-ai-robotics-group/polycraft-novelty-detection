@@ -5,10 +5,14 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
+import torch.nn.functional as F
 
 from polycraft_nov_data.image_transforms import GaussianNoise
+from polycraft_nov_data.dataloader import polycraft_dataloaders_full_image
+import polycraft_nov_data.data_const as data_const
 
 import polycraft_nov_det.plot as plot
+import polycraft_nov_det.models.vgg as vgg16
 
 
 def model_label(model, include_classes):
@@ -108,6 +112,7 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
             save_model(model, session_path, epoch)
     return model
 
+
 def train_VGG(model, train_loader, valid_loader, lr, epochs=500, train_noisy=True, gpu=None):
     """Train a VGG model.
     Args:
@@ -123,7 +128,8 @@ def train_VGG(model, train_loader, valid_loader, lr, epochs=500, train_noisy=Tru
     """
     # get a unique path for this session to prevent overwriting
     start_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-    session_path = pathlib.Path(model_label) / pathlib.Path(start_time)
+    model_label_ = model_label(model, include_classes=data_const.NORMAL_CLASSES)
+    session_path = pathlib.Path(model_label_) / pathlib.Path(start_time)
     # get Tensorboard writer
     writer = SummaryWriter(pathlib.Path("runs_VGG") / session_path)
     # define training constants
@@ -133,38 +139,86 @@ def train_VGG(model, train_loader, valid_loader, lr, epochs=500, train_noisy=Tru
     model.to(device)
     # construct optimizer
     optimizer = optim.Adam(model.parameters(), lr)
+    
+    normal_class_indices = torch.tensor([0, 4, 11, 36, 53]) 
+    
     # train model
     for epoch in range(epochs):
+        
+        print('Epoch Nr.', epoch, flush=True)
         train_loss = 0
+        
         for data, target in train_loader:
             batch_size = data.shape[0]
+            target_ = torch.zeros((batch_size))
+            
+            for nci_pos, nci in enumerate(normal_class_indices):
+                
+                if target == nci:
+                    target_[0] = torch.tensor(nci_pos, dtype=torch.long)
+                    
             data = data.to(device)
+            target_ = target_.to(device).long()
             optimizer.zero_grad()
+            
             # update weights with optimizer
             if not train_noisy:
                 pred = model(data)
             else:
                 pred = model(GaussianNoise()(data))
-            batch_loss = loss_func(target, pred)
+            
+            batch_loss = loss_func(pred, target_)
             batch_loss.backward()
             optimizer.step()
             # logging
             train_loss += batch_loss.item() * batch_size
+            
         # calculate and record train loss
         av_train_loss = train_loss / len(train_loader)
+        print('Avg. Train loss ', av_train_loss.item(), flush = True)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
         # get validation loss
         valid_loss = 0
         for data, target in valid_loader:
+            
+            target_ = torch.zeros((batch_size))
+            
+            for nci_pos, nci in enumerate(normal_class_indices):
+                
+                if target == nci:
+                    target_[0] = torch.tensor(nci_pos, dtype=torch.long)
+            
             batch_size = data.shape[0]
             data = data.to(device)
+            target_ = target_.to(device).long()
             pred = model(data)
-            batch_loss = loss_func(target, pred)
+            batch_loss = loss_func(pred, target_)
             valid_loss += batch_loss.item() * batch_size
+            
         av_valid_loss = valid_loss / len(valid_loader)
+        print('Avg. Valid loss ', av_valid_loss.item(), flush = True)
         writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # save model
             save_model(model, session_path, epoch)
+        
     return model
+
+
+if __name__ == '__main__':
+    
+    
+    train_loader, valid_loader, _ = polycraft_dataloaders_full_image(batch_size=1, 
+                                                          image_scale=1, 
+                                                          include_novel=True, 
+                                                          shuffle=True)
+    
+    print('Loading is done', flush=True)
+    
+    classifier = vgg16.VGGPretrained(num_classes=5)
+    
+    train_VGG(classifier, train_loader, valid_loader, lr=1e-3, epochs=8000, 
+              train_noisy=True, gpu=0)
+    
+    
