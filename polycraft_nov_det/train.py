@@ -143,7 +143,7 @@ def train_VGG(model, train_loader, valid_loader, lr, epochs=500, train_noisy=Tru
     # construct optimizer
     optimizer = optim.Adam(model.parameters(), lr)
     
-    normal_class_indices = torch.tensor([0, 4, 11, 36, 53]) 
+    normal_class_indices = torch.tensor([0, 1, 11, 36, 53]) 
     
     # train model
     for epoch in range(epochs):
@@ -168,6 +168,7 @@ def train_VGG(model, train_loader, valid_loader, lr, epochs=500, train_noisy=Tru
             data = data.to(device)
             
             target_ = target_.to(device)
+            
             optimizer.zero_grad()
             
             # update weights with optimizer
@@ -227,7 +228,7 @@ def train_VGG(model, train_loader, valid_loader, lr, epochs=500, train_noisy=Tru
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # save model
             save_model(model, session_path, epoch)
-        
+       
     return model
 
 
@@ -243,7 +244,5 @@ if __name__ == '__main__':
     
     classifier = vgg16.VGGPretrained(num_classes=5)
     
-    train_VGG(classifier, train_loader, valid_loader, lr=1e-3, epochs=1000, 
+    train_VGG(classifier, train_loader, valid_loader, lr=1e-5, epochs=1000, 
               train_noisy=True, gpu=1)
-    
-    
