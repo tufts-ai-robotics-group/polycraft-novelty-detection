@@ -6,7 +6,7 @@ from polycraft_nov_det.detector import NoveltyDetector
 class EnsembleDetector(NoveltyDetector):
     def __init__(self, models):
         super().__init__()
-        self.models = models
+        self.models = [model.eval() for model in models]
 
     def novelty_score(self, data):
         outputs = []
