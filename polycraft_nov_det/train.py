@@ -1,14 +1,10 @@
 from datetime import datetime
 import pathlib
 
-import matplotlib.pyplot as plt
-import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-import torch.nn.functional as F
 
 from polycraft_nov_data.image_transforms import GaussianNoise
 from polycraft_nov_data.dataloader import polycraft_dataloaders_full_image
@@ -116,7 +112,7 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
     return model
 
 
-def train_VGG(model, train_loader, valid_loader, lr, epochs=500, train_noisy=True, gpu=None):
+def train_vgg(model, train_loader, valid_loader, lr, epochs=500, gpu=None):
     """Train a VGG model.
     Args:
         model (torch.nn.Module): (Pretrained) VGG Classifiction Model to train.
@@ -124,7 +120,6 @@ def train_VGG(model, train_loader, valid_loader, lr, epochs=500, train_noisy=Tru
         valid_loader (torch.utils.data.DataLoader): Validation set for model.
         lr (float): Learning rate.
         epochs (int, optional): Number of epochs to train for. Defaults to 500.
-        train_noisy (bool, optional): Whether to use denoising autoencoder. Defaults to True.
         gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
     Returns:
         torch.nn.Module: Trained VGG model.
@@ -134,7 +129,7 @@ def train_VGG(model, train_loader, valid_loader, lr, epochs=500, train_noisy=Tru
     model_label_ = model_label(model, include_classes=data_const.NORMAL_CLASSES)
     session_path = pathlib.Path(model_label_) / pathlib.Path(start_time)
     # get Tensorboard writer
-    writer = SummaryWriter(pathlib.Path("runs_VGG11") / session_path)
+    writer = SummaryWriter(pathlib.Path("runs_VGG") / session_path)
     # define training constants
     loss_func = nn.CrossEntropyLoss()
     device = torch.device(gpu if gpu is not None else "cpu")
@@ -142,156 +137,56 @@ def train_VGG(model, train_loader, valid_loader, lr, epochs=500, train_noisy=Tru
     model.to(device)
     # construct optimizer
     optimizer = optim.Adam(model.parameters(), lr)
-    
-    normal_class_indices = torch.tensor([0, 1, 11, 36, 53]) 
-    normal_class_indices_ss = torch.tensor([0, 53])  # sub-sample on these
-    
     # train model
     for epoch in range(epochs):
         print('---------------------------------------------', flush=True)
         print('Epoch Nr.', epoch, flush=True)
         train_loss = 0
-        train_acc = 0
-           
+        model.train()
         for data, target in train_loader:
-            
-            batch_size = 0
-            batch_size_max = data.shape[0]
-            target_ = []
-            data_ = []
-            
-            # maximum number of dominant class samples
-            max_nr_dom_class = 10#(batch_size_max // 5) * len(normal_class_indices_ss)
-            nr_dom_class = 0
-            nr_ur_class = 0
-            
-            for data_idx in range(batch_size_max):
-                for nci_idx, nci in enumerate(normal_class_indices):
-                    
-                    # subsample dominant classes
-                    if (target[data_idx] == nci):
-                            
-                        if ((target[data_idx] == normal_class_indices_ss[0] or 
-                             target[data_idx] == normal_class_indices_ss[1]) and nr_dom_class <= max_nr_dom_class):
-                                
-                        
-                            target_.append(torch.tensor(nci_idx, dtype=torch.long))
-                            data_.append(data[data_idx])
-                            batch_size += 1
-                                 
-                            nr_dom_class += 1
-                                    
-                        if ((target[data_idx] != normal_class_indices_ss[0] and 
-                             target[data_idx] != normal_class_indices_ss[1])):
-                            target_.append(torch.tensor(nci_idx, dtype=torch.long))
-                            data_.append(data[data_idx])
-                            batch_size += 1
-                            nr_ur_class += 1
-                            
-                       
-            #for data_idx in range(batch_size):           
-            #    plt.imshow(np.transpose(data_[data_idx].detach().cpu(), (1, 2, 0)))
-            #    plt.title(str(target_[data_idx]))
-            #    plt.savefig('sanity_check_valid/' + str(data_idx) + '.png')
-                        
-            data_ = torch.stack(data_)
-            target_ = torch.stack(target_)
-            
-            data_ = data_.to(device)
-            target_ = target_.to(device)
-            
+            batch_size = data.shape[0]
+            data = data.to(device)
+            target = target.to(device)
             optimizer.zero_grad()
-            
             # update weights with optimizer
-            if not train_noisy:
-                pred = model(data_)
-            else:
-                pred = model(GaussianNoise()(data_))
-            
-            batch_loss = loss_func(pred, target_)
+            pred = model(data)
+            batch_loss = loss_func(pred, target)
             batch_loss.backward()
             optimizer.step()
             # logging
-            pred_class = pred.argmax(dim=1)  # softmax does not change order
-            pred_corr = (pred_class == target_)
-            
-            batch_acc = pred_corr.sum() / batch_size
-            train_acc += batch_acc
             train_loss += batch_loss.item() * batch_size
-            
-       
         # calculate and record train loss
         av_train_loss = train_loss / len(train_loader)
-        av_train_acc = train_acc / len(train_loader)
-        print('Avg. Train loss ', av_train_loss, flush = True)
+        print('Avg. Train loss ', av_train_loss, flush=True)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
-        print('Avg. Train Acc ', av_train_acc, flush = True)
-        writer.add_scalar("Average Training Acc", av_train_acc, epoch)
-        
-        with torch.no_grad():
-            # get validation loss
-            valid_loss = 0
-            valid_acc = 0
-            for data, target in valid_loader:
-                
-                batch_size = 0
-                batch_size_max = data.shape[0]
-                target_ = []
-                data_ = []
-                
-                for data_idx in range(batch_size_max):
-                    for nci_idx, nci in enumerate(normal_class_indices):
-                    
-                        # use only seen novelties for classifier validation
-                        if target[data_idx] == nci:
-                            target_.append(torch.tensor(nci_idx, dtype=torch.long))
-                            data_.append(data[data_idx])
-                            batch_size += 1
-                            
-                #for data_idx in range(batch_size):           
-                #    plt.imshow(np.transpose(data_[data_idx].detach().cpu(), (1, 2, 0)))
-                #    plt.title(str(target_[data_idx]))
-                #    plt.savefig('sanity_check_valid/' + str(data_idx) + '.png')
-                            
-                data_ = torch.stack(data_)
-                target_ = torch.stack(target_)
-                
-                data_ = data_.to(device)
-                target_ = target_.to(device)
-                pred = model(data_)
-                pred_class = pred.argmax(dim=1)  # softmax does not change order
-                
-                pred_corr = (pred_class == target_)
-                batch_acc = pred_corr.sum() / batch_size
-                valid_acc += batch_acc
-                batch_loss = loss_func(pred, target_)
-                valid_loss += batch_loss.item() * batch_size
-                
-            av_valid_loss = valid_loss / len(valid_loader)
-            av_valid_acc = valid_acc / len(valid_loader)
-            print('Avg. Valid loss ', av_valid_loss, flush = True)
-            writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
-            print('Avg. Valid Acc ', av_valid_acc, flush = True)
-            writer.add_scalar("Average Validation Acc", av_valid_acc, epoch)
-            # updates every 10% of training time
-            if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
-                # save model
-                save_model(model, session_path, epoch)
-       
+        # get validation loss
+        valid_loss = 0
+        model.eval()
+        for data, target in valid_loader:
+            batch_size = data.shape[0]
+            data = data.to(device)
+            target = target.to(device)
+            optimizer.zero_grad()
+            # update weights with optimizer
+            pred = model(data)
+            batch_loss = loss_func(pred, target)
+            # logging
+            valid_loss += batch_loss.item() * batch_size
+        av_valid_loss = valid_loss / len(valid_loader)
+        print('Avg. Valid loss ', av_valid_loss, flush=True)
+        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
+        # updates every 10% of training time
+        if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
+            # save model
+            save_model(model, session_path, epoch)
     return model
 
 
 if __name__ == '__main__':
-    
-    
-    train_loader, valid_loader, _ = polycraft_dataloaders_full_image(batch_size=300, 
-                                                          image_scale=1, 
-                                                          include_novel=True, 
-                                                          shuffle=True)
-    
+    train_loader, valid_loader, _ = polycraft_dataloaders_full_image(batch_size=32,
+                                                                     image_scale=1,
+                                                                     include_novel=False,
+                                                                     shuffle=True)
     print('Loading is done', flush=True)
-    
     classifier = vgg16.VGGPretrained(num_classes=5)
-    
-    train_VGG(classifier, train_loader, valid_loader, lr=1e-5, epochs=500, 
-              train_noisy=False, gpu=0)
+    train_vgg(classifier, train_loader, valid_loader, lr=1e-5, epochs=1000, gpu=1)
