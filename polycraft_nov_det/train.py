@@ -112,7 +112,7 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
     return model
 
 
-def train_vgg(model, train_loader, valid_loader, lr, epochs=500, train_noisy=True, gpu=None):
+def train_vgg(model, train_loader, valid_loader, lr, epochs=500, gpu=None):
     """Train a VGG model.
     Args:
         model (torch.nn.Module): (Pretrained) VGG Classifiction Model to train.
@@ -120,7 +120,6 @@ def train_vgg(model, train_loader, valid_loader, lr, epochs=500, train_noisy=Tru
         valid_loader (torch.utils.data.DataLoader): Validation set for model.
         lr (float): Learning rate.
         epochs (int, optional): Number of epochs to train for. Defaults to 500.
-        train_noisy (bool, optional): Whether to use denoising autoencoder. Defaults to True.
         gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
     Returns:
         torch.nn.Module: Trained VGG model.
@@ -155,10 +154,7 @@ def train_vgg(model, train_loader, valid_loader, lr, epochs=500, train_noisy=Tru
             target_ = target_.to(device)
             optimizer.zero_grad()
             # update weights with optimizer
-            if not train_noisy:
-                pred = model(data)
-            else:
-                pred = model(GaussianNoise()(data))
+            pred = model(data)
             batch_loss = loss_func(pred, target_)
             batch_loss.backward()
             optimizer.step()
@@ -206,5 +202,4 @@ if __name__ == '__main__':
                                                                      shuffle=True)
     print('Loading is done', flush=True)
     classifier = vgg16.VGGPretrained(num_classes=5)
-    train_vgg(classifier, train_loader, valid_loader, lr=1e-5, epochs=1000,
-              train_noisy=True, gpu=1)
+    train_vgg(classifier, train_loader, valid_loader, lr=1e-5, epochs=1000, gpu=1)
