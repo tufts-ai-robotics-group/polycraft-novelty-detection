@@ -137,25 +137,20 @@ def train_vgg(model, train_loader, valid_loader, lr, epochs=500, gpu=None):
     model.to(device)
     # construct optimizer
     optimizer = optim.Adam(model.parameters(), lr)
-    normal_class_indices = torch.tensor([0, 1, 11, 36, 53])
     # train model
     for epoch in range(epochs):
         print('---------------------------------------------', flush=True)
         print('Epoch Nr.', epoch, flush=True)
         train_loss = 0
+        model.train()
         for data, target in train_loader:
             batch_size = data.shape[0]
-            target_ = torch.empty_like(target)
-            for data_idx in range(batch_size):
-                for nci_idx, nci in enumerate(normal_class_indices):
-                    if target[data_idx] == nci:
-                        target_[data_idx] = torch.tensor(nci_idx, dtype=torch.long)
             data = data.to(device)
-            target_ = target_.to(device)
+            target = target.to(device)
             optimizer.zero_grad()
             # update weights with optimizer
             pred = model(data)
-            batch_loss = loss_func(pred, target_)
+            batch_loss = loss_func(pred, target)
             batch_loss.backward()
             optimizer.step()
             # logging
@@ -166,24 +161,16 @@ def train_vgg(model, train_loader, valid_loader, lr, epochs=500, gpu=None):
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
         # get validation loss
         valid_loss = 0
+        model.eval()
         for data, target in valid_loader:
-            batch_size = 0
-            batch_size_max = data.shape[0]
-            target_ = []
-            data_ = []
-            for data_idx in range(batch_size_max):
-                for nci_idx, nci in enumerate(normal_class_indices):
-                    # use only seen novelties for classifier validation
-                    if target[data_idx] == nci:
-                        target_.append(torch.tensor(nci_idx, dtype=torch.long))
-                        data_.append(data[data_idx])
-                        batch_size += 1
-            data_ = torch.stack(data_)
-            target_ = torch.stack(target_)
-            data_ = data_.to(device)
-            target_ = target_.to(device)
-            pred = model(data_)
-            batch_loss = loss_func(pred, target_)
+            batch_size = data.shape[0]
+            data = data.to(device)
+            target = target.to(device)
+            optimizer.zero_grad()
+            # update weights with optimizer
+            pred = model(data)
+            batch_loss = loss_func(pred, target)
+            # logging
             valid_loss += batch_loss.item() * batch_size
         av_valid_loss = valid_loss / len(valid_loader)
         print('Avg. Valid loss ', av_valid_loss, flush=True)
@@ -198,7 +185,7 @@ def train_vgg(model, train_loader, valid_loader, lr, epochs=500, gpu=None):
 if __name__ == '__main__':
     train_loader, valid_loader, _ = polycraft_dataloaders_full_image(batch_size=32,
                                                                      image_scale=1,
-                                                                     include_novel=True,
+                                                                     include_novel=False,
                                                                      shuffle=True)
     print('Loading is done', flush=True)
     classifier = vgg16.VGGPretrained(num_classes=5)
