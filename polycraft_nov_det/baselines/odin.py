@@ -29,5 +29,4 @@ class OdinDetector(NoveltyDetector):
         pert_data = torch.add(data.data, -self.noise, gradient)
         output = self.model(pert_data)
         # score from perturbed image
-        novel_score = torch.max(torch.softmax(output / self.temp, dim=1), dim=1)
-        return novel_score
+        return torch.max(torch.softmax(output / self.temp, dim=1), dim=1)
