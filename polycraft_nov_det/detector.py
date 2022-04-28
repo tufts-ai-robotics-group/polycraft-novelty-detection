@@ -159,8 +159,8 @@ def reconstruction_lin_reg(model, train_loader, device="cpu"):
 
 
 class NoveltyDetector:
-    def __init__(self):
-        pass
+    def __init__(self, device="cpu"):
+        self.device = device
 
     def novelty_score(self, data):
         return 0

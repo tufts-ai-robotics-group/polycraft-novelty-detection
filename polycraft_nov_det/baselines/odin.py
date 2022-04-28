@@ -5,13 +5,14 @@ from polycraft_nov_det.detector import NoveltyDetector
 
 
 class OdinDetector(NoveltyDetector):
-    def __init__(self, model, temp=1, noise=.0014):
-        super().__init__()
-        self.model = model.eval()
+    def __init__(self, model, device="cpu", temp=1, noise=.0014):
+        super().__init__(device)
+        self.model = model.eval().to(device)
         self.temp = temp
         self.noise = noise
 
     def novelty_score(self, data):
+        data = data.to(self.device)
         # get model output
         output = self.model(data)
         # get prediction from non-temp scaled output
