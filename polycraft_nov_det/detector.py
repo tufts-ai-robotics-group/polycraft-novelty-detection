@@ -162,6 +162,7 @@ class NoveltyDetector:
     def __init__(self, device="cpu"):
         self.device = device
 
+    @torch.no_grad
     def novelty_score(self, data):
         return 0
 

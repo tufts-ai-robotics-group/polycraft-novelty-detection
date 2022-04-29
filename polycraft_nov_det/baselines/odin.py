@@ -11,6 +11,7 @@ class OdinDetector(NoveltyDetector):
         self.temp = temp
         self.noise = noise
 
+    @torch.no_grad
     def novelty_score(self, data):
         data = data.to(self.device)
         # get model output
