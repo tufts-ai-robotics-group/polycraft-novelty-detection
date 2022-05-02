@@ -11,9 +11,9 @@ class OdinDetector(NoveltyDetector):
         self.temp = temp
         self.noise = noise
 
-    @torch.no_grad
     def novelty_score(self, data):
         data = data.to(self.device)
+        data.requires_grad = True
         # get model output
         output = self.model(data)
         # get prediction from non-temp scaled output
@@ -30,4 +30,5 @@ class OdinDetector(NoveltyDetector):
         pert_data = torch.add(data.data, -self.noise, gradient)
         output = self.model(pert_data)
         # score from perturbed image
-        return torch.max(torch.softmax(output / self.temp, dim=1), dim=1)
+        # selecting first element is only to discard argmax from torch.max
+        return torch.max(torch.softmax(output / self.temp, dim=1), dim=1)[0]

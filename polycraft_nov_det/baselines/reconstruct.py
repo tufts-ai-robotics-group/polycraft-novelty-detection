@@ -9,7 +9,7 @@ class ReconstructDetector(NoveltyDetector):
         super().__init__(device)
         self.model = model.eval().to(device)
 
-    @torch.no_grad
+    @torch.no_grad()
     def novelty_score(self, data):
         data = data.to(self.device)
         r_data, embedding = self.model(data)
