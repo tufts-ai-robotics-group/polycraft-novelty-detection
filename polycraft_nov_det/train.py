@@ -6,9 +6,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
-from polycraft_nov_data.image_transforms import GaussianNoise
-from polycraft_nov_data.dataloader import polycraft_dataloaders_full_image
 import polycraft_nov_data.data_const as data_const
+from polycraft_nov_data.image_transforms import GaussianNoise
+from polycraft_nov_data.dataloader import polycraft_dataloaders
 
 import polycraft_nov_det.plot as plot
 import polycraft_nov_det.models.vgg as vgg16
@@ -44,6 +44,26 @@ def save_model(model, session_path, epoch):
     # make directory and save model
     model_dir.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), model_dir / model_fname)
+    
+    
+def calc_per_class_acc(preds, labels, noc):
+    """Determine per-class accuracy.
+    Args:
+        preds (torch.tensor): Predictions computed by the model.
+        labels (torch.tensor): Ground truth labels.
+        noc (int): Number of classes the model uses.
+    """
+    acc_per_class = []
+    pred_class = torch.argmax(preds, dim=1)  # softmax does not change order
+
+    for c in range(noc):
+        match = labels == c
+        noi_per_class = match.sum()
+        match = match & (pred_class == labels)
+        num_corrects_per_class = match.sum()
+        acc_per_class.append(num_corrects_per_class / noi_per_class)
+       
+    return torch.stack(acc_per_class)
 
 
 def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_noisy=True,
@@ -112,7 +132,7 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
     return model
 
 
-def train_vgg(model, train_loader, valid_loader, lr, epochs=500, gpu=None):
+def train_vgg(model, train_loader, valid_loader, num_classes, lr, epochs=500, gpu=None):
     """Train a VGG model.
     Args:
         model (torch.nn.Module): (Pretrained) VGG Classifiction Model to train.
@@ -137,11 +157,14 @@ def train_vgg(model, train_loader, valid_loader, lr, epochs=500, gpu=None):
     model.to(device)
     # construct optimizer
     optimizer = optim.Adam(model.parameters(), lr)
+
     # train model
     for epoch in range(epochs):
         print('---------------------------------------------', flush=True)
         print('Epoch Nr.', epoch, flush=True)
         train_loss = 0
+        pred_list = []
+        target_list = []
         model.train()
         for data, target in train_loader:
             batch_size = data.shape[0]
@@ -150,6 +173,8 @@ def train_vgg(model, train_loader, valid_loader, lr, epochs=500, gpu=None):
             optimizer.zero_grad()
             # update weights with optimizer
             pred = model(data)
+            pred_list.append(pred)
+            target_list.append(target)
             batch_loss = loss_func(pred, target)
             batch_loss.backward()
             optimizer.step()
@@ -159,34 +184,64 @@ def train_vgg(model, train_loader, valid_loader, lr, epochs=500, gpu=None):
         av_train_loss = train_loss / len(train_loader)
         print('Avg. Train loss ', av_train_loss, flush=True)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
-        # get validation loss
-        valid_loss = 0
-        model.eval()
-        for data, target in valid_loader:
-            batch_size = data.shape[0]
-            data = data.to(device)
-            target = target.to(device)
-            optimizer.zero_grad()
-            # update weights with optimizer
-            pred = model(data)
-            batch_loss = loss_func(pred, target)
-            # logging
-            valid_loss += batch_loss.item() * batch_size
-        av_valid_loss = valid_loss / len(valid_loader)
-        print('Avg. Valid loss ', av_valid_loss, flush=True)
-        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
-        # updates every 10% of training time
-        if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
-            # save model
-            save_model(model, session_path, epoch)
+        # calculate per class accuracy
+        pred_list = torch.cat(pred_list)
+        target_list = torch.cat(target_list)
+        acc_pc = calc_per_class_acc(pred_list, target_list, num_classes).to(device)
+
+        for c in range(num_classes):
+            print('Avg. Train Acc, class ',str(c), ': ', acc_pc[c].item(), flush=True)
+            writer.add_scalar("Average Train Acc class" + str(c), acc_pc[c].item(), epoch)
+
+        with torch.no_grad():
+            # get validation loss
+            valid_loss = 0
+            pred_list = []
+            target_list = []
+            model.eval()
+            for data, target in valid_loader:
+                batch_size = data.shape[0]
+                data = data.to(device)
+                target = target.to(device)
+                optimizer.zero_grad()
+                # update weights with optimizer
+                pred = model(data)
+                pred_list.append(pred)
+                target_list.append(target)
+
+                #for data_idx in range(batch_size):           
+                #    plt.imshow(np.transpose(data[data_idx].detach().cpu(), (1, 2, 0)))
+                #    plt.title(str(target[data_idx]))
+                #    plt.savefig('sanity_check_valid/' + str(data_idx) + '.png')
+ 
+                batch_loss = loss_func(pred, target)
+                # logging
+                valid_loss += batch_loss.item() * batch_size
+
+            av_valid_loss = valid_loss / len(valid_loader)
+            print('Avg. Valid loss ', av_valid_loss, flush=True)
+            writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
+            # calculate per class accuracy
+            pred_list = torch.cat(pred_list)
+            target_list = torch.cat(target_list)
+            acc_pc = calc_per_class_acc(pred_list, target_list, num_classes).to(device)
+            for c in range(num_classes):
+                print('Avg. Valid Acc, class ',str(c), ': ', acc_pc[c].item(), flush=True)
+                writer.add_scalar("Average Valid Acc class" + str(c), acc_pc[c].item(), epoch)
+            # updates every 10% of training time
+            if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
+                # save model
+                save_model(model, session_path, epoch)
     return model
 
 
 if __name__ == '__main__':
-    train_loader, valid_loader, _ = polycraft_dataloaders_full_image(batch_size=32,
-                                                                     image_scale=1,
-                                                                     include_novel=False,
-                                                                     shuffle=True)
+    (train_loader, valid_loader, _), labels = polycraft_dataloaders(batch_size=32, 
+                                                          image_scale=1.0, 
+                                                          patch=False, 
+                                                          include_novel=False,
+                                                          shuffle=True, 
+                                                          ret_class_to_idx=True)
     print('Loading is done', flush=True)
     classifier = vgg16.VGGPretrained(num_classes=5)
-    train_vgg(classifier, train_loader, valid_loader, lr=1e-5, epochs=1000, gpu=1)
+    train_vgg(classifier, train_loader, valid_loader, num_classes=5, lr=1e-5, epochs=1000, gpu=0)
