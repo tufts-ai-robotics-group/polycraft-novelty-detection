@@ -30,7 +30,7 @@ class LinearRegularization():
         return data[np.newaxis] < thresh_val[:, np.newaxis]
 
     def quantile(self, data):
-        out = (np.clip(data, self.min, self.max) - self.min) / self.slope
+        out = (data - self.min) / self.slope
         if len(out.shape) == 0:
             out = out[np.newaxis]
         return out
