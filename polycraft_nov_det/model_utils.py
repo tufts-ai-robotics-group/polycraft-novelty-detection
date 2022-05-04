@@ -7,6 +7,7 @@ import polycraft_nov_data.data_const as polycraft_const
 import polycraft_nov_det.data.mnist_loader as mnist_loader
 from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
+import polycraft_nov_det.models.vgg as vgg16
 from polycraft_nov_det.detector import load_lin_reg, reconstruction_lin_reg
 
 
@@ -18,12 +19,10 @@ def load_model(path, model, device="cpu"):
 
 def load_mnist_model(path, device="cpu", latent_len=64):
     """Load a saved MNIST model
-
     Args:
         path (str): Path to saved model state_dict
         device (str, optional): Device tag for torch.device. Defaults to "cpu".
         latent_len (int, optional): Length of model's latent vector. Defaults to 64.
-
     Returns:
         LSAMNISTNoEst: Model with saved state_dict
     """
@@ -33,17 +32,29 @@ def load_mnist_model(path, device="cpu", latent_len=64):
 
 def load_polycraft_model(path, device="cpu", latent_len=100):
     """Load a saved Polycraft model
-
     Args:
         path (str): Path to saved model state_dict
         device (str, optional): Device tag for torch.device. Defaults to "cpu".
         latent_len (int, optional): Length of model's latent vector. Defaults to 100.
-
     Returns:
         LSACIFAR10NoEst: Model with saved state_dict
     """
     model = LSACIFAR10NoEst(polycraft_const.PATCH_SHAPE, latent_len)
     return load_model(path, model, device)
+
+
+def load_polycraft_classifier(path, device="cpu", num_classes=5):
+    """Load a saved Polycraft classifier
+    Args:
+        path (str): Path to saved model state_dict
+        device (str, optional): Device tag for torch.device. Defaults to "cpu".
+        num_classes (int, optional): Number of classes the classifier was 
+                                     trained on. Defaults to 5.
+    Returns:
+        vgg16 classifer: Classifier model with saved state_dict
+    """
+    classifier = vgg16.VGGPretrained(num_classes=num_classes)
+    return load_model(path, classifier, device)
 
 
 def load_cached_lin_reg(model_path, model, train_loader, device="cpu"):
