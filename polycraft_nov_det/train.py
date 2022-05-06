@@ -1,10 +1,13 @@
 from datetime import datetime
 import pathlib
+import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
+
+from sklearn.svm import OneClassSVM
 
 import polycraft_nov_data.data_const as data_const
 from polycraft_nov_data.image_transforms import GaussianNoise
@@ -12,6 +15,7 @@ from polycraft_nov_data.dataloader import polycraft_dataloaders
 
 import polycraft_nov_det.plot as plot
 import polycraft_nov_det.models.vgg as vgg16
+import polycraft_nov_det.model_utils as model_utils
 
 
 def model_label(model, include_classes):
@@ -235,13 +239,78 @@ def train_vgg(model, train_loader, valid_loader, num_classes, lr, epochs=500, gp
     return model
 
 
+def fit_oneclassSVM(svm, feature_extractor, train_loader, valid_loader):
+    """Fit a One-Class SVM. The SVM is fit based on features extracted by the
+    trained VGG16 classifier backbone on the training set.
+    Args:
+        svm (sklearn.svm.OneClassSVM): One-Class SVM model.
+        feature extractor (torch.nn.Module): Trained vgg16 classifier.
+        train_loader (torch.utils.data.DataLoader): Training set for SVM.
+        valid_loader (torch.utils.data.DataLoader): Validation set for SVM.
+    Returns:
+        svm (sklearn.svm.OneClassSVM): Fitted One-Class SVM model.
+    """
+    # we don't need the classification head
+    feature_extractor = feature_extractor.backbone
+    features_list = []
+    target_list = []
+
+    for j, (data, target) in enumerate(train_loader):
+        # novel --> -1, not novel (class 0, 1, 2, 3, 4) --> 1
+        target = [1 if (i==0 or i == 1 or i ==2 or i == 3 or i == 4) else (-1) for i in target]
+        target_list.append(target)
+        train_features = feature_extractor(data).detach().numpy()
+        features_list.append(train_features)
+
+    features_list = np.concatenate(features_list)
+    target_list = np.concatenate(target_list)
+    # fit svm on training data using feature vectors (without any novelties)
+    oc_svm = svm.fit(features_list)
+    svm_pred = oc_svm.predict(features_list)
+    # calculate accuracy
+    train_acc = np.sum(svm_pred == target_list)/len(features_list)
+    print('Train Acc.: ', train_acc)
+
+    features_list = []
+    target_list = []
+
+    for j, (data, target) in enumerate(valid_loader):
+        # novel --> -1, not novel (class 0, 1, 2, 3, 4) --> 1
+        target = [1 if (i==0 or i == 1 or i ==2 or i == 3 or i == 4) else (-1) for i in target]
+        target_list.append(target)
+        train_features = feature_extractor(data).detach().numpy()
+        features_list.append(train_features)
+
+    features_list = np.concatenate(features_list)
+    target_list = np.concatenate(target_list)
+    # apply svm (fitted on training data) to validation data (with novelties)
+    svm_pred = oc_svm.predict(features_list)
+    # calculate accuracy
+    valid_acc = np.sum(svm_pred == target_list)/len(features_list)
+    print('Valid Acc.: ', valid_acc)
+
+    return oc_svm
+
+
 if __name__ == '__main__':
-    (train_loader, valid_loader, _), labels = polycraft_dataloaders(batch_size=32, 
-                                                          image_scale=1.0, 
-                                                          patch=False, 
-                                                          include_novel=False,
+
+    gpu = 1
+    num_classes = 5
+    device = torch.device(gpu if gpu is not None else "cpu")
+
+    # use vgg16 as feature extractor
+    classifier = vgg16.VGGPretrained(num_classes=5)
+
+    (train_loader, valid_loader, _), labels = polycraft_dataloaders(batch_size=100,
+                                                          image_scale=1.0,
+                                                          patch=False,
+                                                          include_novel=True,
                                                           shuffle=True, 
                                                           ret_class_to_idx=True)
-    print('Loading is done', flush=True)
-    classifier = vgg16.VGGPretrained(num_classes=5)
-    train_vgg(classifier, train_loader, valid_loader, num_classes=5, lr=1e-5, epochs=1000, gpu=0)
+    
+    model_path = 'models/VGGPretrained_class_normal_fence_item_anvil_item_sand_item_coal_block/2022.05.03.12.34.16/1000.pt'
+    # OneClassSVM based on Schölkopf et. al.
+    one_class_svm = OneClassSVM(nu=0.001, kernel='rbf', gamma='auto')
+    model_path = pathlib.Path(model_path)
+    model = model_utils.load_polycraft_classifier(model_path, device, num_classes=num_classes).eval()
+    fit_oneclassSVM(one_class_svm, classifier, train_loader, valid_loader)
