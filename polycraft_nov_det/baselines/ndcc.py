@@ -5,7 +5,7 @@ import torch.nn as nn
 
 
 class NDCC(nn.Module):
-    def __init__(self, embedding, classifier, strategy, l2_normalize=True, r=1.0):
+    def __init__(self, embedding, classifier, l2_normalize=True, r=1.0):
         super(NDCC, self).__init__()
         self.embedding = embedding
         self.classifier = classifier
@@ -15,16 +15,10 @@ class NDCC(nn.Module):
         if self.l2_normalize:
             self.r = r
 
-        self.strategy = strategy
-        if self.strategy == 1:
-            self.sigma = torch.tensor(((np.ones(1))).astype(
-                'float32'), requires_grad=True, device="cuda")
-            self.delta = None
-        elif self.strategy == 2:
-            self.sigma = torch.tensor(((np.ones(1))).astype(
-                'float32'), requires_grad=True, device="cuda")
-            self.delta = torch.tensor((np.zeros(self.dim_embedding)).astype(
-                'float32'), requires_grad=True, device="cuda")
+        self.sigma = torch.tensor(((np.ones(1))).astype(
+            'float32'), requires_grad=True, device="cuda")
+        self.delta = torch.tensor((np.zeros(self.dim_embedding)).astype(
+            'float32'), requires_grad=True, device="cuda")
 
     def forward(self, x):
         x = self.embedding(x)
@@ -37,14 +31,9 @@ class NDCC(nn.Module):
         self.eval()
         weight = self.classifier.weight
         weight = weight.cpu().detach().numpy()
-        if self.strategy == 1:
-            sigma2 = (self.sigma.detach().cpu().numpy()) ** 2
-            sigma = sigma2 * np.eye(self.dim_embedding)
-            inv_sigma = (1/sigma2) * np.eye(self.dim_embedding)
-        elif self.strategy == 2:
-            sigma2 = ((self.delta + self.sigma).detach().cpu().numpy()) ** 2
-            sigma = np.diag(sigma2)
-            inv_sigma = np.diag(sigma2 ** -1)
+        sigma2 = ((self.delta + self.sigma).detach().cpu().numpy()) ** 2
+        sigma = np.diag(sigma2)
+        inv_sigma = np.diag(sigma2 ** -1)
         means = weight @ sigma
         distances = np.zeros((len(loader.dataset), self.num_classes))
         with torch.no_grad():
