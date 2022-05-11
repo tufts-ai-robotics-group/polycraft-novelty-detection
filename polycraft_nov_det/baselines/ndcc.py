@@ -4,6 +4,8 @@ import numpy as np
 from sklearn.metrics.pairwise import pairwise_distances
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from torch.optim import lr_scheduler
 
 from polycraft_nov_det.detector import NoveltyDetector
 from polycraft_nov_det.models.vgg import VGGPretrained
@@ -67,50 +69,38 @@ def train_ndcc(model, optimizer, scheduler, num_epochs=20):
     for epoch in range(num_epochs):
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
-            # for phase in ['train']:
-
             model.eval()  # NDCC is alwayes set to evaluate mode
-
             cnt = 0
-
             epoch_loss = 0.
             epoch_acc = 0.
-
             for step, (inputs, labels) in enumerate(dataloaders[phase]):
-
                 inputs = (inputs.cuda())
                 labels = (labels.long().cuda())
-
                 optimizer.zero_grad()
-
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
                     sigma2 = (model.sigma + model.delta) ** 2
                     means = model.classifier.weight * sigma2
-                    loss_md = (torch.div(
-                        (outputs - means[labels]) ** 2, sigma2.detach())).sum() / (2 * outputs.shape[0])
-                    loss_nll = (torch.log(sigma2).sum()) / 2 + (torch.div(
-                        (outputs.detach() - means[labels]) ** 2, sigma2).sum() / outputs.shape[0]) / 2
+                    loss_md = (torch.div((outputs - means[labels]) ** 2, sigma2.detach())).sum() \
+                        / (2 * outputs.shape[0])
+                    loss_nll = (torch.log(sigma2).sum()) / 2 + \
+                        (torch.div((outputs.detach() - means[labels]) ** 2, sigma2).sum()
+                         / outputs.shape[0]) / 2
 
-                    logits = nn.parallel.data_parallel(
-                        model.classifier, outputs)
+                    logits = model.classifier(outputs)
                     loss_ce = F.cross_entropy(logits, labels)
 
                     loss = loss_ce + opt.lmd * (loss_md + opt.gma * loss_nll)
-
                 # backward + optimize only if in training phase
                 if phase == 'train':
                     loss.backward()
                     optimizer.step()
-
                 # statistics
                 _, preds = torch.max(logits, 1)
-
                 epoch_loss = (loss.item() * inputs.size(0) +
                               cnt * epoch_loss) / (cnt + inputs.size(0))
                 epoch_acc = (torch.sum(preds == labels.data) +
                              epoch_acc * cnt).double() / (cnt + inputs.size(0))
-
                 cnt += inputs.size(0)
             if phase == 'train':
                 scheduler.step()
