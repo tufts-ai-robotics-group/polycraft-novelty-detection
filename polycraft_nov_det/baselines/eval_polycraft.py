@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from matplotlib import pyplot as plt
-from sklearn.metrics import roc_curve, RocCurveDisplay
+import sklearn.metrics as metrics
 import torch
 
 import polycraft_nov_data.data_const as data_const
@@ -36,11 +36,18 @@ def save_scores(detector: NoveltyDetector, output_folder):
     torch.save(classes, folder_path / "classes.pt")
 
 
-def roc_from_save(output_folder):
-    # ROC with 1 as novel target
+def eval_from_save(output_folder):
     folder_path = Path(output_folder)
     novel_true = torch.load(folder_path / "novel_true.pt")
     novel_score = torch.load(folder_path / "novel_score.pt")
-    fpr, tpr, _ = roc_curve(novel_true, novel_score)
-    RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
+    # TODO need to upsample normal data for similar to typical episode
+    # ROC with 1 as novel target
+    fpr, tpr, roc_threshs = metrics.roc_curve(novel_true, novel_score)
+    metrics.RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
     plt.savefig(folder_path / "roc.png")
+    # PRC with 1 as novel target
+    precision, recall, prc_threshs = metrics.precision_recall_curve(novel_true, novel_score)
+    metrics.PrecisionRecallDisplay(precision=precision, recall=recall).plot()
+    plt.savefig(folder_path / "prc.png")
+    # TODO precision and FPR at TPR 95%
+    # TODO TPR and FPR at precision 95%, may have to handle no precision near 95%
