@@ -1,4 +1,6 @@
 import argparse
+from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_distances
@@ -6,9 +8,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import lr_scheduler
+from torch.utils.tensorboard import SummaryWriter
+
+from polycraft_nov_data.dataloader import polycraft_dataloaders
 
 from polycraft_nov_det.detector import NoveltyDetector
 from polycraft_nov_det.models.vgg import VGGPretrained
+import polycraft_nov_det.train as train
 
 
 class NDCC(nn.Module):
@@ -21,9 +27,9 @@ class NDCC(nn.Module):
         self.r = r
 
         self.sigma = torch.tensor(((np.ones(1))).astype(
-            'float32'), requires_grad=True, device="cuda")
+            'float32'), requires_grad=True)
         self.delta = torch.tensor((np.zeros(self.dim_embedding)).astype(
-            'float32'), requires_grad=True, device="cuda")
+            'float32'), requires_grad=True)
 
     def forward(self, x):
         x = self.embedding(x)
@@ -65,7 +71,15 @@ class NDCCDetector(NoveltyDetector):
         return nd_scores
 
 
-def train_ndcc(model, optimizer, scheduler, num_epochs=20):
+def train_ndcc(model, optimizer, scheduler, num_epochs=20, gpu=None):
+    device = torch.device(gpu if gpu is not None else "cpu")
+    model.to(device)
+    # get a unique path for this session to prevent overwriting
+    start_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+    session_path = Path("NDCC") / Path(start_time)
+    # get Tensorboard writer
+    writer = SummaryWriter(Path("runs") / session_path)
+
     for epoch in range(num_epochs):
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
@@ -74,8 +88,8 @@ def train_ndcc(model, optimizer, scheduler, num_epochs=20):
             epoch_loss = 0.
             epoch_acc = 0.
             for step, (inputs, labels) in enumerate(dataloaders[phase]):
-                inputs = (inputs.cuda())
-                labels = (labels.long().cuda())
+                inputs = (inputs.to(device))
+                labels = (labels.long().to(device))
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
@@ -104,13 +118,17 @@ def train_ndcc(model, optimizer, scheduler, num_epochs=20):
                 cnt += inputs.size(0)
             if phase == 'train':
                 scheduler.step()
-    torch.save(model.state_dict(), saved_model_path)
+                writer.add_scalar("Average Train Loss", epoch_loss, epoch)
+                writer.add_scalar("Average Train Acc", epoch_acc, epoch)
+            else:
+                writer.add_scalar("Average Valid Loss", epoch_loss, epoch)
+                writer.add_scalar("Average Valid Acc", epoch_acc, epoch)
+    train.save_model(model, session_path, num_epochs - 1)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=256)
-    parser.add_argument('--test_batch_size', type=int, default=256)
+    parser.add_argument('--batch_size', type=int, default=256) # TODO test with smaller batch
 
     parser.add_argument('--dataset', type=str, default='FounderType200',
                         choices=['CUB200', 'StanfordDogs', 'FounderType200'])
@@ -181,6 +199,11 @@ if __name__ == '__main__':
         opt.lr_milestones = [30, 40]
         opt.num_epochs = 40
 
+    train_loader, valid_loader, _ = polycraft_dataloaders(opt.batch_size)
+    dataloaders = {}
+    dataloaders['train'] = train_loader
+    dataloaders['val'] = valid_loader
+
     embedding = VGGPretrained(5).backbone  # num_classes ignored here
     classifier = nn.Linear(4096, opt.num_classes)
     model = NDCC(embedding=embedding, classifier=classifier, r=opt.r)
@@ -196,8 +219,6 @@ if __name__ == '__main__':
 
     scheduler = lr_scheduler.MultiStepLR(
         optimizer, milestones=opt.lr_milestones, gamma=0.1)
-
-    model = model.cuda()
 
     # ==================== training ====================
 
