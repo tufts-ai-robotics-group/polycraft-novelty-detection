@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
 
-    output_folder = Path("models/vgg/eval")
+    output_folder = Path("models/vgg/eval_odin")
     output_folder.mkdir(exist_ok=True, parents=True)
     model_path = Path("models/vgg/1000.pt")
     if not model_path.exists():
