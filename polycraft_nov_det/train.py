@@ -191,6 +191,7 @@ def train_vgg(model, train_loader, valid_loader, num_classes, lr, epochs=500, gp
         # calculate per class accuracy
         pred_list = torch.cat(pred_list)
         target_list = torch.cat(target_list)
+        
         acc_pc = calc_per_class_acc(pred_list, target_list, num_classes).to(device)
 
         for c in range(num_classes):
@@ -254,47 +255,62 @@ def fit_oneclassSVM(svm, feature_extractor, train_loader, valid_loader):
     feature_extractor = feature_extractor.backbone
     features_list = []
     target_list = []
-
+   
     for j, (data, target) in enumerate(train_loader):
-        # novel --> -1, not novel (class 0, 1, 2, 3, 4) --> 1
-        target = [1 if (i==0 or i == 1 or i ==2 or i == 3 or i == 4) else (-1) for i in target]
+        # novel --> 1, not novel (class 0, 1, 2, 3, 4) --> 0
+        target = [0 if (i == 0 or i == 1 or i ==2 or i == 3 or i == 4) else (1) for i in target]
         target_list.append(target)
         train_features = feature_extractor(data).detach().numpy()
         features_list.append(train_features)
-
+           
+    print('Features collected')
     features_list = np.concatenate(features_list)
     target_list = np.concatenate(target_list)
     # fit svm on training data using feature vectors (without any novelties)
     oc_svm = svm.fit(features_list)
     svm_pred = oc_svm.predict(features_list)
+    svm_pred = [1 if (i == -1) else (0) for i in svm_pred]
+    
     # calculate accuracy
     train_acc = np.sum(svm_pred == target_list)/len(features_list)
     print('Train Acc.: ', train_acc)
-
+    
     features_list = []
     target_list = []
 
     for j, (data, target) in enumerate(valid_loader):
-        # novel --> -1, not novel (class 0, 1, 2, 3, 4) --> 1
-        target = [1 if (i==0 or i == 1 or i ==2 or i == 3 or i == 4) else (-1) for i in target]
+        # novel --> 1, not novel (class 0, 1, 2, 3, 4) --> 0
+        target = [0 if (i == 0 or i == 1 or i ==2 or i == 3 or i == 4) else (1) for i in target]
         target_list.append(target)
         train_features = feature_extractor(data).detach().numpy()
         features_list.append(train_features)
-
+      
     features_list = np.concatenate(features_list)
     target_list = np.concatenate(target_list)
     # apply svm (fitted on training data) to validation data (with novelties)
     svm_pred = oc_svm.predict(features_list)
+    svm_pred = [1 if (i == -1) else (0) for i in svm_pred]
     # calculate accuracy
     valid_acc = np.sum(svm_pred == target_list)/len(features_list)
     print('Valid Acc.: ', valid_acc)
-
+    
+    acc_per_class = []
+    
+    for c in range(2):
+        match = target_list == c
+        noi_per_class = match.sum()
+        match = match & (svm_pred == target_list)
+        num_corrects_per_class = match.sum()
+        acc_per_class.append(num_corrects_per_class / noi_per_class)
+        
+    print('Avg. Valid Acc, class non-normal: ', acc_per_class[0], flush=True)
+    print('Avg. Valid Acc, class novel: ', acc_per_class[1], flush=True)
     return oc_svm
 
 
 if __name__ == '__main__':
 
-    gpu = 1
+    gpu = 0
     num_classes = 5
     device = torch.device(gpu if gpu is not None else "cpu")
 
@@ -308,7 +324,7 @@ if __name__ == '__main__':
                                                           shuffle=True, 
                                                           ret_class_to_idx=True)
     
-    model_path = 'models/VGGPretrained_class_normal_fence_item_anvil_item_sand_item_coal_block/2022.05.03.12.34.16/1000.pt'
+    model_path = 'models/VGGPretrained_class_normal_fence_item_anvil_item_sand_item_coal_block/2022.05.10.11.51.34/1000.pt'
     # OneClassSVM based on Schölkopf et. al.
     one_class_svm = OneClassSVM(nu=0.001, kernel='rbf', gamma='auto')
     model_path = pathlib.Path(model_path)
