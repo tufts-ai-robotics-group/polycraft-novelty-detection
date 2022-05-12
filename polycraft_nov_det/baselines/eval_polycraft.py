@@ -11,8 +11,8 @@ from polycraft_nov_det.detector import NoveltyDetector
 
 
 def save_scores(detector: NoveltyDetector, output_folder):
-    (_, _, test_loader), class_to_idx = polycraft_dataloaders(include_novel=True,
-                                                              ret_class_to_idx=True)
+    (_, _, test_loader), class_to_idx = polycraft_dataloaders(
+            include_novel=True, ret_class_to_idx=True, shuffle=False)
     normal_targets = torch.Tensor([class_to_idx[c] for c in data_const.NORMAL_CLASSES])
     idx_to_class = {v: k for k, v in class_to_idx.items()}
     # collect scores, novelty labels with 1 as novel, and targets
