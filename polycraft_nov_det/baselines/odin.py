@@ -41,8 +41,7 @@ if __name__ == "__main__":
 
     from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
 
-    output_folder = Path("models/vgg/eval_odin")
-    output_folder.mkdir(exist_ok=True, parents=True)
+    output_parent = Path("models/vgg/eval_odin")
     model_path = Path("models/vgg/1000.pt")
     if not model_path.exists():
         import urllib.request
@@ -51,5 +50,14 @@ if __name__ == "__main__":
             "https://drive.google.com/uc?export=download&id=1qpIqLgPHlFkjtRigbbXFYMdzTTUtzJkY&confirm=t",
             model_path
         )
-    save_scores(OdinDetector(model_path, device=torch.device("cuda:1")), output_folder)
-    eval_from_save(output_folder)
+    # define hyperparameter search space
+    temps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+    noises = [i * 0.004 / 20 for i in range(21)]
+    for temp in temps:
+        for noise in noises:
+            output_folder = output_parent / Path(f"t={temp}_n={noise:.4f}")
+            output_folder.mkdir(exist_ok=True, parents=True)
+            save_scores(
+                OdinDetector(model_path, device=torch.device("cuda:1"), temp=temp, noise=noise),
+                output_folder)
+            eval_from_save(output_folder)
