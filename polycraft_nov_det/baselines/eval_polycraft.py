@@ -20,12 +20,9 @@ def save_scores(detector: NoveltyDetector, output_folder):
     novel_true = torch.Tensor([])
     targets = torch.Tensor([])
     for data, target in test_loader:
-        novel_score = torch.hstack([novel_score, detector.novelty_score(data)])
+        novel_score = torch.hstack([novel_score, detector.novelty_score(data).cpu()])
         novel_true = torch.hstack([novel_true, (~torch.isin(target, normal_targets)).long()])
         targets = torch.hstack([targets, targets])
-    novel_score = novel_score.detach().cpu().numpy()
-    novel_true = novel_true.detach().cpu().numpy()
-    targets = targets.detach().cpu().numpy()
     # convert targets to names
     classes = torch.Tensor([idx_to_class[target.item()] for target in targets])
     # output data

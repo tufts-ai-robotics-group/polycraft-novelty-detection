@@ -4,4 +4,4 @@ __pycache__
 build
 reqlib-metadata
 *.egg-info
-models/vgg/*
+models/vgg/*.pt
