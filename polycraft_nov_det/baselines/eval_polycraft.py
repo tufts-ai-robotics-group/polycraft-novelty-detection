@@ -37,13 +37,19 @@ def eval_from_save(output_folder):
     folder_path = Path(output_folder)
     novel_true = torch.load(folder_path / "novel_true.pt")
     novel_score = torch.load(folder_path / "novel_score.pt")
-    # TODO need to upsample normal data for similar to typical episode
+    # upsample normal data so it accounts for 3/4 of the weight, roughly the split of an episode
+    norm_count = torch.sum(novel_true == 0)
+    novel_count = torch.sum(novel_true == 1)
+    weight = torch.ones_like(novel_score)
+    weight[novel_true == 0] = 3 * novel_count / norm_count
     # ROC with 1 as novel target
-    fpr, tpr, roc_threshs = metrics.roc_curve(novel_true, novel_score)
-    metrics.RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
+    fpr, tpr, roc_threshs = metrics.roc_curve(novel_true, novel_score, sample_weight=weight)
+    auroc = metrics.roc_auc_score(novel_true, novel_score, sample_weight=weight)
+    metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=auroc).plot()
     plt.savefig(folder_path / "roc.png")
     # PRC with 1 as novel target
-    precision, recall, prc_threshs = metrics.precision_recall_curve(novel_true, novel_score)
+    precision, recall, prc_threshs = metrics.precision_recall_curve(
+        novel_true, novel_score, sample_weight=weight)
     metrics.PrecisionRecallDisplay(precision=precision, recall=recall).plot()
     plt.savefig(folder_path / "prc.png")
     # TODO precision and FPR at TPR 95%
