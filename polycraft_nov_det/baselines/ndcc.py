@@ -11,6 +11,7 @@ from torch.optim import lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 
 from polycraft_nov_data.dataloader import polycraft_dataloaders
+import polycraft_nov_data.data_const as data_const
 
 from polycraft_nov_det.detector import NoveltyDetector
 from polycraft_nov_det.models.vgg import VGGPretrained
@@ -123,21 +124,16 @@ def train_ndcc(model, optimizer, scheduler, num_epochs=20, gpu=None):
             else:
                 writer.add_scalar("Average Valid Loss", epoch_loss, epoch)
                 writer.add_scalar("Average Valid Acc", epoch_acc, epoch)
-    train.save_model(model, session_path, num_epochs - 1)
+    train.save_model(model, session_path, num_epochs)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=256) # TODO test with smaller batch
+    parser.add_argument('--batch_size', type=int, default=256)
 
     parser.add_argument('--dataset', type=str, default='FounderType200',
                         choices=['CUB200', 'StanfordDogs', 'FounderType200'])
-    parser.add_argument('--num_workers', type=int, default=4)
-    parser.add_argument('--random_seed', type=int, default=42,
-                        help='random seed for train/test split')
 
-    parser.add_argument('--num_classes', type=int, default=100,
-                        help='the number of training classes')
     parser.add_argument('--num_epochs', type=int, default=10,
                         help='the number of training epochs')
 
@@ -157,9 +153,6 @@ if __name__ == '__main__':
     parser.add_argument('--gma', type=float, default=1 /
                         4096, help='gamma in Eq. (22)')
     parser.add_argument('--r', type=float, default=16, help='|v(x)|=r')
-
-    parser.add_argument('--exp_id', type=str, default='1')
-    parser.add_argument('--checkpoint_dir', type=str, default='checkpoints')
 
     opt = parser.parse_args()
 
@@ -204,8 +197,8 @@ if __name__ == '__main__':
     dataloaders['train'] = train_loader
     dataloaders['val'] = valid_loader
 
-    embedding = VGGPretrained(5).backbone  # num_classes ignored here
-    classifier = nn.Linear(4096, opt.num_classes)
+    embedding = VGGPretrained(len(data_const.NORMAL_CLASSES)).backbone  # num_classes ignored here
+    classifier = nn.Linear(4096, len(data_const.NORMAL_CLASSES))  # replacing typical VGG head
     model = NDCC(embedding=embedding, classifier=classifier, r=opt.r)
 
     optimizer = torch.optim.SGD([{'params': model.embedding.parameters(), 'lr': opt.lr1},
@@ -222,4 +215,4 @@ if __name__ == '__main__':
 
     # ==================== training ====================
 
-    train_ndcc(model, optimizer, scheduler, num_epochs=opt.num_epochs)
+    train_ndcc(model, optimizer, scheduler, num_epochs=opt.num_epochs, gpu=torch.device("cuda:1"))
