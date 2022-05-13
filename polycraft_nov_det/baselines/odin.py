@@ -31,9 +31,9 @@ class OdinDetector(NoveltyDetector):
         pert_data = torch.add(data.data, gradient, alpha=-self.noise)
         with torch.no_grad():
             output = self.model(pert_data)
-        # score from perturbed image
+        # score from perturbed image, multiplying by -1 so large scores are more likely novel
         # selecting first element is only to discard argmax from torch.max
-        return torch.max(torch.softmax(output / self.temp, dim=1), dim=1)[0]
+        return -1 * torch.max(torch.softmax(output / self.temp, dim=1), dim=1)[0]
 
 
 if __name__ == "__main__":
