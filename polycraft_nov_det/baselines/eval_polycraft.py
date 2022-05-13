@@ -47,10 +47,12 @@ def eval_from_save(output_folder):
     auroc = metrics.roc_auc_score(novel_true, novel_score, sample_weight=weight)
     metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=auroc).plot()
     plt.savefig(folder_path / "roc.png")
+    plt.close()
     # PRC with 1 as novel target
     precision, recall, prc_threshs = metrics.precision_recall_curve(
         novel_true, novel_score, sample_weight=weight)
     metrics.PrecisionRecallDisplay(precision=precision, recall=recall).plot()
     plt.savefig(folder_path / "prc.png")
+    plt.close()
     # TODO precision and FPR at TPR 95%
     # TODO TPR and FPR at precision 95%, may have to handle no precision near 95%
