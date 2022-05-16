@@ -31,7 +31,7 @@ def save_scores(detector: NoveltyDetector, output_folder):
     folder_path.mkdir(exist_ok=True, parents=True)
     torch.save(novel_score, folder_path / "novel_score.pt")
     torch.save(novel_true, folder_path / "novel_true.pt")
-    np.save(classes, folder_path / "classes.npy")
+    np.save(folder_path / "classes.npy", classes)
 
 
 def eval_from_save(output_folder):
