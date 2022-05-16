@@ -27,11 +27,11 @@ if __name__ == "__main__":
 
     device = torch.device("cuda:1")
     models = [
-        load_vgg_model(Path("models/vgg/vgg_classifier_1000.pt", device)),
-        load_vgg_model(Path("models/vgg/vgg_classifier_1000_2.pt", device)),
-        load_vgg_model(Path("models/vgg/vgg_classifier_1000_3.pt", device)),
-        load_vgg_model(Path("models/vgg/vgg_classifier_1000_4.pt", device)),
-        load_vgg_model(Path("models/vgg/vgg_classifier_1000_5.pt", device)),
+        load_vgg_model(Path("models/vgg/vgg_classifier_1000.pt"), device),
+        load_vgg_model(Path("models/vgg/vgg_classifier_1000_2.pt"), device),
+        load_vgg_model(Path("models/vgg/vgg_classifier_1000_3.pt"), device),
+        load_vgg_model(Path("models/vgg/vgg_classifier_1000_4.pt"), device),
+        load_vgg_model(Path("models/vgg/vgg_classifier_1000_5.pt"), device),
     ]
     output_folder = Path("models/vgg/eval_ensemble/")
 
