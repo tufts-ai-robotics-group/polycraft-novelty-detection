@@ -42,14 +42,7 @@ if __name__ == "__main__":
     from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
 
     output_parent = Path("models/vgg/eval_odin")
-    model_path = Path("models/vgg/1000.pt")
-    if not model_path.exists():
-        import urllib.request
-
-        urllib.request.urlretrieve(
-            "https://drive.google.com/uc?export=download&id=1qpIqLgPHlFkjtRigbbXFYMdzTTUtzJkY&confirm=t",
-            model_path
-        )
+    model_path = Path("models/vgg/vgg_classifier_1000.pt")
     # define hyperparameter search space
     temps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
     noises = [i * 0.004 / 20 for i in range(21)]
