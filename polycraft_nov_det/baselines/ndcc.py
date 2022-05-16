@@ -124,7 +124,7 @@ def train_ndcc(model, optimizer, scheduler, num_epochs=20, gpu=None):
             else:
                 writer.add_scalar("Average Valid Loss", epoch_loss, epoch)
                 writer.add_scalar("Average Valid Acc", epoch_acc, epoch)
-    train.save_model(model, session_path, num_epochs)
+    train.save_model(model, session_path, num_epochs - 1)
 
 
 if __name__ == '__main__':
