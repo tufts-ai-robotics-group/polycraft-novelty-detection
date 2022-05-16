@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from matplotlib import pyplot as plt
+import numpy as np
 import sklearn.metrics as metrics
 import torch
 
@@ -24,13 +25,13 @@ def save_scores(detector: NoveltyDetector, output_folder):
         novel_true = torch.hstack([novel_true, (~torch.isin(target, normal_targets)).long()])
         targets = torch.hstack([targets, target])
     # convert targets to names
-    classes = torch.Tensor([idx_to_class[target.item()] for target in targets])
+    classes = np.array([idx_to_class[target.item()] for target in targets])
     # output data
     folder_path = Path(output_folder)
     folder_path.mkdir(exist_ok=True, parents=True)
     torch.save(novel_score, folder_path / "novel_score.pt")
     torch.save(novel_true, folder_path / "novel_true.pt")
-    torch.save(classes, folder_path / "classes.pt")
+    np.save(classes, folder_path / "classes.npy")
 
 
 def eval_from_save(output_folder):
