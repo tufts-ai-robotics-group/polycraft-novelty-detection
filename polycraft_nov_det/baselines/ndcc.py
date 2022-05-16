@@ -69,7 +69,7 @@ class NDCCDetector(NoveltyDetector):
             outputs = outputs.detach().cpu().numpy().squeeze()
         distances = mahalanobis_metric(outputs, self.means, self.inv_sigma)
         nd_scores = np.min(distances, axis=1)
-        return nd_scores
+        return torch.Tensor(nd_scores)
 
 
 def train_ndcc(model, optimizer, scheduler, num_epochs=20, gpu=None):
@@ -129,6 +129,9 @@ def train_ndcc(model, optimizer, scheduler, num_epochs=20, gpu=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--eval', action='store_true',
+                        help='evaluate instead of training')
+
     parser.add_argument('--batch_size', type=int, default=256)
 
     parser.add_argument('--dataset', type=str, default='FounderType200',
@@ -168,7 +171,6 @@ if __name__ == '__main__':
 
         opt.lr_milestones = [25, 28, 30]
         opt.num_epochs = 30
-
     elif opt.dataset == 'FounderType200':
         opt.num_classes = 100
         opt.lr1 = 1e-2
@@ -179,7 +181,6 @@ if __name__ == '__main__':
         opt.lmd = 2e-1
         opt.lr_milestones = [5, 10]
         opt.num_epochs = 10
-
     elif opt.dataset == 'CUB200':
         opt.num_classes = 100
         opt.lr1 = 1e-2
@@ -213,6 +214,16 @@ if __name__ == '__main__':
     scheduler = lr_scheduler.MultiStepLR(
         optimizer, milestones=opt.lr_milestones, gamma=0.1)
 
-    # ==================== training ====================
+    device = torch.device("cuda:1")
+    # train model
+    if not opt.eval:
+        train_ndcc(model, optimizer, scheduler, num_epochs=opt.num_epochs, gpu=device)
+    # eval model
+    else:
+        from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
+        from polycraft_nov_det.model_utils import load_model
 
-    train_ndcc(model, optimizer, scheduler, num_epochs=opt.num_epochs, gpu=torch.device("cuda:1"))
+        model = load_model("models/vgg/ndcc_stanford_dogs_30.pt", model, device)
+        output_folder = Path("models/vgg/eval_ndcc/stanford_dogs/")
+        save_scores(NDCCDetector(model, device), output_folder)
+        eval_from_save(output_folder)
