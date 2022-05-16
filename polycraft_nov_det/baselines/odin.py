@@ -6,7 +6,7 @@ from polycraft_nov_det.model_utils import load_vgg_model
 
 
 class OdinDetector(NoveltyDetector):
-    def __init__(self, model_path, device="cpu", temp=1000, noise=.0014):
+    def __init__(self, model_path, device="cpu", temp=1000, noise=.0004):
         super().__init__(device)
         self.model = load_vgg_model(model_path, device).to(device).eval()
         self.temp = temp
