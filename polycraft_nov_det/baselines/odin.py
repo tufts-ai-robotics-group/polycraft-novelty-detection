@@ -49,7 +49,6 @@ if __name__ == "__main__":
     for temp in temps:
         for noise in noises:
             output_folder = output_parent / Path(f"t={temp}_n={noise:.4f}")
-            output_folder.mkdir(exist_ok=True, parents=True)
             save_scores(
                 OdinDetector(model_path, device=torch.device("cuda:1"), temp=temp, noise=noise),
                 output_folder)

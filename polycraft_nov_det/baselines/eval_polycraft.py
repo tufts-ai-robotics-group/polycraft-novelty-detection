@@ -22,12 +22,12 @@ def save_scores(detector: NoveltyDetector, output_folder):
     for data, target in test_loader:
         novel_score = torch.hstack([novel_score, detector.novelty_score(data).cpu()])
         novel_true = torch.hstack([novel_true, (~torch.isin(target, normal_targets)).long()])
-        targets = torch.hstack([targets, targets])
+        targets = torch.hstack([targets, target])
     # convert targets to names
     classes = torch.Tensor([idx_to_class[target.item()] for target in targets])
     # output data
     folder_path = Path(output_folder)
-    folder_path.mkdir(exist_ok=True)
+    folder_path.mkdir(exist_ok=True, parents=True)
     torch.save(novel_score, folder_path / "novel_score.pt")
     torch.save(novel_true, folder_path / "novel_true.pt")
     torch.save(classes, folder_path / "classes.pt")
@@ -53,7 +53,8 @@ def eval_from_save(output_folder):
     precision, recall, prc_threshs = metrics.precision_recall_curve(
         novel_true, novel_score, sample_weight=weight)
     av_p = metrics.average_precision_score(novel_true, novel_score, sample_weight=weight)
-    metrics.PrecisionRecallDisplay(precision=precision, recall=recall, average_precision=av_p).plot()
+    metrics.PrecisionRecallDisplay(
+        precision=precision, recall=recall, average_precision=av_p).plot()
     plt.savefig(folder_path / "prc.png")
     plt.close()
     # TODO precision and FPR at TPR 95%
