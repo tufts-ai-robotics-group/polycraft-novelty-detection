@@ -94,7 +94,7 @@ def train_ndcc(model, optimizer, scheduler, num_epochs=20, gpu=None):
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
-                    sigma2 = (model.sigma + model.delta) ** 2
+                    sigma2 = ((model.sigma + model.delta) ** 2).to(device)
                     means = model.classifier.weight * sigma2
                     loss_md = (torch.div((outputs - means[labels]) ** 2, sigma2.detach())).sum() \
                         / (2 * outputs.shape[0])
@@ -132,10 +132,11 @@ if __name__ == '__main__':
     parser.add_argument('--eval', action='store_true',
                         help='evaluate instead of training')
 
-    parser.add_argument('--batch_size', type=int, default=256)
+    # smaller batch size compared to paper due to limited GPU
+    parser.add_argument('--batch_size', type=int, default=64)
 
-    parser.add_argument('--dataset', type=str, default='FounderType200',
-                        choices=['CUB200', 'StanfordDogs', 'FounderType200'])
+    parser.add_argument('--dataset', type=str, default='StanfordDogsTimes1e-1',
+                        choices=['StanfordDogs', 'StanfordDogsTimes1e-1', 'StanfordDogsTimes1e-2'])
 
     parser.add_argument('--num_epochs', type=int, default=10,
                         help='the number of training epochs')
@@ -159,7 +160,6 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
-    # recommended choice for hyperparameters (according to Table C.1. in our Supplementary Material)
     if opt.dataset == 'StanfordDogs':
         opt.num_classes = 60
         opt.lr1 = 1e-3
@@ -171,27 +171,28 @@ if __name__ == '__main__':
 
         opt.lr_milestones = [25, 28, 30]
         opt.num_epochs = 30
-    elif opt.dataset == 'FounderType200':
-        opt.num_classes = 100
-        opt.lr1 = 1e-2
-        opt.lr2 = 1e-1
-        opt.lr3 = 1e-1
-        opt.lr4 = 1e-3
-        opt.r = 32
+    elif opt.dataset == 'StanfordDogsTimes1e-1':
+        opt.num_classes = 60
+        opt.lr1 = 1e-4
+        opt.lr2 = 1e-2
+        opt.lr3 = 1e-2
+        opt.lr4 = 1e-4
+        opt.r = 16
         opt.lmd = 2e-1
-        opt.lr_milestones = [5, 10]
-        opt.num_epochs = 10
-    elif opt.dataset == 'CUB200':
-        opt.num_classes = 100
-        opt.lr1 = 1e-2
-        opt.lr2 = 1e-1
-        opt.lr3 = 1e-1
-        opt.lr4 = 1e-3
-        opt.r = 8
-        opt.lmd = 1e-4
 
-        opt.lr_milestones = [30, 40]
-        opt.num_epochs = 40
+        opt.lr_milestones = [25, 28, 30]
+        opt.num_epochs = 30
+    elif opt.dataset == 'StanfordDogsTimes1e-2':
+        opt.num_classes = 60
+        opt.lr1 = 1e-5
+        opt.lr2 = 1e-3
+        opt.lr3 = 1e-3
+        opt.lr4 = 1e-5
+        opt.r = 16
+        opt.lmd = 2e-1
+
+        opt.lr_milestones = [25, 28, 30]
+        opt.num_epochs = 30
 
     train_loader, valid_loader, _ = polycraft_dataloaders(opt.batch_size)
     dataloaders = {}
