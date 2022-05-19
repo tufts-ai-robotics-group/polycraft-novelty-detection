@@ -9,6 +9,7 @@ from sklearn.svm import OneClassSVM
 
 from polycraft_nov_data.dataloader import polycraft_dataloaders
 import polycraft_nov_det.model_utils as model_utils
+from polycraft_nov_det.detector import NoveltyDetector
 
 
 def extract_features(feature_extractor, loader):
@@ -41,6 +42,19 @@ def extract_features(feature_extractor, loader):
     target_list = np.concatenate(target_list)
 
     return features_list, target_list
+
+
+class OneClassSVMDetector(NoveltyDetector):
+    def __init__(self, svm, device="cpu"):
+        super().__init__(device)
+        self.svm = svm
+        
+    def novelty_score(self, features):
+        outputs = self.svm.predict(features)
+        # svm output +1 --> not novel (0), svm output -1 --> novel
+        outputs = torch.Tensor(outputs)
+        outputs = [0 if (i == +1) else 1 for i in outputs]
+        return outputs
 
 
 def fit_oneclassSVM(feature_extractor, train_loader, valid_loader):
@@ -77,16 +91,15 @@ def fit_oneclassSVM(feature_extractor, train_loader, valid_loader):
 
             # fit svm on training data using feature vectors (without any novelties)
             oc_svm = svm.fit(features_train)
-            svm_pred = oc_svm.predict(features_train)
-            svm_pred = [0 if (i == +1) else 1 for i in svm_pred]
-
+            detector = OneClassSVMDetector(oc_svm)
+            svm_pred = detector.novelty_score(features_train) 
             # calculate accuracy
             train_acc = np.sum(svm_pred == targets_train)/len(features_train)
             print('Train Acc.: ', train_acc)
 
             # apply svm (fitted on training data) to validation data (with novelties)
-            svm_pred = oc_svm.predict(features_valid)
-            svm_pred = [0 if (i == +1) else 1 for i in svm_pred]
+            svm_pred = detector.novelty_score(features_valid) 
+
             # calculate accuracy
             valid_acc = np.sum(svm_pred == targets_valid)/len(features_valid)
             print('Valid Acc.: ', valid_acc)
