@@ -69,3 +69,31 @@ def eval_from_save(output_folder):
     precision_80_ind = np.argwhere(precision >= .8)[0]
     print(f"Recall(TPR) @ Precision {precision[precision_80_ind][0]}%: " +
           f"{recall[precision_80_ind][0]}")
+    return fpr, tpr, auroc, precision, recall, av_p
+
+
+if __name__ == "__main__":
+    method_to_outputs = {
+        "NDCC": Path("models/vgg/eval_ndcc/stanford_dogs_times_1e-1"),
+        "ODIN": Path("models/vgg/eval_odin/t=1000_n=0.0004"),
+        "Ensemble": Path("models/vgg/eval_ensemble/"),
+    }
+    for method, output_folder in method_to_outputs.items():
+        fpr, tpr, auroc, precision, recall, av_p = eval_from_save(output_folder)
+        plt.figure(1)
+        plt.plot(fpr, tpr, label=f"{method} (AUROC {auroc:.2%})")
+        plt.figure(2)
+        plt.plot(recall, precision, label=f"{method} (Av. Precision {av_p:.2%})",
+                 drawstyle="steps-post")
+    # ROC figure
+    plt.figure(1)
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.legend(loc="lower right")
+    plt.savefig("figures/roc.png")
+    # PRC figure
+    plt.figure(2)
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.legend(loc="upper right")
+    plt.savefig("figures/prc.png")
