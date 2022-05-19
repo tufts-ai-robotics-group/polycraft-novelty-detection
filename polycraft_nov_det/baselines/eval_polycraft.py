@@ -50,6 +50,9 @@ def eval_from_save(output_folder):
     metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=auroc).plot()
     plt.savefig(folder_path / "roc.png")
     plt.close()
+    # FPR at TPR 95%
+    tpr_95_ind = np.argwhere(tpr >= .95)[0]
+    print(f"FPR @ TPR {tpr[tpr_95_ind][0]}%: {fpr[tpr_95_ind][0]}")
     # PRC with 1 as novel target
     precision, recall, prc_threshs = metrics.precision_recall_curve(
         novel_true, novel_score, sample_weight=weight)
@@ -58,5 +61,7 @@ def eval_from_save(output_folder):
         precision=precision, recall=recall, average_precision=av_p).plot()
     plt.savefig(folder_path / "prc.png")
     plt.close()
-    # TODO precision and FPR at TPR 95%
-    # TODO TPR and FPR at precision 95%, may have to handle no precision near 95%
+    # recall at precision 80%
+    precision_80_ind = np.argwhere(precision >= .8)[0]
+    print(f"Recall(TPR) @ Precision {precision[precision_80_ind][0]}%: " +
+          f"{recall[precision_80_ind][0]}")
