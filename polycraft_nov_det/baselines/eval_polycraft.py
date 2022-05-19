@@ -12,26 +12,28 @@ from polycraft_nov_det.detector import NoveltyDetector
 
 
 def save_scores(detector: NoveltyDetector, output_folder):
-    (_, _, test_loader), class_to_idx = polycraft_dataloaders(
+    (_, valid_loader, test_loader), class_to_idx = polycraft_dataloaders(
             include_novel=True, ret_class_to_idx=True, shuffle=False)
     normal_targets = torch.Tensor([class_to_idx[c] for c in data_const.NORMAL_CLASSES])
     idx_to_class = {v: k for k, v in class_to_idx.items()}
-    # collect scores, novelty labels with 1 as novel, and targets
-    novel_score = torch.Tensor([])
-    novel_true = torch.Tensor([])
-    targets = torch.Tensor([])
-    for data, target in test_loader:
-        novel_score = torch.hstack([novel_score, detector.novelty_score(data).cpu()])
-        novel_true = torch.hstack([novel_true, (~torch.isin(target, normal_targets)).long()])
-        targets = torch.hstack([targets, target])
-    # convert targets to names
-    classes = np.array([idx_to_class[target.item()] for target in targets])
-    # output data
-    folder_path = Path(output_folder)
-    folder_path.mkdir(exist_ok=True, parents=True)
-    torch.save(novel_score, folder_path / "novel_score.pt")
-    torch.save(novel_true, folder_path / "novel_true.pt")
-    np.save(folder_path / "classes.npy", classes)
+    for split in ["valid", "test"]:
+        loader = valid_loader if split == "valid" else test_loader
+        # collect scores, novelty labels with 1 as novel, and targets
+        novel_score = torch.Tensor([])
+        novel_true = torch.Tensor([])
+        targets = torch.Tensor([])
+        for data, target in loader:
+            novel_score = torch.hstack([novel_score, detector.novelty_score(data).cpu()])
+            novel_true = torch.hstack([novel_true, (~torch.isin(target, normal_targets)).long()])
+            targets = torch.hstack([targets, target])
+        # convert targets to names
+        classes = np.array([idx_to_class[target.item()] for target in targets])
+        # output data
+        folder_path = Path(output_folder)
+        folder_path.mkdir(exist_ok=True, parents=True)
+        torch.save(novel_score, folder_path / f"{split}_novel_score.pt")
+        torch.save(novel_true, folder_path / f"{split}_novel_true.pt")
+        np.save(folder_path / f"{split}_classes.npy", classes)
 
 
 def eval_from_save(output_folder):
