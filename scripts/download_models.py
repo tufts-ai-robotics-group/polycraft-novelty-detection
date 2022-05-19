@@ -6,6 +6,9 @@ model_path_to_url = {
     Path("models/vgg/ndcc_stanford_dogs_30.pt"):
     "https://drive.google.com/uc?export=download&id=1gm8GvXkTjgw-1u3YBdqioOGG0onD9si9&confirm=t",
 
+    Path("models/vgg/ndcc_stanford_dogs_times_1e-1_30.pt"):
+    "https://drive.google.com/uc?export=download&id=1Oa_I0mXNptp-swrX6Kg2j4ZxrhdyOdNi&confirm=t",
+
     Path("models/vgg/vgg_classifier_1000.pt"):
     "https://drive.google.com/uc?export=download&id=1bw5pYUPKPg6WlMyowuzG-nfCTBeJvvS0&confirm=t",
 
