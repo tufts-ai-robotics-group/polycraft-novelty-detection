@@ -50,6 +50,7 @@ def eval_from_save(output_folder):
     metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=auroc).plot()
     plt.savefig(folder_path / "roc.png")
     plt.close()
+    print(f"AUROC: {auroc}")
     # FPR at TPR 95%
     tpr_95_ind = np.argwhere(tpr >= .95)[0]
     print(f"FPR @ TPR {tpr[tpr_95_ind][0]}%: {fpr[tpr_95_ind][0]}")
@@ -61,6 +62,7 @@ def eval_from_save(output_folder):
         precision=precision, recall=recall, average_precision=av_p).plot()
     plt.savefig(folder_path / "prc.png")
     plt.close()
+    print(f"Average Precision: {av_p}")
     # recall at precision 80%
     precision_80_ind = np.argwhere(precision >= .8)[0]
     print(f"Recall(TPR) @ Precision {precision[precision_80_ind][0]}%: " +
