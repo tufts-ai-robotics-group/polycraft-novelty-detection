@@ -3,6 +3,7 @@ import pathlib
 import numpy as np
 import joblib
 import torch
+import matplotlib.pyplot as plt
 
 from sklearn.svm import OneClassSVM
 
@@ -23,6 +24,7 @@ def extract_features(feature_extractor, loader):
     feature_extractor = feature_extractor.backbone
     features_list = []
     target_list = []
+    print('Lets collect features')
 
     for j, (data, target) in enumerate(loader):
         # novel --> 1, not novel (class 0, 1, 2, 3, 4) --> 0
@@ -31,8 +33,8 @@ def extract_features(feature_extractor, loader):
         features = feature_extractor(data).detach().numpy()
         features_list.append(features)
 
-        if j == 2:
-            break
+        #if j == 1:
+        #    break
 
     print('Features collected')
     features_list = np.concatenate(features_list)
@@ -55,14 +57,20 @@ def fit_oneclassSVM(feature_extractor, train_loader, valid_loader):
     # get a unique path for this session to prevent overwriting
     start_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
     session_path = pathlib.Path('OneClassSVM') / pathlib.Path(start_time)
+    print('--------------')
     features_train, targets_train = extract_features(feature_extractor, train_loader)
     features_valid, targets_valid = extract_features(feature_extractor, valid_loader)
 
-    nu_range = np.linspace(0, 1, 6)
+    nu_range = np.linspace(0.1, 0.9, 9)
     gamma_range = np.logspace(-5, 5, 11)
+    acc_nn = np.zeros((len(nu_range), len(gamma_range)))
+    acc_n = np.zeros((len(nu_range), len(gamma_range)))
 
-    for nu in nu_range:
-        for gamma in gamma_range:
+    for i, nu in enumerate(nu_range):
+        for j, gamma in enumerate(gamma_range):
+            print('--------------------------', flush = True)
+            print('Nu ', nu)
+            print('Gamma ', gamma)
 
             # OneClassSVM based on Schölkopf et. al.
             svm = OneClassSVM(nu=nu, kernel='rbf', gamma=gamma)
@@ -92,8 +100,11 @@ def fit_oneclassSVM(feature_extractor, train_loader, valid_loader):
                 num_corrects_per_class = match.sum()
                 acc_per_class.append(num_corrects_per_class / noi_per_class)
 
-            print('Valid Acc, class non-normal: ', acc_per_class[0], flush=True)
+            print('Valid Acc, class non-novel: ', acc_per_class[0], flush=True)
             print('Valid Acc, class novel: ', acc_per_class[1], flush=True)
+            
+            acc_nn[i][j] = acc_per_class[0]
+            acc_n[i][j] = acc_per_class[1]
 
             # construct paths
             model_dir = pathlib.Path("models") / session_path
@@ -101,13 +112,32 @@ def fit_oneclassSVM(feature_extractor, train_loader, valid_loader):
             # make directory and save model
             model_dir.mkdir(parents=True, exist_ok=True)
             joblib.dump(oc_svm, model_dir / model_fname)
+            
+    X, Y = np.meshgrid(gamma_range, nu_range)
+            
+    fig, ax = plt.subplots(1, 2, constrained_layout=True, figsize=(12,5), dpi=300)
+    p = ax[0].pcolor(X, Y, acc_nn, vmin=abs(acc_nn).min(), vmax=abs(acc_nn).max())
+    ax[0].set_xscale('log')
+    ax[0].set_xlabel('gamma')
+    ax[0].set_ylabel('nu')
+    ax[0].title.set_text('Non-novel accuracy')
+    cb = fig.colorbar(p, ax=ax[0])
+    
+    p = ax[1].pcolor(X, Y, acc_n, vmin=abs(acc_n).min(), vmax=abs(acc_n).max())
+    ax[1].set_xscale('log')
+    ax[1].set_xlabel('gamma')
+    ax[1].set_ylabel('nu')
+    ax[1].title.set_text('Novel accuracy')
+    cb = fig.colorbar(p, ax=ax[1])
+    
+    fig.savefig('param_search.png')
 
     return oc_svm
 
 
 if __name__ == '__main__':
 
-    gpu = 2
+    gpu = 1
     num_classes = 5
     device = torch.device(gpu if gpu is not None else "cpu")
 
