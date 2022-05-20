@@ -21,6 +21,11 @@ Pytorch requires different versions depending on the machine it is running on. T
 pipenv run pip3 install torch torchvision torchaudio
 ```
 
+To install pretrained models run:
+```
+pipenv run python scripts/download_models.py
+```
+
 #### Conda Installation
 
 The following instructions are **not recommended** unless you are unable to install a Python version compatible with the Pipenv.
