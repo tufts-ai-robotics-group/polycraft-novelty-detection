@@ -9,6 +9,7 @@ from polycraft_nov_det.data.loader_trans import GaussianBlur, TransformTwice
 
 # data shape constant
 CIFAR_SHAPE = (3, 32, 32)
+IMAGENET_SHAPE = (3, 224, 224)
 
 
 def torch_cifar(norm_targets, batch_size=32, include_novel=False, shuffle=True, use_10=True,
@@ -41,6 +42,8 @@ def torch_cifar(norm_targets, batch_size=32, include_novel=False, shuffle=True, 
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
         interp = transforms.InterpolationMode.BICUBIC
+        # resizing to ImageNet shape (3, 224, 224)
+        resize = transforms.Resize(IMAGENET_SHAPE[1], interpolation=interp)
         if rot_loader == "consistent":
             # based on DINO global transforms
             # https://github.com/facebookresearch/dino/blob/main/main_dino.py
@@ -54,25 +57,30 @@ def torch_cifar(norm_targets, batch_size=32, include_novel=False, shuffle=True, 
             ])
             # guaranteed blur transform
             blur_transform = transforms.Compose([
-                transforms.RandomResizedCrop(CIFAR_SHAPE[1], scale=(.4, 1), interpolation=interp),
+                transforms.RandomResizedCrop(IMAGENET_SHAPE[1], scale=(.4, 1),
+                                             interpolation=interp),
                 flip_and_color_jitter,
                 GaussianBlur(1.0),
             ])
             # chance of blur and/or solarize transform
             blur_solarize_transform = transforms.Compose([
-                transforms.RandomResizedCrop(CIFAR_SHAPE[1], scale=(.4, 1), interpolation=interp),
+                transforms.RandomResizedCrop(IMAGENET_SHAPE[1], scale=(.4, 1),
+                                             interpolation=interp),
                 flip_and_color_jitter,
                 GaussianBlur(0.1),
                 transforms.RandomSolarize(128, p=.2),
             ])
             # randomly apply one of two above
             train_transform = TransformTwice(transforms.Compose([
+                resize,
                 transforms.RandomChoice([blur_transform, blur_solarize_transform]),
                 test_transform,
             ]))
         else:
             train_transform = transforms.Compose([
-                transforms.RandomResizedCrop(CIFAR_SHAPE[1], scale=(.4, 1), interpolation=interp),
+                resize,
+                transforms.RandomResizedCrop(IMAGENET_SHAPE[1], scale=(.4, 1),
+                                             interpolation=interp),
                 transforms.RandomHorizontalFlip(),
                 test_transform,
             ])
