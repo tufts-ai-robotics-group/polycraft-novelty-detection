@@ -43,9 +43,11 @@ def base_dataset(dataset_class, train_kwargs, test_kwargs, norm_targets, include
     # select only included classes and split the train set to get a validation set
     train_set, valid_set = dataset_transforms.filter_split(train_set, class_splits)
     if not include_novel:
-        test_set = dataset_transforms.filter_dataset(test_set, norm_targets)
+        test_set = dataset_transforms.filter_dataset(
+            test_set, [test_set.classes[target] for target in norm_targets])
     else:
-        test_set = dataset_transforms.filter_dataset(test_set, targets)
+        test_set = dataset_transforms.filter_dataset(
+            test_set, [test_set.classes[target] for target in targets])
     return norm_targets, novel_targets, (train_set, valid_set, test_set)
 
 
