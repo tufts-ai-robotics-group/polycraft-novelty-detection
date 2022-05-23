@@ -70,7 +70,6 @@ def fit_oneclassSVM(feature_extractor, train_loader, valid_loader):
     """Fit a One-Class SVM. The SVM is fit based on features extracted by the
     trained VGG16 classifier backbone on the training set.
     Args:
-        svm (sklearn.svm.OneClassSVM): One-Class SVM model.
         feature extractor (torch.nn.Module): Trained vgg16 classifier.
         train_loader (torch.utils.data.DataLoader): Training set for SVM.
         valid_loader (torch.utils.data.DataLoader): Validation set for SVM.
@@ -138,27 +137,25 @@ def fit_oneclassSVM(feature_extractor, train_loader, valid_loader):
                 match = match & (svm_pred == targets_valid)
                 num_corrects_per_class = match.sum()
                 corr_per_class.append(num_corrects_per_class)
-                
-                
+
             print('tp', corr_per_class[1])
             print('tn', corr_per_class[0])
-            
+
             print('Valid Acc, class non-novel: ', corr_per_class[0]/num_per_class[0], flush=True)
             print('Valid Acc, class novel: ', corr_per_class[1]/num_per_class[0], flush=True)
-            
+
             precision[i][j] = t_pos/(t_pos + f_pos)
             recall[i][j] = t_pos/(t_pos + f_neg)
-            print("nu_%f_gamm_%f.pkl" % (nu, gamma))
-           
+
             # construct paths
             model_dir = pathlib.Path("models") / session_path
             model_fname = pathlib.Path("nu_%f_gamm_%f.pkl" % (nu, gamma))
             # make directory and save model
             model_dir.mkdir(parents=True, exist_ok=True)
             joblib.dump(oc_svm, model_dir / model_fname)
-            
+
     X, Y = np.meshgrid(gamma_range, nu_range)
-            
+
     fig, ax = plt.subplots(1, 2, constrained_layout=True, figsize=(12,5), dpi=300)
     p = ax[0].pcolor(X, Y, precision, vmin=abs(precision).min(), vmax=abs(precision).max())
     ax[0].set_xscale('log')
@@ -166,26 +163,53 @@ def fit_oneclassSVM(feature_extractor, train_loader, valid_loader):
     ax[0].set_ylabel('nu')
     ax[0].title.set_text('Precision')
     cb = fig.colorbar(p, ax=ax[0])
-    
+
     p = ax[1].pcolor(X, Y, recall, vmin=abs(recall).min(), vmax=abs(recall).max())
     ax[1].set_xscale('log')
     ax[1].set_xlabel('gamma')
     ax[1].set_ylabel('nu')
     ax[1].title.set_text('Recall')
     cb = fig.colorbar(p, ax=ax[1])
-    
+
     fig.savefig('param_search.png')
 
     return oc_svm
 
 
+def test_oneclassSVM(feature_extractor, test_loader):
+    """Test a trained One-Class SVM. The SVM is tested based on features extracted by the
+    trained VGG16 classifier backbone on the test set.
+    Args:
+        feature extractor (torch.nn.Module): Trained vgg16 classifier.
+        test_loader (torch.utils.data.DataLoader): Test set for SVM.
+    """
+    features_test, targets_test = extract_features(feature_extractor, test_loader)
+    oc_svm = joblib.load('models/nu_0.300000_gamm_0.000100.pkl')
+    detector = OneClassSVMDetector(oc_svm)
+    svm_pred = detector.novelty_score(features_test)
+
+    svm_pred = np.asarray([bool(x) for x in svm_pred])
+    targets_test = np.asarray([bool(x) for x in targets_test])
+    t_pos = np.sum(np.logical_and(svm_pred, targets_test))
+    f_pos = np.sum(np.logical_and(svm_pred, ~targets_test))
+    f_neg = np.sum(np.logical_and(~svm_pred, targets_test))
+
+    precision = t_pos / (t_pos + f_pos)
+    recall = t_pos / (t_pos + f_neg)
+
+    print('Precision on test set: ', precision)
+    print('Recall on test set: ', recall)
+
+    return
+
+
 if __name__ == '__main__':
 
-    gpu = 0
+    gpu = 1
     num_classes = 5
     device = torch.device(gpu if gpu is not None else "cpu")
 
-    (train_loader, valid_loader, _), labels = polycraft_dataloaders(batch_size=100,
+    (train_loader, valid_loader, test_loader), labels = polycraft_dataloaders(batch_size=100,
                                                           image_scale=1.0,
                                                           patch=False,
                                                           include_novel=True,
@@ -194,5 +218,5 @@ if __name__ == '__main__':
     
     
     classifier = load_vgg_model(Path("../models/VGGPretrained_class_normal_fence_item_anvil_item_sand_item_coal_block/2022.05.10.11.51.34/1000.pt"), device)
-    svm = fit_oneclassSVM(classifier.eval(), train_loader, valid_loader)
+    svm = test_oneclassSVM(classifier.eval(), test_loader)
     
