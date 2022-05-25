@@ -298,7 +298,7 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=0.0005, epochs=
         model (torch.nn.Module): Model to train.
         model_label (str): Label for model type, preferably from model_label function.
         train_loader (torch.utils.data.DataLoader): Training set for model.
-        train_loader (torch.utils.data.DataLoader): Validation set for model.
+        norm_targets (list): Targets for normal data.
         lr (float): Learning rate.
         epochs (int, optional): Number of epochs to train for. Defaults to 200.
         gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
