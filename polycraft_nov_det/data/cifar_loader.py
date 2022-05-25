@@ -1,15 +1,13 @@
 from importlib.resources import path
 
 from torchvision.datasets import CIFAR10, CIFAR100
-from torchvision import transforms
 
 from polycraft_nov_det.data.base_loader import base_loader
-from polycraft_nov_det.data.loader_trans import GaussianBlur, TransformTwice
+from polycraft_nov_det.data.loader_trans import DINOConsistentTrans, DINOCropTrans, DINONormTrans
 
 
 # data shape constant
 CIFAR_SHAPE = (3, 32, 32)
-IMAGENET_SHAPE = (3, 224, 224)
 
 
 def torch_cifar(norm_targets, batch_size=32, include_novel=False, shuffle=True, use_10=True,
@@ -37,53 +35,11 @@ def torch_cifar(norm_targets, batch_size=32, include_novel=False, shuffle=True, 
     """
     dataset_class = CIFAR10 if use_10 else CIFAR100
     with path("polycraft_nov_det", "base_data") as data_path:
-        test_transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        ])
-        interp = transforms.InterpolationMode.BICUBIC
-        # resizing to ImageNet shape (3, 224, 224)
-        resize = transforms.Resize(IMAGENET_SHAPE[1], interpolation=interp)
+        test_transform = DINONormTrans()
         if rot_loader == "consistent":
-            # based on DINO global transforms
-            # https://github.com/facebookresearch/dino/blob/main/main_dino.py
-            flip_and_color_jitter = transforms.Compose([
-                transforms.RandomHorizontalFlip(p=0.5),
-                transforms.RandomApply(
-                    [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1)],
-                    p=0.8
-                ),
-                transforms.RandomGrayscale(p=0.2),
-            ])
-            # guaranteed blur transform
-            blur_transform = transforms.Compose([
-                transforms.RandomResizedCrop(IMAGENET_SHAPE[1], scale=(.4, 1),
-                                             interpolation=interp),
-                flip_and_color_jitter,
-                GaussianBlur(1.0),
-            ])
-            # chance of blur and/or solarize transform
-            blur_solarize_transform = transforms.Compose([
-                transforms.RandomResizedCrop(IMAGENET_SHAPE[1], scale=(.4, 1),
-                                             interpolation=interp),
-                flip_and_color_jitter,
-                GaussianBlur(0.1),
-                transforms.RandomSolarize(128, p=.2),
-            ])
-            # randomly apply one of two above
-            train_transform = TransformTwice(transforms.Compose([
-                resize,
-                transforms.RandomChoice([blur_transform, blur_solarize_transform]),
-                test_transform,
-            ]))
+            train_transform = DINOConsistentTrans()
         else:
-            train_transform = transforms.Compose([
-                resize,
-                transforms.RandomResizedCrop(IMAGENET_SHAPE[1], scale=(.4, 1),
-                                             interpolation=interp),
-                transforms.RandomHorizontalFlip(),
-                test_transform,
-            ])
+            train_transform = DINOCropTrans()
         train_kwargs = {
             "root": data_path,
             "train": True,
