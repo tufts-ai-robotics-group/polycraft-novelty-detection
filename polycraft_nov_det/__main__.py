@@ -1,6 +1,10 @@
 import argparse
 
+from polycraft_nov_data.dataloader import polycraft_dataloaders_gcd
+import polycraft_nov_data.data_const as data_const
+
 from polycraft_nov_det.data.cifar_loader import torch_cifar
+from polycraft_nov_det.data.loader_trans import DINOConsistentTrans
 from polycraft_nov_det.models.autonovel_resnet import AutoNovelResNet
 from polycraft_nov_det.model_load import load_autonovel_resnet, load_dino_pretrained
 from polycraft_nov_det.models.dino_train import DinoWithHead
@@ -55,10 +59,9 @@ elif args.model == "autonovel":
     train.train_autonovel(model, model_label, train_loader, norm_targets, gpu=args.gpu)
 elif args.model == "gcd":
     batch_size = 128
-    norm_targets, novel_targets, (train_loader, _, _) = torch_cifar(
-        range(5), batch_size, include_novel=True, rot_loader="consistent")
+    train_loader = polycraft_dataloaders_gcd(DINOConsistentTrans(), batch_size, include_novel=True)
     # get model instance
     model = DinoWithHead(load_dino_pretrained())
     # start model training
-    model_label = args.name if args.name is not None else train.model_label(model, norm_targets)
-    train.train_gcd(model, model_label, train_loader, norm_targets, gpu=args.gpu)
+    model_label = args.name if args.name is not None else train.model_label(model, "nov")
+    train.train_gcd(model, model_label, train_loader, data_const.NORMAL_CLASSES, gpu=args.gpu)
