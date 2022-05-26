@@ -38,8 +38,8 @@ def save_scores(detector: NoveltyDetector, output_folder):
 
 def eval_from_save(output_folder):
     folder_path = Path(output_folder)
-    novel_true = torch.load(folder_path / "novel_true.pt")
-    novel_score = torch.load(folder_path / "novel_score.pt")
+    novel_true = torch.load(folder_path / "test_novel_true.pt")
+    novel_score = torch.load(folder_path / "test_novel_score.pt")
     # upsample normal data so it accounts for 3/4 of the weight, roughly the split of an episode
     # should affect PRC but not ROC
     norm_count = torch.sum(novel_true == 0)
