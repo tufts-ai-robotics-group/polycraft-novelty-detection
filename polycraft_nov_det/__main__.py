@@ -18,6 +18,8 @@ parser.add_argument("-model", choices=["self_supervised", "supervised", "autonov
 parser.add_argument("-name", default=None, help="Name for model run")
 parser.add_argument("-gpu", type=int, default=1,
                     help="Index of GPU to train on, negative int for CPU")
+parser.add_argument("-sup_weight", type=float, default=.35,
+                    help="Hyperparameter for GCD loss")
 args = parser.parse_args()
 # process args
 if args.gpu < 0:
@@ -64,4 +66,5 @@ elif args.model == "gcd":
     model = DinoWithHead(load_dino_pretrained())
     # start model training
     model_label = args.name if args.name is not None else train.model_label(model, "nov")
-    train.train_gcd(model, model_label, train_loader, data_const.NORMAL_CLASSES, gpu=args.gpu)
+    train.train_gcd(model, model_label, train_loader, data_const.NORMAL_CLASSES, gpu=args.gpu,
+                    supervised_weight=args.sup_weight)

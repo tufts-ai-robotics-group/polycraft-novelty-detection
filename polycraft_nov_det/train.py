@@ -291,7 +291,7 @@ def run_epoch_gcd(loader, model, loss_func, device, epoch, optimizer=None, lr_sc
 
 
 def train_gcd(model, model_label, train_loader, norm_targets, lr=0.0005, epochs=200,
-              gpu=None):
+              supervised_weight=0.35, gpu=None):
     """Train a model for generalized category discovery.
 
     Args:
@@ -301,6 +301,7 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=0.0005, epochs=
         norm_targets (list): Targets for normal data.
         lr (float): Learning rate.
         epochs (int, optional): Number of epochs to train for. Defaults to 200.
+        supervised_weight (float, optional): Weight for supervised GCD objective. Defaults to 0.35.
         gpu (int, optional): Index of GPU to use, CPU if None. Defaults to None.
 
     Returns:
@@ -312,7 +313,7 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=0.0005, epochs=
     # get Tensorboard writer
     writer = SummaryWriter(pathlib.Path("runs") / session_path)
     # define training constants
-    loss_func = GCDLoss(norm_targets)
+    loss_func = GCDLoss(norm_targets, supervised_weight)
     device = torch.device(gpu if gpu is not None else "cpu")
     # move model to device
     model.to(device)
