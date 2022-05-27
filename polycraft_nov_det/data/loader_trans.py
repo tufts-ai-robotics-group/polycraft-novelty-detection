@@ -105,10 +105,10 @@ class DINOCropTrans:
 
 class DINOTestTrans:
     def __init__(self) -> None:
-        self.transform = TransformTwice(transforms.Compose([
+        self.transform = transforms.Compose([
             transforms.Resize(IMAGENET_SHAPE[1], interpolation=INTERP),
             DINONormTrans(),
-        ]))
+        ])
 
     def __call__(self, img):
         return self.transform(img)
