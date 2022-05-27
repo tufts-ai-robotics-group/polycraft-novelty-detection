@@ -11,8 +11,9 @@ from polycraft_nov_data.dataloader import polycraft_dataloaders
 from polycraft_nov_det.detector import NoveltyDetector
 
 
-def save_scores(detector: NoveltyDetector, output_folder):
+def save_scores(detector: NoveltyDetector, output_folder, patch=False):
     (_, valid_loader, test_loader), class_to_idx = polycraft_dataloaders(
+            patch=patch,
             include_novel=True, ret_class_to_idx=True, shuffle=False)
     normal_targets = torch.Tensor([class_to_idx[c] for c in data_const.NORMAL_CLASSES])
     idx_to_class = {v: k for k, v in class_to_idx.items()}
@@ -84,7 +85,8 @@ if __name__ == "__main__":
         "NDCC": Path("models/vgg/eval_ndcc/stanford_dogs_times_1e-1"),
         "ODIN": Path("models/vgg/eval_odin/t=1000_n=0.0004"),
         "Ensemble": Path("models/vgg/eval_ensemble/"),
-    }
+        "One-Class SVM": Path("models/vgg/eval_ocSVM/nu=0.100000_gamm=0.000010"),
+        "Autoencoder (patch-based)": Path("models/polycraft/noisy/scale_1/patch_based/AE_patchwise")}
     for method, output_folder in method_to_outputs.items():
         print(f"Method: {method}")
         fpr, tpr, auroc, precision, recall, av_p = eval_from_save(output_folder)
