@@ -290,7 +290,7 @@ def run_epoch_gcd(loader, model, loss_func, device, epoch, optimizer=None, lr_sc
     return av_loss
 
 
-def train_gcd(model, model_label, train_loader, norm_targets, lr=0.0005, epochs=200,
+def train_gcd(model, model_label, train_loader, norm_targets, lr=0.1, epochs=200,
               supervised_weight=0.35, gpu=None):
     """Train a model for generalized category discovery.
 
@@ -318,7 +318,7 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=0.0005, epochs=
     # move model to device
     model.to(device)
     # construct optimizer and lr scheduler (with per batch steps)
-    optimizer = optim.AdamW(model.parameters(), lr=lr)
+    optimizer = optim.SGD(model.parameters(), lr=lr)
     lr_sched = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs * len(train_loader), 1e-6)
     # train model
     for epoch in range(epochs):
