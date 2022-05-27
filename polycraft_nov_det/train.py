@@ -319,7 +319,7 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=0.1, epochs=200
     model.to(device)
     # construct optimizer and lr scheduler (with per batch steps)
     optimizer = optim.SGD(model.parameters(), lr=lr)
-    lr_sched = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs * len(train_loader), 1e-6)
+    lr_sched = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs * len(train_loader), lr * .01)
     # train model
     for epoch in range(epochs):
         # calculate average train loss for epoch
