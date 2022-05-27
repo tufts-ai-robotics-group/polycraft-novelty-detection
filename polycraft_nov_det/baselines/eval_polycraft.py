@@ -77,6 +77,8 @@ def eval_from_save(output_folder):
     roc_precision_80_ind = np.argwhere(roc_threshs >= prc_threshs[precision_80_ind])[-1]
     print(f"TNR @ Precision {precision[precision_80_ind][0]}%: " +
           f"{1 - fpr[roc_precision_80_ind][0]}")
+    print(f"TPR @ Precision {precision[precision_80_ind][0]}%: " +
+          f"{tpr[roc_precision_80_ind][0]}")
     return fpr, tpr, auroc, precision, recall, av_p
 
 
