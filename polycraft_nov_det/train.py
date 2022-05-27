@@ -331,6 +331,6 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=0.1, epochs=200
             # save model
             save_model_dino(model, session_path, epoch)
             # get validation accuracy
-            valid_acc = evals.cifar10_gcd(model.backbone, device=device)
+            valid_acc = evals.polycraft_gcd(model.backbone, device=device)
             writer.add_scalar("Average Validation Accuracy", valid_acc, epoch)
     return model

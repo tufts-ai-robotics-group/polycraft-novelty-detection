@@ -1,6 +1,10 @@
 import numpy as np
 
+from polycraft_nov_data.dataloader import polycraft_dataloaders_gcd
+import polycraft_nov_data.data_const as data_const
+
 from polycraft_nov_det.data.cifar_loader import torch_cifar
+from polycraft_nov_det.data.loader_trans import DINOTestTrans
 import polycraft_nov_det.eval.stats as stats
 from polycraft_nov_det.ss_kmeans import SSKMeans
 
@@ -83,6 +87,30 @@ def cifar10_gcd(model, device="cpu"):
         y_true = np.hstack((y_true, targets.cpu().numpy()))
     # SS KMeans
     norm_mask = y_true < len(norm_targets)
+    ss_est = SSKMeans(embeddings[norm_mask], y_true[norm_mask], 10).fit(
+        embeddings[~norm_mask], y_true[~norm_mask])
+    y_pred = ss_est.predict(embeddings)
+    row_ind, col_ind, weight = stats.assign_clusters(y_pred, y_true)
+    acc = stats.cluster_acc(row_ind, col_ind, weight)
+    print(acc)
+    print(stats.cluster_confusion(row_ind, col_ind, weight))
+    return acc
+
+
+def polycraft_gcd(model, device="cpu"):
+    # get dataloader
+    batch_size = 128
+    train_loader = polycraft_dataloaders_gcd(DINOTestTrans(), batch_size, include_novel=True)
+    # collect embeddings and labels
+    embeddings = np.empty((0, 768))
+    y_true = np.empty((0,))
+    for data, targets in train_loader:
+        data, targets = data.to(device), targets.to(device)
+        data_embeddings = model(data).detach().cpu().numpy()
+        embeddings = np.vstack((embeddings, data_embeddings))
+        y_true = np.hstack((y_true, targets.cpu().numpy()))
+    # SS KMeans
+    norm_mask = y_true < len(data_const.NORMAL_CLASSES)
     ss_est = SSKMeans(embeddings[norm_mask], y_true[norm_mask], 10).fit(
         embeddings[~norm_mask], y_true[~norm_mask])
     y_pred = ss_est.predict(embeddings)
