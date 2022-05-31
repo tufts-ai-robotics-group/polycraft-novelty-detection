@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 
 from polycraft_nov_data.dataloader import polycraft_dataloaders_gcd
@@ -97,6 +98,7 @@ def cifar10_gcd(model, device="cpu"):
     return acc
 
 
+@torch.no_grad()
 def polycraft_gcd(model, device="cpu"):
     # get dataloader
     batch_size = 128
@@ -136,8 +138,6 @@ def polycraft_gcd(model, device="cpu"):
 
 
 if __name__ == "__main__":
-    import torch
-
     from polycraft_nov_det.model_load import load_dino_block, load_dino_pretrained
 
     device = torch.device("cuda:1")
