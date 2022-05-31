@@ -110,12 +110,38 @@ def polycraft_gcd(model, device="cpu"):
         embeddings = np.vstack((embeddings, data_embeddings))
         y_true = np.hstack((y_true, targets.cpu().numpy()))
     # SS KMeans
-    norm_mask = y_true < len(data_const.NORMAL_CLASSES)
+    num_norm = len(data_const.NORMAL_CLASSES)
+    norm_mask = y_true < num_norm
     ss_est = SSKMeans(embeddings[norm_mask], y_true[norm_mask], 10).fit(
         embeddings[~norm_mask], y_true[~norm_mask])
     y_pred = ss_est.predict(embeddings)
+    # print results
     row_ind, col_ind, weight = stats.assign_clusters(y_pred, y_true)
     acc = stats.cluster_acc(row_ind, col_ind, weight)
-    print(acc)
+    print(f"All: {acc}")
+    # results for normal and novel subsets
+    norm_row_mask = row_ind < num_norm
+    norm_weight = np.copy(weight)
+    norm_weight[num_norm:] = 0
+    norm_acc = stats.cluster_acc(row_ind[norm_row_mask], col_ind[norm_row_mask], norm_weight)
+    print(f"Normal: {norm_acc}")
+    novel_weight = np.copy(weight)
+    novel_weight[:num_norm] = 0
+    novel_acc = stats.cluster_acc(row_ind[~norm_row_mask], col_ind[~norm_row_mask], novel_weight)
+    print(f"Novel: {novel_acc}")
+    print("Confusion Matrix:")
     print(stats.cluster_confusion(row_ind, col_ind, weight))
+    print()
     return acc
+
+
+if __name__ == "__main__":
+    import torch
+
+    from polycraft_nov_det.model_load import load_dino_block, load_dino_pretrained
+
+    device = torch.device("cuda:1")
+    print("DINO SS K-Means\n")
+    polycraft_gcd(load_dino_pretrained(device))
+    print("GCD SS K-Means\n")
+    polycraft_gcd(load_dino_block("models/polycraft/GCD/block200.pt", device))
