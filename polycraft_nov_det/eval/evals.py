@@ -142,6 +142,6 @@ if __name__ == "__main__":
 
     device = torch.device("cuda:1")
     print("DINO SS K-Means\n")
-    polycraft_gcd(load_dino_pretrained(device))
+    polycraft_gcd(load_dino_pretrained(device), device)
     print("GCD SS K-Means\n")
-    polycraft_gcd(load_dino_block("models/polycraft/GCD/block200.pt", device))
+    polycraft_gcd(load_dino_block("models/polycraft/GCD/block200.pt", device), device)
