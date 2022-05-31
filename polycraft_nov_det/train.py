@@ -260,17 +260,28 @@ def train_autonovel(model, model_label, train_loader, norm_targets, lr=.1, epoch
     return model
 
 
-def run_epoch_gcd(loader, model, loss_func, device, epoch, optimizer=None, lr_sched=None):
+def run_epoch_gcd(labeled_loader, unlabeled_loader, model, loss_func: GCDLoss, device, epoch,
+                  optimizer=None, lr_sched=None):
     is_train = optimizer is not None and lr_sched is not None
     if is_train:
         model.train()
     else:
         model.eval()
     loss = 0
-    batch_num = 0
-    for (data, t_data), targets in loader:
-        batch_size = data.shape[0]
+    data_num = 0
+    unlabeled_iter = iter(unlabeled_loader)
+    for (data, t_data), targets in labeled_loader:
+        # combine batch from labeled and unlabeled loaders
+        try:
+            (u_data, u_t_data), u_targets = next(unlabeled_iter)
+        except StopIteration:
+            unlabeled_iter = iter(unlabeled_loader)
+            (u_data, u_t_data), u_targets = next(unlabeled_iter)
+        data = torch.vstack([data, u_data])
+        t_data = torch.vstack([t_data, u_t_data])
+        targets = torch.hstack([targets, u_targets + loss_func.num_norm_targets])
         data, t_data, targets = data.to(device), t_data.to(device), targets.to(device)
+        batch_size = data.shape[0]
         if is_train:
             optimizer.zero_grad()
         # calculate loss and backprop if training
@@ -281,23 +292,24 @@ def run_epoch_gcd(loader, model, loss_func, device, epoch, optimizer=None, lr_sc
             optimizer.step()
         # record loss without averaging
         loss += batch_loss.item() * batch_size
+        data_num += batch_size
         # update lr scheduler
         if is_train:
             lr_sched.step()
-            batch_num += 1
     # calculate average loss
-    av_loss = loss / len(loader)
+    av_loss = loss / data_num
     return av_loss
 
 
-def train_gcd(model, model_label, train_loader, norm_targets, lr=0.1, epochs=200,
-              supervised_weight=0.35, gpu=None):
+def train_gcd(model, model_label, labeled_loader, unlabeled_loader, norm_targets, lr=0.1,
+              epochs=200, supervised_weight=0.35, gpu=None):
     """Train a model for generalized category discovery.
 
     Args:
         model (torch.nn.Module): Model to train.
         model_label (str): Label for model type, preferably from model_label function.
-        train_loader (torch.utils.data.DataLoader): Training set for model.
+        labeled_loader (torch.utils.data.DataLoader): Labeled set for model.
+        unlabeled_loader (torch.utils.data.DataLoader): Unlabeled set for model.
         norm_targets (list): Targets for normal data.
         lr (float): Learning rate.
         epochs (int, optional): Number of epochs to train for. Defaults to 200.
@@ -319,12 +331,13 @@ def train_gcd(model, model_label, train_loader, norm_targets, lr=0.1, epochs=200
     model.to(device)
     # construct optimizer and lr scheduler (with per batch steps)
     optimizer = optim.SGD(model.parameters(), lr=lr)
-    lr_sched = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs * len(train_loader), lr * .01)
+    num_batches = epochs * (len(labeled_loader) + len(unlabeled_loader))
+    lr_sched = optim.lr_scheduler.CosineAnnealingLR(optimizer, num_batches, lr * .01)
     # train model
     for epoch in range(epochs):
         # calculate average train loss for epoch
         av_train_loss = run_epoch_gcd(
-            train_loader, model, loss_func, device, epoch, optimizer, lr_sched)
+            labeled_loader, unlabeled_loader, model, loss_func, device, epoch, optimizer, lr_sched)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:

@@ -60,11 +60,11 @@ elif args.model == "autonovel":
     model_label = args.name if args.name is not None else train.model_label(model, norm_targets)
     train.train_autonovel(model, model_label, train_loader, norm_targets, gpu=args.gpu)
 elif args.model == "gcd":
-    batch_size = 128
-    train_loader = polycraft_dataloaders_gcd(DINOConsistentTrans(), batch_size, include_novel=True)
+    batch_size = 64
+    labeled_loader, unlabeled_loader = polycraft_dataloaders_gcd(DINOConsistentTrans(), batch_size)
     # get model instance
     model = DinoWithHead(load_dino_pretrained())
     # start model training
-    model_label = args.name if args.name is not None else train.model_label(model, "nov")
-    train.train_gcd(model, model_label, train_loader, data_const.NORMAL_CLASSES, gpu=args.gpu,
-                    supervised_weight=args.sup_weight)
+    model_label = args.name if args.name is not None else train.model_label(model, None)
+    train.train_gcd(model, model_label, labeled_loader, unlabeled_loader, data_const.NORMAL_CLASSES,
+                    gpu=args.gpu, supervised_weight=args.sup_weight)

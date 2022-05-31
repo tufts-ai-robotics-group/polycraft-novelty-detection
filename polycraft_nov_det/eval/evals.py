@@ -102,11 +102,12 @@ def cifar10_gcd(model, device="cpu"):
 def polycraft_gcd(model, device="cpu"):
     # get dataloader
     batch_size = 128
-    train_loader = polycraft_dataloaders_gcd(DINOTestTrans(), batch_size, include_novel=True)
+    _, unlabeled_loader = polycraft_dataloaders_gcd(
+        DINOTestTrans(), batch_size, mask_valid_normal=False)
     # collect embeddings and labels
     embeddings = np.empty((0, 768))
     y_true = np.empty((0,))
-    for data, targets in train_loader:
+    for data, targets in unlabeled_loader:
         data, targets = data.to(device), targets.to(device)
         data_embeddings = model(data).detach().cpu().numpy()
         embeddings = np.vstack((embeddings, data_embeddings))
