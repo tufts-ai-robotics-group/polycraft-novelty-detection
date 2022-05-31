@@ -31,6 +31,6 @@ if __name__ == '__main__':
 
     model_path = Path(model_path)
 
-    save_scores(ReconstructDetector(model_path, device=torch.device("cuda:0")), 
+    save_scores(ReconstructDetector(model_path, device=torch.device("cuda:0")),
                 output_folder, patch=True)
-    eval_from_save(output_folder)     
+    eval_from_save(output_folder)
