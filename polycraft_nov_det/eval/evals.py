@@ -102,9 +102,17 @@ def cifar10_gcd(model, device="cpu"):
 def polycraft_gcd(model, device="cpu"):
     # get dataloader
     batch_size = 128
-    _, unlabeled_loader = polycraft_dataloaders_gcd(
+    labeled_loader, unlabeled_loader = polycraft_dataloaders_gcd(
         DINOTestTrans(), batch_size)
-    # collect embeddings and labels
+    # collect labeled embeddings and labels
+    labeled_embeddings = np.empty((0, 768))
+    labeled_y = np.empty((0,))
+    for data, targets in labeled_loader:
+        data, targets = data.to(device), targets.to(device)
+        data_embeddings = model(data).detach().cpu().numpy()
+        labeled_embeddings = np.vstack((labeled_embeddings, data_embeddings))
+        labeled_y = np.hstack((labeled_y, targets.cpu().numpy()))
+    # collect unlabeled embeddings and labels
     embeddings = np.empty((0, 768))
     y_true = np.empty((0,))
     for data, targets in unlabeled_loader:
@@ -113,16 +121,15 @@ def polycraft_gcd(model, device="cpu"):
         embeddings = np.vstack((embeddings, data_embeddings))
         y_true = np.hstack((y_true, targets.cpu().numpy()))
     # SS KMeans
-    num_norm = len(data_const.NORMAL_CLASSES)
-    norm_mask = y_true < num_norm
-    ss_est = SSKMeans(embeddings[norm_mask], y_true[norm_mask], 10).fit(
-        embeddings[~norm_mask], y_true[~norm_mask])
+    ss_est = SSKMeans(labeled_embeddings, labeled_y, 10).fit(
+        embeddings, torch.zeros_like(y_true))
     y_pred = ss_est.predict(embeddings)
     # print results
     row_ind, col_ind, weight = stats.assign_clusters(y_pred, y_true)
     acc = stats.cluster_acc(row_ind, col_ind, weight)
     print(f"All: {acc}")
     # results for normal and novel subsets
+    num_norm = len(data_const.NORMAL_CLASSES)
     norm_row_mask = row_ind < num_norm
     norm_weight = np.copy(weight)
     norm_weight[num_norm:] = 0
