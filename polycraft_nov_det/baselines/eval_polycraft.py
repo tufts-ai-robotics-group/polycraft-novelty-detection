@@ -87,7 +87,8 @@ if __name__ == "__main__":
         "ODIN": Path("models/vgg/eval_odin/t=1000_n=0.0004"),
         "Ensemble": Path("models/vgg/eval_ensemble/"),
         "One-Class SVM": Path("models/vgg/eval_ocsvm/nu=0.100000_gamm=0.000010"),
-        "Autoencoder (Patch)": Path("models/polycraft/noisy/scale_1/patch_based/AE_patchwise")}
+        "Autoencoder (Patch)": Path("models/polycraft/noisy/scale_1/patch_based/AE_patchwise"),
+        "Autoencoder (Full image)": Path("models/polycraft/noisy/scale_1/fullimage_based/AE_fullimage")}
     for method, output_folder in method_to_outputs.items():
         print(f"Method: {method}")
         fpr, tpr, auroc, precision, recall, av_p = eval_from_save(output_folder)
