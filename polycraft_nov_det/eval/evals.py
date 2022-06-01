@@ -7,6 +7,7 @@ import polycraft_nov_data.data_const as data_const
 from polycraft_nov_det.data.cifar_loader import torch_cifar
 from polycraft_nov_det.data.loader_trans import DINOTestTrans
 import polycraft_nov_det.eval.stats as stats
+from polycraft_nov_det.plot import plot_embedding
 from polycraft_nov_det.ss_kmeans import SSKMeans
 
 
@@ -99,7 +100,7 @@ def cifar10_gcd(model, device="cpu"):
 
 
 @torch.no_grad()
-def polycraft_gcd(model, device="cpu"):
+def polycraft_gcd(model, label="GCD", device="cpu"):
     # get dataloader
     batch_size = 128
     labeled_loader, unlabeled_loader = polycraft_dataloaders_gcd(
@@ -127,6 +128,7 @@ def polycraft_gcd(model, device="cpu"):
     # print results
     row_ind, col_ind, weight = stats.assign_clusters(y_pred, y_true)
     acc = stats.cluster_acc(row_ind, col_ind, weight)
+    print(f"{label}\n")
     print(f"All: {acc}")
     # results for normal and novel subsets
     num_norm = len(data_const.NORMAL_CLASSES)
@@ -142,6 +144,8 @@ def polycraft_gcd(model, device="cpu"):
     print("Confusion Matrix:")
     print(stats.cluster_confusion(row_ind, col_ind, weight))
     print()
+    # TSNE embedding visualization
+    plot_embedding(embeddings, y_true).savefig(f"{label} TSNE.png")
     return acc
 
 
@@ -149,7 +153,6 @@ if __name__ == "__main__":
     from polycraft_nov_det.model_load import load_dino_block, load_dino_pretrained
 
     device = torch.device("cuda:1")
-    print("DINO SS K-Means\n")
-    polycraft_gcd(load_dino_pretrained(device), device)
-    print("GCD SS K-Means\n")
-    polycraft_gcd(load_dino_block("models/polycraft/GCD/block200.pt", device), device)
+    polycraft_gcd(load_dino_pretrained(device), "DINO SS K-Means", device)
+    polycraft_gcd(load_dino_block("models/polycraft/GCD/block200.pt", device), "GCD SS K-Means",
+                  device)
