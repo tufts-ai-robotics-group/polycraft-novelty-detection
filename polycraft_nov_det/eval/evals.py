@@ -106,7 +106,7 @@ def polycraft_gcd(model, label="GCD", device="cpu"):
     # get dataloader
     batch_size = 128
     labeled_loader, unlabeled_loader = polycraft_dataloaders_gcd(
-        DINOTestTrans(), batch_size)
+        DINOTestTrans(), batch_size, eval_mode=True)
     # collect labeled embeddings and labels
     labeled_embeddings = np.empty((0, 768))
     labeled_y = np.empty((0,))
