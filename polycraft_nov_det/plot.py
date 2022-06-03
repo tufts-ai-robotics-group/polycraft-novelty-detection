@@ -11,8 +11,8 @@ def plot_con_matrix(con_matrix):
 
 
 def plot_gcd_con_matrix(con_matrix):
-    labels = ["Normal", "Fence", "Anvil", "Sand", "Coal",
-              "Quartz", "Obsidian", "Prismarine", "TNT", "Sea Lantern"]
+    labels = ["GS", "G1", "I1", "I2", "I3",
+              "I4", "I5", "I6", "I7", "I8"]
     disp = metrics.ConfusionMatrixDisplay(
         con_matrix,
         display_labels=labels)
