@@ -17,7 +17,7 @@ from sklearn.utils._openmp_helpers import _openmp_effective_n_threads
 # modified version of SKLearn algorithms
 class SSKMeans(KMeans):
     def __init__(self, X_labeled, y, n_clusters=8, n_init=10, max_iter=300, tol=0.0001, verbose=0,
-                 random_state=None, copy_x=True):
+                 random_state=0, copy_x=True):
         super().__init__(n_clusters, n_init=n_init, max_iter=max_iter, tol=tol,
                          verbose=verbose, random_state=random_state, copy_x=copy_x)
         self.X_labeled = self._validate_data(
@@ -307,7 +307,7 @@ class SSKMeans(KMeans):
 
 
 def ss_kmeans_plusplus(
-    X_labeled, y, X_unlabeled, n_clusters_unlabeled, *, x_squared_norms=None, random_state=None,
+    X_labeled, y, X_unlabeled, n_clusters_unlabeled, *, x_squared_norms=None, random_state=0,
     n_local_trials=None
 ):
     """Init n_clusters seeds according to semi-supervised k-means++
@@ -323,7 +323,7 @@ def ss_kmeans_plusplus(
         The number of centroids to initialize from unlabeled data.
     x_squared_norms : array-like of shape (n_samples,), default=None
         Squared Euclidean norm of each data point.
-    random_state : int or RandomState instance, default=None
+    random_state : int or RandomState instance, default=0
         Determines random number generation for centroid initialization. Pass
         an int for reproducible output across multiple function calls.
         See :term:`Glossary <random_state>`.
