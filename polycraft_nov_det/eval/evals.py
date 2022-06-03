@@ -125,7 +125,7 @@ def polycraft_gcd(model, label="GCD", device="cpu"):
         y_true = np.hstack((y_true, targets.cpu().numpy()))
     # SS KMeans
     ss_est = SSKMeans(labeled_embeddings, labeled_y, 10).fit(
-        embeddings, torch.zeros_like(y_true))
+        embeddings, np.zeros_like(y_true))
     y_pred = ss_est.predict(embeddings)
     # print results
     row_ind, col_ind, weight = stats.assign_clusters(y_pred, y_true)
