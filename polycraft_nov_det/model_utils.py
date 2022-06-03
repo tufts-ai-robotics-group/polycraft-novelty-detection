@@ -19,12 +19,10 @@ def load_model(path, model, device="cpu"):
 
 def load_mnist_model(path, device="cpu", latent_len=64):
     """Load a saved MNIST model
-
     Args:
         path (str): Path to saved model state_dict
         device (str, optional): Device tag for torch.device. Defaults to "cpu".
         latent_len (int, optional): Length of model's latent vector. Defaults to 64.
-
     Returns:
         LSAMNISTNoEst: Model with saved state_dict
     """
@@ -32,18 +30,16 @@ def load_mnist_model(path, device="cpu", latent_len=64):
     return load_model(path, model, device)
 
 
-def load_polycraft_model(path, device="cpu", latent_len=100):
+def load_polycraft_model(path, input_shape, device="cpu", latent_len=100):
     """Load a saved Polycraft model
-
     Args:
         path (str): Path to saved model state_dict
         device (str, optional): Device tag for torch.device. Defaults to "cpu".
         latent_len (int, optional): Length of model's latent vector. Defaults to 100.
-
     Returns:
         LSACIFAR10NoEst: Model with saved state_dict
     """
-    model = LSACIFAR10NoEst(polycraft_const.PATCH_SHAPE, latent_len)
+    model = LSACIFAR10NoEst(input_shape, latent_len)
     return load_model(path, model, device)
 
 

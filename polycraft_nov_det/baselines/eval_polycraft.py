@@ -11,9 +11,10 @@ from polycraft_nov_data.dataloader import polycraft_dataloaders
 from polycraft_nov_det.detector import NoveltyDetector
 
 
-def save_scores(detector: NoveltyDetector, output_folder, patch=False):
+def save_scores(detector: NoveltyDetector, output_folder, patch=False, quad_full_image=False):
     (_, valid_loader, test_loader), class_to_idx = polycraft_dataloaders(
-            patch=patch, include_novel=True, ret_class_to_idx=True, shuffle=False)
+            patch=patch, include_novel=True, ret_class_to_idx=True, 
+            shuffle=False, quad_full_image=quad_full_image)
     normal_targets = torch.Tensor([class_to_idx[c] for c in data_const.NORMAL_CLASSES])
     idx_to_class = {v: k for k, v in class_to_idx.items()}
     for split in ["valid", "test"]:
