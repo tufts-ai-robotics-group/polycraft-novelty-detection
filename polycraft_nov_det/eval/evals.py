@@ -135,17 +135,17 @@ def polycraft_gcd(model, label="GCD", device="cpu"):
     print(f"All: {acc}")
     # results for normal and novel subsets
     num_norm = len(data_const.NORMAL_CLASSES)
-    norm_row_mask = row_ind < num_norm
-    norm_weight = np.copy(weight)
-    norm_weight[num_norm:] = 0
-    norm_acc = stats.cluster_acc(row_ind[norm_row_mask], col_ind[norm_row_mask], norm_weight)
+    con_mat = stats.cluster_confusion(row_ind, col_ind, weight)
+    # clear rows so only looking at predictions with the desired true labels
+    norm_con = np.copy(con_mat)
+    norm_con[num_norm:] = 0
+    norm_acc = float(np.diag(norm_con).sum()) / norm_con.sum()
     print(f"Normal: {norm_acc}")
-    novel_weight = np.copy(weight)
-    novel_weight[:num_norm] = 0
-    novel_acc = stats.cluster_acc(row_ind[~norm_row_mask], col_ind[~norm_row_mask], novel_weight)
+    novel_con = np.copy(con_mat)
+    novel_con[:num_norm] = 0
+    novel_acc = float(np.diag(novel_con).sum()) / novel_con.sum()
     print(f"Novel: {novel_acc}")
     print("Confusion Matrix:")
-    con_mat = stats.cluster_confusion(row_ind, col_ind, weight)
     print(con_mat)
     print()
     # confusion matrix visualization

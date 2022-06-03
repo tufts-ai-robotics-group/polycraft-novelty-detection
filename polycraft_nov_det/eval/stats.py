@@ -19,8 +19,8 @@ def assign_clusters(y_pred, y_true):
         y_pred (np.array): predicted labels (N,)
 
     Returns:
-        tuple: np.array of row indices and one of corresponding column indices giving the optimal
-               assignment.
+        tuple: np.array of sorted row indices (true) and one of corresponding column indices (pred)
+               giving the optimal assignment.
                np.array of weight matrix used for assignment.
     """
     y_pred = y_pred.astype(np.int64)
@@ -31,7 +31,7 @@ def assign_clusters(y_pred, y_true):
     # compute weight matrix with row index as prediction and col index as true
     weight = np.zeros((d, d), dtype=np.int64)
     for i in range(y_pred.size):
-        weight[y_pred[i], y_true[i]] += 1
+        weight[y_true[i], y_pred[i]] += 1
     # compute assignments
     row_ind, col_ind = optimize.linear_sum_assignment(weight, maximize=True)
     return row_ind, col_ind, weight
@@ -41,8 +41,8 @@ def cluster_acc(row_ind, col_ind, weight):
     """Compute clustering accuracy
 
     Args:
-        row_ind (np.array): Predicted class index
-        col_ind (np.array): True class index
+        row_ind (np.array): True class index
+        col_ind (np.array): Predicted class index
         weight (np.array): Weight matrix used for assigning clusters
 
     Returns:
@@ -55,17 +55,17 @@ def cluster_confusion(row_ind, col_ind, weight):
     """Reorder weight matrix to get clustering confusion matrix
 
     Args:
-        row_ind (np.array): Predicted class index
-        col_ind (np.array): True class index
+        row_ind (np.array): True class index
+        col_ind (np.array): Predicted class index
         weight (np.array): Weight matrix used for assigning clusters
 
     Returns:
-        np.array: clustering confusion matrix
+        np.array: clustering confusion matrix, with true labels as rows
     """
     # add 1 because of zero indexing
     d = max(col_ind) + 1
     # reorder weights according to cluster assignments
     con_matrix = np.zeros((d, d))
     for i, j in zip(row_ind, col_ind):
-        con_matrix[j] = weight[i]
+        con_matrix[:, i] = weight[:, j]
     return con_matrix
