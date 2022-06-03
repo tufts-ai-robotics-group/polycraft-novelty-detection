@@ -56,7 +56,6 @@ class OneClassSVMDetector(NoveltyDetector):
         with torch.no_grad():
             features = self.feature_extractor(data).cpu().detach().numpy()
             outputs = self.svm.decision_function(features)
-            outputs = outputs
 
         return torch.Tensor(outputs)
 
@@ -193,8 +192,7 @@ if __name__ == '__main__':
     from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
 
     output_parent = Path("models/vgg/eval_ocsvm")
-    classifier_path = Path(
-        "polycraft_nov_det/models/vgg/vgg_classifier_1000.pt")
+    classifier_path = Path("models/vgg/vgg_classifier_1000.pt")
 
     nus = np.linspace(0.1, 0.9, 9)
     gammas = np.logspace(-5, 1, 9)
