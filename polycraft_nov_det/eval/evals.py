@@ -103,6 +103,7 @@ def cifar10_gcd(model, device="cpu"):
 
 @torch.no_grad()
 def polycraft_gcd(model, label="GCD", device="cpu"):
+    model.eval()
     # get dataloader
     batch_size = 128
     labeled_loader, unlabeled_loader = polycraft_dataloaders_gcd(
