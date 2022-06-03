@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 from sklearn import metrics
 from sklearn.decomposition import PCA
 
-import polycraft_nov_data.data_const as data_const
-
 
 def plot_con_matrix(con_matrix):
     disp = metrics.ConfusionMatrixDisplay(con_matrix, display_labels=["Novel", "Normal"])
@@ -13,9 +11,11 @@ def plot_con_matrix(con_matrix):
 
 
 def plot_gcd_con_matrix(con_matrix):
+    labels = ["Normal", "Fence", "Anvil", "Sand", "Coal",
+              "Quartz", "Obsidian", "Prismarine", "TNT", "Sea Lantern"]
     disp = metrics.ConfusionMatrixDisplay(
         con_matrix,
-        display_labels=data_const.NORMAL_CLASSES + data_const.NOVEL_VALID_CLASSES)
+        display_labels=labels)
     disp = disp.plot(cmap="Blues", values_format=".0f")
     return disp.figure_
 
