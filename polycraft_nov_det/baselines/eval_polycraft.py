@@ -13,7 +13,7 @@ from polycraft_nov_det.detector import NoveltyDetector
 
 def save_scores(detector: NoveltyDetector, output_folder, patch=False, quad_full_image=False):
     (_, valid_loader, test_loader), class_to_idx = polycraft_dataloaders(
-            patch=patch, include_novel=True, ret_class_to_idx=True, 
+            patch=patch, include_novel=True, ret_class_to_idx=True,
             shuffle=False, quad_full_image=quad_full_image)
     normal_targets = torch.Tensor([class_to_idx[c] for c in data_const.NORMAL_CLASSES])
     idx_to_class = {v: k for k, v in class_to_idx.items()}
@@ -60,6 +60,7 @@ def eval_from_save(output_folder):
     # PRC with 1 as novel target
     precision, recall, prc_threshs = metrics.precision_recall_curve(
         novel_true, novel_score, sample_weight=weight)
+    prc_threshs = np.hstack([prc_threshs, prc_threshs[-1] + 1e-4])  # extra thresh to match lens
     av_p = metrics.average_precision_score(novel_true, novel_score, sample_weight=weight)
     metrics.PrecisionRecallDisplay(
         precision=precision, recall=recall, average_precision=av_p).plot()
