@@ -224,7 +224,7 @@ if __name__ == '__main__':
         from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
         from polycraft_nov_det.model_utils import load_model
 
-        model = load_model("models/vgg/ndcc_stanford_dogs_30.pt", model, device)
-        output_folder = Path("models/vgg/eval_ndcc/stanford_dogs/")
+        model = load_model("models/vgg/ndcc_stanford_dogs_times_1e-1_30.pt", model, device)
+        output_folder = Path("models/vgg/eval_ndcc/stanford_dogs_times_1e-1/")
         save_scores(NDCCDetector(model, device), output_folder)
         eval_from_save(output_folder)
