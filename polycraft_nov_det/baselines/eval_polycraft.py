@@ -60,6 +60,8 @@ def eval_from_save(output_folder):
     # PRC with 1 as novel target
     precision, recall, prc_threshs = metrics.precision_recall_curve(
         novel_true, novel_score, sample_weight=weight)
+    auprc = metrics.auc(recall, precision)
+    print(f"AUPRC: {auprc}")
     prc_threshs = np.hstack([prc_threshs, prc_threshs[-1] + 1e-4])  # extra thresh to match lens
     av_p = metrics.average_precision_score(novel_true, novel_score, sample_weight=weight)
     metrics.PrecisionRecallDisplay(
@@ -71,16 +73,18 @@ def eval_from_save(output_folder):
     precision_80_ind = np.argwhere(precision >= .8)[0]
     print(f"Recall(TPR) @ Precision {precision[precision_80_ind][0]}%: " +
           f"{recall[precision_80_ind][0]}")
+    print('Prec 80 thresh', prc_threshs[precision_80_ind])
     # precision at TPR 95%
     prc_tpr_95_ind = np.argwhere(prc_threshs >= roc_threshs[tpr_95_ind])[0]
     print(f"Precision @ TPR {tpr[tpr_95_ind][0]}%: {precision[prc_tpr_95_ind][0]}")
+    print('TPR 95 thresh', roc_threshs[tpr_95_ind])
     # TNR at precision 80%
     roc_precision_80_ind = np.argwhere(roc_threshs >= prc_threshs[precision_80_ind])[-1]
     print(f"TNR @ Precision {precision[precision_80_ind][0]}%: " +
           f"{1 - fpr[roc_precision_80_ind][0]}")
     print(f"TPR @ Precision {precision[precision_80_ind][0]}%: " +
           f"{tpr[roc_precision_80_ind][0]}")
-    return fpr, tpr, auroc, precision, recall, av_p
+    return fpr, tpr, auroc, precision, recall, av_p, auprc
 
 
 if __name__ == "__main__":
@@ -93,12 +97,12 @@ if __name__ == "__main__":
         "Autoencoder (Full image)": Path("models/polycraft/noisy/scale_1/fullimage_based/AE_fullimage")}
     for method, output_folder in method_to_outputs.items():
         print(f"Method: {method}")
-        fpr, tpr, auroc, precision, recall, av_p = eval_from_save(output_folder)
+        fpr, tpr, auroc, precision, recall, av_p, auprc = eval_from_save(output_folder)
         print()
         plt.figure(1)
         plt.plot(fpr, tpr, label=f"{method} (AUROC {auroc:.2%})")
         plt.figure(2)
-        plt.plot(recall, precision, label=f"{method} (Av. Precision {av_p:.2%})",
+        plt.plot(recall, precision, label=f"{method} (AUPRC {auprc:.2%})",
                  drawstyle="steps-post")
     # ROC figure
     plt.figure(1)
