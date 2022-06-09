@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from polycraft_nov_det.detector import NoveltyDetector
-from polycraft_nov_det.model_utils import load_polycraft_model
+from polycraft_nov_det.model_utils import load_autoencoder_model
 
 
 class ReconstructDetector(NoveltyDetector):
     def __init__(self, model_path, ipt_shape, device="cpu"):
         super().__init__(device)
-        model = load_polycraft_model(model_path, ipt_shape, device)
+        model = load_autoencoder_model(model_path, ipt_shape, device)
         self.model = model.eval().to(device)
 
     @torch.no_grad()
@@ -29,7 +29,7 @@ class ReconstructDetector(NoveltyDetector):
 class ReconstructDetectorPatchBased(NoveltyDetector):
     def __init__(self, model_path, ipt_shape, device="cpu"):
         super().__init__(device)
-        model = load_polycraft_model(model_path, ipt_shape, device)
+        model = load_autoencoder_model(model_path, ipt_shape, device)
         self.model = model.eval().to(device)
 
     @torch.no_grad()

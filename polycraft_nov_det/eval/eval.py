@@ -22,7 +22,7 @@ def eval_mnist(model_path, device="cpu"):
 
 def eval_polycraft(model_path, image_scale=1, device="cpu"):
     model_path = Path(model_path)
-    model = model_utils.load_polycraft_model(model_path, device).eval()
+    model = model_utils.load_autoencoder_model(model_path, device).eval()
     dataloaders = polycraft_dataloaders(image_scale=image_scale, include_novel=True)
     # get targets determined at runtime
     base_dataset = polycraft_dataset()

@@ -2,8 +2,6 @@ import os.path
 
 import torch
 
-import polycraft_nov_data.data_const as polycraft_const
-
 import polycraft_nov_det.data.mnist_loader as mnist_loader
 from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
@@ -30,7 +28,7 @@ def load_mnist_model(path, device="cpu", latent_len=64):
     return load_model(path, model, device)
 
 
-def load_polycraft_model(path, input_shape, device="cpu", latent_len=100):
+def load_autoencoder_model(path, input_shape, device="cpu", latent_len=100):
     """Load a saved Polycraft model
     Args:
         path (str): Path to saved model state_dict
