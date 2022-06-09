@@ -6,18 +6,10 @@ from polycraft_nov_data import data_const as polycraft_const
 from polycraft_nov_data.dataloader import polycraft_dataloaders, polycraft_dataset
 from polycraft_nov_data.dataset_transforms import folder_name_to_target_list
 
-import polycraft_nov_det.data.mnist_loader as mnist_loader
 import polycraft_nov_det.eval.plot as eval_plot
 import polycraft_nov_det.eval.stats as eval_stats
 import polycraft_nov_det.model_utils as model_utils
 import polycraft_nov_det.detector
-
-
-def eval_mnist(model_path, device="cpu"):
-    model_path = Path(model_path)
-    model = model_utils.load_mnist_model(model_path, device).eval()
-    norm_targets, novel_targets, dataloaders = mnist_loader.torch_mnist(include_novel=True)
-    eval_base(model_path, model, dataloaders, norm_targets, novel_targets, False, device)
 
 
 def eval_polycraft(model_path, image_scale=1, device="cpu"):

@@ -3,15 +3,13 @@ import argparse
 from polycraft_nov_data.data_const import PATCH_SHAPE
 from polycraft_nov_data.dataloader import polycraft_dataloaders
 
-import polycraft_nov_det.data.mnist_loader as mnist_loader
 import polycraft_nov_det.models.lsa.LSA_cifar10_no_est as LSA_cifar10_no_est
-import polycraft_nov_det.models.lsa.LSA_mnist_no_est as LSA_mnist_no_est
 import polycraft_nov_det.train as train
 
 
 # construct argument parser
 parser = argparse.ArgumentParser(description="Polycraft Novelty Detection Model Training")
-parser.add_argument("model", choices=["mnist", "polycraft"],
+parser.add_argument("model", choices=["polycraft"],
                     help="Model to train")
 # Polycraft specific args
 polycraft_group = parser.add_argument_group("Polycraft")
@@ -38,23 +36,8 @@ training_group.add_argument("-gpu", type=int,
 args = parser.parse_args()
 
 include_classes = None
-# handle MNIST args
-if args.model == "mnist":
-    # set default train kwargs
-    train_kwargs = {
-        "lr": 1e-2,
-        "epochs": 500,
-        "gpu": 1,
-    }
-    # get dataloaders
-    batch_size = 256 if args.batch_size is None else args.batch_size
-    _, _, dataloaders = mnist_loader.torch_mnist(batch_size)
-    train_loader, valid_loader, _ = dataloaders
-    # get model instance
-    latent_len = 64 if args.latent_len is None else args.latent_len
-    model = LSA_mnist_no_est.LSAMNISTNoEst(mnist_loader.MNIST_SHAPE, latent_len)
 # handle Polycraft args
-elif args.model == "polycraft":
+if args.model == "polycraft":
     # set default train kwargs
     train_kwargs = {
         "lr": 1e-3,

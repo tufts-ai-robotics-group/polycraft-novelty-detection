@@ -2,8 +2,6 @@ import os.path
 
 import torch
 
-import polycraft_nov_det.data.mnist_loader as mnist_loader
-from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
 from polycraft_nov_det.models.vgg import VGGPretrained
 from polycraft_nov_det.detector import load_lin_reg, reconstruction_lin_reg
@@ -13,19 +11,6 @@ def load_model(path, model, device="cpu"):
     # load parameters into a model instance
     model.load_state_dict(torch.load(path, map_location=device))
     return model
-
-
-def load_mnist_model(path, device="cpu", latent_len=64):
-    """Load a saved MNIST model
-    Args:
-        path (str): Path to saved model state_dict
-        device (str, optional): Device tag for torch.device. Defaults to "cpu".
-        latent_len (int, optional): Length of model's latent vector. Defaults to 64.
-    Returns:
-        LSAMNISTNoEst: Model with saved state_dict
-    """
-    model = LSAMNISTNoEst(mnist_loader.MNIST_SHAPE, latent_len)
-    return load_model(path, model, device)
 
 
 def load_autoencoder_model(path, input_shape, device="cpu", latent_len=100):
