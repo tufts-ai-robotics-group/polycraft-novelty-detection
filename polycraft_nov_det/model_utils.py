@@ -7,7 +7,7 @@ import polycraft_nov_data.data_const as polycraft_const
 import polycraft_nov_det.data.mnist_loader as mnist_loader
 from polycraft_nov_det.models.lsa.LSA_mnist_no_est import LSAMNISTNoEst
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
-import polycraft_nov_det.models.vgg as vgg16
+from polycraft_nov_det.models.vgg import VGGPretrained
 from polycraft_nov_det.detector import load_lin_reg, reconstruction_lin_reg
 
 
@@ -30,7 +30,7 @@ def load_mnist_model(path, device="cpu", latent_len=64):
     return load_model(path, model, device)
 
 
-def load_polycraft_model(path, device="cpu", latent_len=100):
+def load_polycraft_model(path, input_shape, device="cpu", latent_len=100):
     """Load a saved Polycraft model
     Args:
         path (str): Path to saved model state_dict
@@ -39,22 +39,13 @@ def load_polycraft_model(path, device="cpu", latent_len=100):
     Returns:
         LSACIFAR10NoEst: Model with saved state_dict
     """
-    model = LSACIFAR10NoEst(polycraft_const.PATCH_SHAPE, latent_len)
+    model = LSACIFAR10NoEst(input_shape, latent_len)
     return load_model(path, model, device)
 
 
-def load_polycraft_classifier(path, device="cpu", num_classes=5):
-    """Load a saved Polycraft classifier
-    Args:
-        path (str): Path to saved model state_dict
-        device (str, optional): Device tag for torch.device. Defaults to "cpu".
-        num_classes (int, optional): Number of classes the classifier was 
-                                     trained on. Defaults to 5.
-    Returns:
-        vgg16 classifer: Classifier model with saved state_dict
-    """
-    classifier = vgg16.VGGPretrained(num_classes=num_classes)
-    return load_model(path, classifier, device)
+def load_vgg_model(path, device="cpu", num_classes=5):
+    model = VGGPretrained(num_classes)
+    return load_model(path, model, device)
 
 
 def load_cached_lin_reg(model_path, model, train_loader, device="cpu"):

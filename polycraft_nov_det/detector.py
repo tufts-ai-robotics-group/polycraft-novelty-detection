@@ -30,7 +30,7 @@ class LinearRegularization():
         return data[np.newaxis] < thresh_val[:, np.newaxis]
 
     def quantile(self, data):
-        out = (np.clip(data, self.min, self.max) - self.min) / self.slope
+        out = (data - self.min) / self.slope
         if len(out.shape) == 0:
             out = out[np.newaxis]
         return out
@@ -159,11 +159,12 @@ def reconstruction_lin_reg(model, train_loader, device="cpu"):
 
 
 class NoveltyDetector:
-    def __init__(self):
-        pass
+    def __init__(self, device="cpu"):
+        self.device = device
 
+    @torch.no_grad()
     def novelty_score(self, data):
-        return 0
+        return torch.zeros(data.shape[0])
 
     def is_novel(self, data, thresh):
         return self.novelty_score(data) > thresh
