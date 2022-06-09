@@ -64,12 +64,12 @@ elif args.model == "polycraft":
     # get dataloaders
     batch_size = 128 if args.batch_size is None else args.batch_size
     image_scale = 1.0 if args.image_scale is None else args.image_scale
-    (train_loader, valid_loader, _), labels = polycraft_dataloaders(batch_size, 
-                                                          image_scale,
-                                                          patch=True,
-                                                          include_novel=False,
-                                                          shuffle=True, 
-                                                          ret_class_to_idx=True)
+    (train_loader, valid_loader, _), labels = polycraft_dataloaders(batch_size,
+                                                                    image_scale,
+                                                                    patch=True,
+                                                                    include_novel=False,
+                                                                    shuffle=True,
+                                                                    ret_class_to_idx=True)
     # get model instance
     latent_len = 100 if args.latent_len is None else args.latent_len
     model = LSA_cifar10_no_est.LSACIFAR10NoEst(PATCH_SHAPE, latent_len)

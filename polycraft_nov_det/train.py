@@ -1,21 +1,15 @@
 from datetime import datetime
 import pathlib
-import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
-from sklearn.svm import OneClassSVM
-
 import polycraft_nov_data.data_const as data_const
 from polycraft_nov_data.image_transforms import GaussianNoise
-from polycraft_nov_data.dataloader import polycraft_dataloaders
 
 import polycraft_nov_det.plot as plot
-import polycraft_nov_det.models.vgg as vgg16
-import polycraft_nov_det.model_utils as model_utils
 
 
 def model_label(model, include_classes):
@@ -48,8 +42,8 @@ def save_model(model, session_path, epoch):
     # make directory and save model
     model_dir.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), model_dir / model_fname)
-    
-    
+
+
 def calc_per_class_acc(preds, labels, noc):
     """Determine per-class accuracy.
     Args:
@@ -66,7 +60,7 @@ def calc_per_class_acc(preds, labels, noc):
         match = match & (pred_class == labels)
         num_corrects_per_class = match.sum()
         acc_per_class.append(num_corrects_per_class / noi_per_class)
-       
+
     return torch.stack(acc_per_class)
 
 
@@ -191,11 +185,11 @@ def train_vgg(model, train_loader, valid_loader, num_classes, lr, epochs=500, gp
         # calculate per class accuracy
         pred_list = torch.cat(pred_list)
         target_list = torch.cat(target_list)
-        
+
         acc_pc = calc_per_class_acc(pred_list, target_list, num_classes).to(device)
 
         for c in range(num_classes):
-            print('Avg. Train Acc, class ',str(c), ': ', acc_pc[c].item(), flush=True)
+            print('Avg. Train Acc, class ', str(c), ': ', acc_pc[c].item(), flush=True)
             writer.add_scalar("Average Train Acc class" + str(c), acc_pc[c].item(), epoch)
 
         with torch.no_grad():
@@ -214,11 +208,11 @@ def train_vgg(model, train_loader, valid_loader, num_classes, lr, epochs=500, gp
                 pred_list.append(pred)
                 target_list.append(target)
 
-                #for data_idx in range(batch_size):           
+                # for data_idx in range(batch_size):
                 #    plt.imshow(np.transpose(data[data_idx].detach().cpu(), (1, 2, 0)))
                 #    plt.title(str(target[data_idx]))
                 #    plt.savefig('sanity_check_valid/' + str(data_idx) + '.png')
- 
+
                 batch_loss = loss_func(pred, target)
                 # logging
                 valid_loss += batch_loss.item() * batch_size
@@ -231,7 +225,7 @@ def train_vgg(model, train_loader, valid_loader, num_classes, lr, epochs=500, gp
             target_list = torch.cat(target_list)
             acc_pc = calc_per_class_acc(pred_list, target_list, num_classes).to(device)
             for c in range(num_classes):
-                print('Avg. Valid Acc, class ',str(c), ': ', acc_pc[c].item(), flush=True)
+                print('Avg. Valid Acc, class ', str(c), ': ', acc_pc[c].item(), flush=True)
                 writer.add_scalar("Average Valid Acc class" + str(c), acc_pc[c].item(), epoch)
             # updates every 10% of training time
             if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
