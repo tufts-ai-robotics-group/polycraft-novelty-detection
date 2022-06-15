@@ -10,9 +10,9 @@ def test_assign():
     assert np.all(row_ind == np.array([0, 1, 2]))
     assert np.all(col_ind == np.array([0, 2, 1]))
     assert np.all(weight == np.array(
-        [[1, 1, 0],
-         [0, 0, 2],
-         [1, 2, 0]]))
+        [[1, 0, 1],
+         [1, 0, 2],
+         [0, 2, 0]]))
 
 
 def test_accuracy():
