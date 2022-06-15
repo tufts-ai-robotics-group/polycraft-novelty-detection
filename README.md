@@ -12,7 +12,7 @@ If you do not have Pipenv installed, run the following:
 ```
 pip install pipenv
 ```
-The Pipenv dependencies can be installed within a Pipenv with the following commands:
+The dependencies can be installed within a Pipenv with the following commands:
 ```
 pipenv install
 ```
@@ -73,10 +73,16 @@ Git submodules used as dependencies for the project.
 
 Automated Pytest tests for polycraft_nov_det, divided by test subject.
 
-## Model Training
+## Model Training and Testing
 
-Model training can be done by executing the module. To view available configurations run:
+Model training for the autoencoder can be done by executing the module. To view available configurations run:
 
 ```
 pipenv run python -m polycraft_nov_det -h
+```
+
+The remaining model training and testing code is found in ```polycraft_nov_det/baselines``` and can be run via the following command while in the repository root folder:
+
+```
+pipenv run python polycraft_nov_det/baselines/<method>.py
 ```

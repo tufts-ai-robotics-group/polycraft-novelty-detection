@@ -4,25 +4,31 @@ import urllib.request
 
 model_path_to_url = {
     Path("models/vgg/ndcc_stanford_dogs_30.pt"):
-    "https://drive.google.com/uc?export=download&id=1gm8GvXkTjgw-1u3YBdqioOGG0onD9si9&confirm=t",
+    "https://tufts.box.com/shared/static/qyx3hrczo937hpjigolrrbjs0zo7pk0f.pt",
 
     Path("models/vgg/ndcc_stanford_dogs_times_1e-1_30.pt"):
-    "https://drive.google.com/uc?export=download&id=1Oa_I0mXNptp-swrX6Kg2j4ZxrhdyOdNi&confirm=t",
+    "https://tufts.box.com/shared/static/sfc0ser0ys3phutmr9png0gvreq436kp.pt",
 
     Path("models/vgg/vgg_classifier_1000.pt"):
-    "https://drive.google.com/uc?export=download&id=1bw5pYUPKPg6WlMyowuzG-nfCTBeJvvS0&confirm=t",
+    "https://tufts.box.com/shared/static/lzbx7ph26fl70otyjyab7z9ka7bpickq.pt",
 
     Path("models/vgg/vgg_classifier_1000_2.pt"):
-    "https://drive.google.com/uc?export=download&id=1RZG8ZqgYoq5ihbVFq0yaYQjG9qNCGnO_&confirm=t",
+    "https://tufts.box.com/shared/static/8fn8vpbr30as6holo20gdutyhsjvhapp.pt",
 
     Path("models/vgg/vgg_classifier_1000_3.pt"):
-    "https://drive.google.com/uc?export=download&id=1R4gwJsPJRtkDILjpa06tmpkBYs5z-cwD&confirm=t",
+    "https://tufts.box.com/shared/static/52s070o8hve4wxv9penk58yjcbe5pjfo.pt",
 
     Path("models/vgg/vgg_classifier_1000_4.pt"):
-    "https://drive.google.com/uc?export=download&id=1MtPn-D0AP7bgpObT0IKiQoS06YpZcas1&confirm=t",
+    "https://tufts.box.com/shared/static/o5x4iqeivdv1j4dnr9muxrlbuhj4ia9c.pt",
 
     Path("models/vgg/vgg_classifier_1000_5.pt"):
-    "https://drive.google.com/uc?export=download&id=1HNjKNYXTkFqNR-O6HWAoAIIXxjNbUMtK&confirm=t",
+    "https://tufts.box.com/shared/static/vbbvdgknw2ozebali0giiylss1ax9urd.pt",
+
+    Path("models/polycraft/noisy/scale_1/patch_based/8000.pt"):
+    "https://tufts.box.com/shared/static/xjjl6ogwdxeyp6972x3x94c2haoh7twj.pt",
+
+    Path("models/polycraft/noisy/scale_1/fullimage_based/8000.pt"):
+    "https://tufts.box.com/shared/static/m1q942jp2r4r29xgx5rn19caha980ubo.pt",
 }
 
 if __name__ == "__main__":
