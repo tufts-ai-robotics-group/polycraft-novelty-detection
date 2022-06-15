@@ -23,6 +23,12 @@ model_path_to_url = {
 
     Path("models/vgg/vgg_classifier_1000_5.pt"):
     "https://tufts.box.com/shared/static/vbbvdgknw2ozebali0giiylss1ax9urd.pt",
+    
+    Path("models/polycraft/noisy/scale_1/patch_based/8000.pt"):
+    "https://tufts.box.com/shared/static/xjjl6ogwdxeyp6972x3x94c2haoh7twj.pt",
+    
+    Path("models/polycraft/noisy/scale_1/fullimage_based/8000.pt"):
+    "https://tufts.box.com/shared/static/m1q942jp2r4r29xgx5rn19caha980ubo.pt",
 }
 
 if __name__ == "__main__":
