@@ -1,6 +1,6 @@
 import argparse
 
-from polycraft_nov_data.dataloader import novelcraft_dataloader
+from polycraft_nov_data.dataloader import episode_dataloader, novelcraft_dataloader
 from polycraft_nov_data.image_transforms import PatchTrainPreprocess
 from polycraft_nov_data.novelcraft_const import PATCH_SHAPE
 
@@ -18,6 +18,8 @@ polycraft_group.add_argument("-image_scale", type=float,
 data_group = parser.add_argument_group("data")
 data_group.add_argument("-batch_size", type=int,
                         help="Batch size for DataLoader")
+data_group.add_argument("-dataset", choices=["novelcraft", "episode"], default="novelcraft",
+                        help="Dataset to train on")
 # model specific args
 model_group = parser.add_argument_group("model")
 model_group.add_argument("-latent_len", type=int,
@@ -46,8 +48,9 @@ train_kwargs = {
 batch_size = 128 if args.batch_size is None else args.batch_size
 image_scale = 1.0 if args.image_scale is None else args.image_scale
 transform = PatchTrainPreprocess(image_scale)
-train_loader = novelcraft_dataloader("train", transform, batch_size=batch_size)
-valid_loader = novelcraft_dataloader("valid_norm", transform, batch_size=batch_size)
+dataloader_func = episode_dataloader if args.dataset == "episode" else novelcraft_dataloader
+train_loader = dataloader_func("train", transform, batch_size=batch_size)
+valid_loader = dataloader_func("valid_norm", transform, batch_size=batch_size)
 # get model instance
 latent_len = 100 if args.latent_len is None else args.latent_len
 model = LSA_cifar10_no_est.LSACIFAR10NoEst(PATCH_SHAPE, latent_len)
