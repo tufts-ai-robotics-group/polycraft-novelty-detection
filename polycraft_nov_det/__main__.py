@@ -10,8 +10,6 @@ import polycraft_nov_det.train as train
 
 # construct argument parser
 parser = argparse.ArgumentParser(description="Polycraft Novelty Detection Model Training")
-parser.add_argument("model", choices=["polycraft"],
-                    help="Model to train")
 # Polycraft specific args
 polycraft_group = parser.add_argument_group("Polycraft")
 polycraft_group.add_argument("-image_scale", type=float,
@@ -37,24 +35,22 @@ training_group.add_argument("-gpu", type=int,
 args = parser.parse_args()
 
 include_classes = None
-# handle Polycraft args
-if args.model == "polycraft":
-    # set default train kwargs
-    train_kwargs = {
-        "lr": 1e-3,
-        "epochs": 8000,
-        "gpu": 1,
-    }
-    # get dataloaders
-    batch_size = 128 if args.batch_size is None else args.batch_size
-    image_scale = 1.0 if args.image_scale is None else args.image_scale
-    transform = PatchTrainPreprocess(image_scale)
-    train_loader = novelcraft_dataloader("train", transform, batch_size=batch_size)
-    valid_loader = novelcraft_dataloader("valid_norm", transform, batch_size=batch_size)
-    # get model instance
-    latent_len = 100 if args.latent_len is None else args.latent_len
-    model = LSA_cifar10_no_est.LSACIFAR10NoEst(PATCH_SHAPE, latent_len)
 
+# set default train kwargs
+train_kwargs = {
+    "lr": 1e-3,
+    "epochs": 8000,
+    "gpu": 1,
+}
+# get dataloaders
+batch_size = 128 if args.batch_size is None else args.batch_size
+image_scale = 1.0 if args.image_scale is None else args.image_scale
+transform = PatchTrainPreprocess(image_scale)
+train_loader = novelcraft_dataloader("train", transform, batch_size=batch_size)
+valid_loader = novelcraft_dataloader("valid_norm", transform, batch_size=batch_size)
+# get model instance
+latent_len = 100 if args.latent_len is None else args.latent_len
+model = LSA_cifar10_no_est.LSACIFAR10NoEst(PATCH_SHAPE, latent_len)
 
 # update train_kwargs with parsed args
 args_dict = vars(args)
