@@ -10,8 +10,9 @@ import torch.nn.functional as F
 from torch.optim import lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 
-from polycraft_nov_data.dataloader import polycraft_dataloaders
-import polycraft_nov_data.data_const as data_const
+from polycraft_nov_data.dataloader import novelcraft_dataloader
+from polycraft_nov_data.image_transforms import VGGPreprocess
+import polycraft_nov_data.novelcraft_const as nc_const
 
 from polycraft_nov_det.detector import NoveltyDetector
 from polycraft_nov_det.models.vgg import VGGPretrained
@@ -194,13 +195,15 @@ if __name__ == '__main__':
         opt.lr_milestones = [25, 28, 30]
         opt.num_epochs = 30
 
-    train_loader, valid_loader, _ = polycraft_dataloaders(opt.batch_size)
+    train_loader = novelcraft_dataloader("train", VGGPreprocess(), opt.batch_size)
+    valid_loader = novelcraft_dataloader("valid", VGGPreprocess(), opt.batch_size)
+    test_loader = novelcraft_dataloader("test", VGGPreprocess(), opt.batch_size)
     dataloaders = {}
     dataloaders['train'] = train_loader
     dataloaders['val'] = valid_loader
 
-    embedding = VGGPretrained(len(data_const.NORMAL_CLASSES)).backbone  # num_classes ignored here
-    classifier = nn.Linear(4096, len(data_const.NORMAL_CLASSES))  # replacing typical VGG head
+    embedding = VGGPretrained(len(nc_const.NORMAL_CLASSES)).backbone  # num_classes ignored here
+    classifier = nn.Linear(4096, len(nc_const.NORMAL_CLASSES))  # replacing typical VGG head
     model = NDCC(embedding=embedding, classifier=classifier, r=opt.r)
 
     optimizer = torch.optim.SGD([{'params': model.embedding.parameters(), 'lr': opt.lr1},
@@ -226,5 +229,5 @@ if __name__ == '__main__':
 
         model = load_model("models/vgg/ndcc_stanford_dogs_times_1e-1_30.pt", model, device)
         output_folder = Path("models/vgg/eval_ndcc/stanford_dogs_times_1e-1/")
-        save_scores(NDCCDetector(model, device), output_folder)
+        save_scores(NDCCDetector(model, device), output_folder, valid_loader, test_loader)
         eval_from_save(output_folder)

@@ -1,7 +1,8 @@
 import argparse
 
-from polycraft_nov_data.data_const import PATCH_SHAPE
-from polycraft_nov_data.dataloader import polycraft_dataloaders
+from polycraft_nov_data.dataloader import novelcraft_dataloader
+from polycraft_nov_data.image_transforms import PatchTrainPreprocess
+from polycraft_nov_data.novelcraft_const import PATCH_SHAPE
 
 import polycraft_nov_det.models.lsa.LSA_cifar10_no_est as LSA_cifar10_no_est
 import polycraft_nov_det.train as train
@@ -47,12 +48,9 @@ if args.model == "polycraft":
     # get dataloaders
     batch_size = 128 if args.batch_size is None else args.batch_size
     image_scale = 1.0 if args.image_scale is None else args.image_scale
-    (train_loader, valid_loader, _), labels = polycraft_dataloaders(batch_size,
-                                                                    image_scale,
-                                                                    patch=True,
-                                                                    include_novel=False,
-                                                                    shuffle=True,
-                                                                    ret_class_to_idx=True)
+    transform = PatchTrainPreprocess(image_scale)
+    train_loader = novelcraft_dataloader("train", transform, batch_size=batch_size)
+    valid_loader = novelcraft_dataloader("valid_norm", transform, batch_size=batch_size)
     # get model instance
     latent_len = 100 if args.latent_len is None else args.latent_len
     model = LSA_cifar10_no_est.LSACIFAR10NoEst(PATCH_SHAPE, latent_len)

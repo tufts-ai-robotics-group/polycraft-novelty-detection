@@ -188,6 +188,8 @@ def fit_ocsvm(feature_extractor, train_loader, valid_loader):
 
 
 if __name__ == '__main__':
+    from polycraft_nov_data.dataloader import novelcraft_dataloader
+    from polycraft_nov_data.image_transforms import VGGPreprocess
 
     from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
 
@@ -205,5 +207,7 @@ if __name__ == '__main__':
 
             save_scores(
                 OneClassSVMDetector(model_path, classifier_path, device=torch.device("cuda:0")),
-                output_folder)
+                output_folder,
+                novelcraft_dataloader("valid", VGGPreprocess(), 32),
+                novelcraft_dataloader("test", VGGPreprocess(), 32))
             eval_from_save(output_folder)

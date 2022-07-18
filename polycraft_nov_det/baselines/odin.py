@@ -39,6 +39,9 @@ class OdinDetector(NoveltyDetector):
 if __name__ == "__main__":
     from pathlib import Path
 
+    from polycraft_nov_data.dataloader import novelcraft_dataloader
+    from polycraft_nov_data.image_transforms import VGGPreprocess
+
     from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
 
     output_parent = Path("models/vgg/eval_odin")
@@ -51,5 +54,7 @@ if __name__ == "__main__":
             output_folder = output_parent / Path(f"t={temp}_n={noise:.4f}")
             save_scores(
                 OdinDetector(model_path, device=torch.device("cuda:1"), temp=temp, noise=noise),
-                output_folder)
+                output_folder,
+                novelcraft_dataloader("valid", VGGPreprocess(), 32),
+                novelcraft_dataloader("test", VGGPreprocess(), 32))
             eval_from_save(output_folder)

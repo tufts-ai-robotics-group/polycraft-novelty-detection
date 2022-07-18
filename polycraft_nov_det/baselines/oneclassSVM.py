@@ -9,7 +9,8 @@ from sklearn.svm import OneClassSVM
 from sklearn.preprocessing import MinMaxScaler
 from pathlib import Path
 
-from polycraft_nov_data.dataloader import polycraft_dataloaders
+from polycraft_nov_data.dataloader import novelcraft_dataloader
+from polycraft_nov_data.image_transforms import VGGPreprocess
 
 from polycraft_nov_det.detector import NoveltyDetector
 from polycraft_nov_det.model_utils import load_vgg_model
@@ -203,17 +204,9 @@ def test_ocsvm(feature_extractor, test_loader):
 
 
 if __name__ == '__main__':
-
     gpu = 1
     num_classes = 5
     device = torch.device(gpu if gpu is not None else "cpu")
-
-    (train_loader, valid_loader, test_loader), labels = polycraft_dataloaders(batch_size=100,
-                                                                              image_scale=1.0,
-                                                                              patch=False,
-                                                                              include_novel=True,
-                                                                              shuffle=True,
-                                                                              ret_class_to_idx=True)
-
+    test_loader = novelcraft_dataloader("test", VGGPreprocess(), 100)
     classifier = load_vgg_model(Path("models/vgg/vgg_classifier_1000.pt"), device)
     svm = test_ocsvm(classifier.eval(), test_loader)

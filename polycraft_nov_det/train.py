@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
-import polycraft_nov_data.data_const as data_const
+import polycraft_nov_data.novelcraft_const as nc_const
 from polycraft_nov_data.image_transforms import GaussianNoise
 
 import polycraft_nov_det.plot as plot
@@ -144,7 +144,7 @@ def train_vgg(model, train_loader, valid_loader, num_classes, lr, epochs=500, gp
     """
     # get a unique path for this session to prevent overwriting
     start_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-    model_label_ = model_label(model, include_classes=data_const.NORMAL_CLASSES)
+    model_label_ = model_label(model, include_classes=nc_const.NORMAL_CLASSES)
     session_path = pathlib.Path(model_label_) / pathlib.Path(start_time)
     # get Tensorboard writer
     writer = SummaryWriter(pathlib.Path("runs_VGG") / session_path)

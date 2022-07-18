@@ -5,18 +5,14 @@ import numpy as np
 import sklearn.metrics as metrics
 import torch
 
-import polycraft_nov_data.data_const as data_const
-from polycraft_nov_data.dataloader import polycraft_dataloaders
+import polycraft_nov_data.novelcraft_const as nc_const
 
 from polycraft_nov_det.detector import NoveltyDetector
 
 
-def save_scores(detector: NoveltyDetector, output_folder, patch=False, quad_full_image=False):
-    (_, valid_loader, test_loader), class_to_idx = polycraft_dataloaders(
-            patch=patch, include_novel=True, ret_class_to_idx=True,
-            shuffle=False, quad_full_image=quad_full_image)
-    normal_targets = torch.Tensor([class_to_idx[c] for c in data_const.NORMAL_CLASSES])
-    idx_to_class = {v: k for k, v in class_to_idx.items()}
+def save_scores(detector: NoveltyDetector, output_folder, valid_loader, test_loader):
+    normal_targets = torch.Tensor([nc_const.ALL_CLASS_TO_IDX[c] for c in nc_const.NORMAL_CLASSES])
+    idx_to_class = nc_const.ALL_IDX_TO_CLASS
     for split in ["valid", "test"]:
         loader = valid_loader if split == "valid" else test_loader
         # collect scores, novelty labels with 1 as novel, and targets

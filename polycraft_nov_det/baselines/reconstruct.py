@@ -36,8 +36,10 @@ class ReconstructDetectorPatchBased(NoveltyDetector):
 
 
 if __name__ == '__main__':
-
     from pathlib import Path
+
+    from polycraft_nov_data.dataloader import collate_patches, novelcraft_dataloader
+    from polycraft_nov_data.image_transforms import PatchTestPreprocess
 
     from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
 
@@ -50,7 +52,9 @@ if __name__ == '__main__':
 
     save_scores(ReconstructDetectorPatchBased(
             model_path, ipt_shape=(3, 32, 32), device=torch.device("cuda:0")),
-        output_folder, patch=True)
+        output_folder,
+        novelcraft_dataloader("valid", PatchTestPreprocess(), 32, collate_fn=collate_patches),
+        novelcraft_dataloader("test", PatchTestPreprocess(), 32, collate_fn=collate_patches),)
     eval_from_save(output_folder)
 
     # full image based AE

@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch.nn.functional import mse_loss
 
-from polycraft_nov_data import data_const as polycraft_const
+import polycraft_nov_data.novelcraft_const as nc_const
 
 
 class LinearRegularization():
@@ -114,7 +114,7 @@ class ReconstructionDet():
         """
         r_error_per_patch = self._mean_r_error(data)
         # amount of patches per image width
-        pw = polycraft_const.IMAGE_SHAPE[1]*scale/(polycraft_const.PATCH_SHAPE[1]//2) - 1
+        pw = nc_const.IMAGE_SHAPE[1]*scale/(nc_const.PATCH_SHAPE[1]//2) - 1
         # amount of patches per image height and width
         two_d_patches_shape = [int(data.shape[0]//pw), int(pw)]
         # reshape flattened patch error array to 2d

@@ -22,6 +22,9 @@ class EnsembleDetector(NoveltyDetector):
 if __name__ == "__main__":
     from pathlib import Path
 
+    from polycraft_nov_data.dataloader import novelcraft_dataloader
+    from polycraft_nov_data.image_transforms import VGGPreprocess
+
     from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
     from polycraft_nov_det.model_utils import load_vgg_model
 
@@ -35,5 +38,7 @@ if __name__ == "__main__":
     ]
     output_folder = Path("models/vgg/eval_ensemble/")
 
-    save_scores(EnsembleDetector(models, device), output_folder)
+    save_scores(EnsembleDetector(models, device), output_folder,
+                novelcraft_dataloader("valid", VGGPreprocess(), 32),
+                novelcraft_dataloader("test", VGGPreprocess(), 32))
     eval_from_save(output_folder)

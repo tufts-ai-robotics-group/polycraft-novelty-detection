@@ -1,7 +1,8 @@
 import pytest
 import torch
 
-from polycraft_nov_data.dataloader import polycraft_dataloaders
+from polycraft_nov_data.dataloader import novelcraft_dataloader
+from polycraft_nov_data.image_transforms import PatchTrainPreprocess
 
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
 
@@ -18,12 +19,8 @@ class TestCIFAR10():
     def test_forward(self, model):
         model(torch.zeros((batch_size,) + cifar_input_shape))
 
-    def test_dataloader_polycraft(self, model):
-        train_loader, _, _ = polycraft_dataloaders(batch_size)
-        patch_train_loader, _, _ = polycraft_dataloaders(include_novel=True)
+    def test_novelcraft_dataloader(self, model):
+        train_loader = novelcraft_dataloader("train", PatchTrainPreprocess(), batch_size=batch_size)
         for data, _ in train_loader:
-            model(data)
-            break
-        for data, _ in patch_train_loader:
             model(data)
             break
