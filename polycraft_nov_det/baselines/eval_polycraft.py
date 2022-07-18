@@ -11,6 +11,7 @@ from polycraft_nov_det.detector import NoveltyDetector
 
 
 def save_scores(detector: NoveltyDetector, output_folder, valid_loader, test_loader):
+    # TODO either ensure loaders have batch size 1 or ensure code handles batch sizes > 1
     normal_targets = torch.Tensor([nc_const.ALL_CLASS_TO_IDX[c] for c in nc_const.NORMAL_CLASSES])
     idx_to_class = nc_const.ALL_IDX_TO_CLASS
     for split in ["valid", "test"]:
