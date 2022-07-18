@@ -207,12 +207,6 @@ def train_vgg(model, train_loader, valid_loader, num_classes, lr, epochs=500, gp
                 pred = model(data)
                 pred_list.append(pred)
                 target_list.append(target)
-
-                # for data_idx in range(batch_size):
-                #    plt.imshow(np.transpose(data[data_idx].detach().cpu(), (1, 2, 0)))
-                #    plt.title(str(target[data_idx]))
-                #    plt.savefig('sanity_check_valid/' + str(data_idx) + '.png')
-
                 batch_loss = loss_func(pred, target)
                 # logging
                 valid_loss += batch_loss.item() * batch_size
