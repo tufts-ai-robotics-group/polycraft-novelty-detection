@@ -72,6 +72,7 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
         model_label (str): Label for model type, preferably from model_label function.
         train_loader (torch.utils.data.DataLoader): Training set for model.
         valid_loader (torch.utils.data.DataLoader): Validation set for model.
+                                                    None value skips validation.
         lr (float): Learning rate.
         epochs (int, optional): Number of epochs to train for. Defaults to 500.
         train_noisy (bool, optional): Whether to use denoising autoencoder. Defaults to True.
@@ -112,15 +113,16 @@ def train(model, model_label, train_loader, valid_loader, lr, epochs=500, train_
         av_train_loss = train_loss / len(train_loader)
         writer.add_scalar("Average Train Loss", av_train_loss, epoch)
         # get validation loss
-        valid_loss = 0
-        for data, target in valid_loader:
-            batch_size = data.shape[0]
-            data = data.to(device)
-            r_data, embedding = model(data)
-            batch_loss = loss_func(data, r_data)
-            valid_loss += batch_loss.item() * batch_size
-        av_valid_loss = valid_loss / len(valid_loader)
-        writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
+        if valid_loader is not None:
+            valid_loss = 0
+            for data, target in valid_loader:
+                batch_size = data.shape[0]
+                data = data.to(device)
+                r_data, embedding = model(data)
+                batch_loss = loss_func(data, r_data)
+                valid_loss += batch_loss.item() * batch_size
+            av_valid_loss = valid_loss / len(valid_loader)
+            writer.add_scalar("Average Validation Loss", av_valid_loss, epoch)
         # updates every 10% of training time
         if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
             # get reconstruction visualization

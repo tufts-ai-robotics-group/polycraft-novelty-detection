@@ -48,9 +48,12 @@ train_kwargs = {
 batch_size = 128 if args.batch_size is None else args.batch_size
 image_scale = 1.0 if args.image_scale is None else args.image_scale
 transform = PatchTrainPreprocess(image_scale)
-dataloader_func = episode_dataloader if args.dataset == "episode" else novelcraft_dataloader
-train_loader = dataloader_func("train", transform, batch_size=batch_size)
-valid_loader = dataloader_func("valid_norm", transform, batch_size=batch_size)
+if args.dataset == "episode":
+    train_loader = episode_dataloader("train", transform, batch_size=batch_size)
+    valid_loader = None
+else:
+    train_loader = novelcraft_dataloader("train", transform, batch_size=batch_size)
+    valid_loader = novelcraft_dataloader("valid_norm", transform, batch_size=batch_size)
 # get model instance
 latent_len = 100 if args.latent_len is None else args.latent_len
 model = LSA_cifar10_no_est.LSACIFAR10NoEst(PATCH_SHAPE, latent_len)
