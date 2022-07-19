@@ -42,7 +42,7 @@ if __name__ == "__main__":
     from polycraft_nov_data.dataloader import novelcraft_dataloader
     from polycraft_nov_data.image_transforms import VGGPreprocess
 
-    from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
+    from polycraft_nov_det.baselines.eval_novelcraft import save_scores, eval_from_save
 
     output_parent = Path("models/vgg/eval_odin")
     model_path = Path("models/vgg/vgg_classifier_1000.pt")

@@ -25,7 +25,7 @@ if __name__ == "__main__":
     from polycraft_nov_data.dataloader import novelcraft_dataloader
     from polycraft_nov_data.image_transforms import VGGPreprocess
 
-    from polycraft_nov_det.baselines.eval_polycraft import save_scores, eval_from_save
+    from polycraft_nov_det.baselines.eval_novelcraft import save_scores, eval_from_save
     from polycraft_nov_det.model_utils import load_vgg_model
 
     device = torch.device("cuda:1")
