@@ -6,9 +6,9 @@ from polycraft_nov_det.model_utils import load_autoencoder_model
 
 
 class ReconstructDetector(NoveltyDetector):
-    def __init__(self, model_path, ipt_shape, device="cpu"):
+    def __init__(self, model_path, input_shape, device="cpu"):
         super().__init__(device)
-        model = load_autoencoder_model(model_path, ipt_shape, device)
+        model = load_autoencoder_model(model_path, input_shape, device)
         self.model = model.eval().to(device)
 
     @torch.no_grad()
@@ -21,9 +21,9 @@ class ReconstructDetector(NoveltyDetector):
 
 
 class ReconstructDetectorPatchBased(NoveltyDetector):
-    def __init__(self, model_path, ipt_shape, device="cpu"):
+    def __init__(self, model_path, input_shape, device="cpu"):
         super().__init__(device)
-        model = load_autoencoder_model(model_path, ipt_shape, device)
+        model = load_autoencoder_model(model_path, input_shape, device)
         self.model = model.eval().to(device)
 
     @torch.no_grad()
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     model_path = Path(model_path)
 
     save_scores(ReconstructDetectorPatchBased(
-            model_path, ipt_shape=(3, 32, 32), device=torch.device("cuda:0")),
+            model_path, input_shape=(3, 32, 32), device=torch.device("cuda:0")),
         output_folder,
         novelcraft_dataloader("valid", PatchTestPreprocess(), 32, collate_fn=collate_patches),
         novelcraft_dataloader("test", PatchTestPreprocess(), 32, collate_fn=collate_patches),)
@@ -65,6 +65,6 @@ if __name__ == '__main__':
     model_path = Path(model_path)
 
     save_scores(ReconstructDetector(
-            model_path, ipt_shape=(3, 256, 256), device=torch.device("cuda:0")),
+            model_path, input_shape=(3, 256, 256), device=torch.device("cuda:0")),
         output_folder, quad_full_image=True)
     eval_from_save(output_folder)
