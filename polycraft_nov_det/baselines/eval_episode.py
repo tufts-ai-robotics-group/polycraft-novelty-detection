@@ -30,7 +30,7 @@ def eval_from_save(output_folder):
     # for each novelty type produce list of episode scores in order of occurrence
     nov_type_to_ep_scores = {}
     for novel_score, path in zip(novel_scores, paths):
-        nov_type, ep_num, frame_num = Path(path).split()
+        nov_type, ep_num, frame_num = Path(path).parts
         # assign episode max score from frames
         ep_scores = nov_type_to_ep_scores.get(nov_type, torch.zeros((100,)))
         ep_scores[ep_num] = max(ep_scores[ep_num], novel_score)
