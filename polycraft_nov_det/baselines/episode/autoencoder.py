@@ -12,9 +12,9 @@ if __name__ == "__main__":
 
     device = torch.device("cuda:0")
     output_folder = Path("models/episode/eval_patch/")
-    model_path = Path("models/episode/ae_patch.pt")
+    model_path = Path("models/episode/ae_patch/8000.pt")
     detector = ReconstructDetectorPatchBased(model_path, PATCH_SHAPE, device)
-    test_loader = episode_dataloader("test", PatchTestPreprocess, 1, collate_patches)
+    test_loader = episode_dataloader("test", PatchTestPreprocess(), 1, collate_patches)
 
     save_scores(detector, output_folder, test_loader)
     eval_from_save(output_folder)
