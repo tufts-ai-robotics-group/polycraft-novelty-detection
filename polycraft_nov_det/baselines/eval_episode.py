@@ -31,6 +31,8 @@ def eval_from_save(output_folder):
     nov_type_to_ep_scores = {}
     for novel_score, path in zip(novel_scores, paths):
         nov_type, ep_num, frame_num = Path(path).parts
+        ep_num = int(ep_num)
+        frame_num = int(frame_num)
         # assign episode max score from frames
         ep_scores = nov_type_to_ep_scores.get(nov_type, torch.zeros((100,)))
         ep_scores[ep_num] = max(ep_scores[ep_num], novel_score)
