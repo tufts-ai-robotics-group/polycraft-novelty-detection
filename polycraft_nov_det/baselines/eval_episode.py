@@ -28,17 +28,27 @@ def eval_from_save(output_folder):
     novel_scores = torch.load(folder_path / "novel_scores.pt")
     paths = np.load(folder_path / "paths.npy")
     # for each novelty type produce list of episode scores in order of occurrence
-    nov_type_to_ep_scores = {}
+    nov_type_to_scores = {}
     for novel_score, path in zip(novel_scores, paths):
-        nov_type, ep_num, frame_num = Path(path).parts
+        path = Path(path)
+        nov_type, ep_num, image_name = path.parts
         ep_num = int(ep_num)
-        frame_num = int(frame_num)
-        # assign episode max score from frames
-        ep_scores = nov_type_to_ep_scores.get(nov_type, torch.zeros((100,)))
-        ep_scores[ep_num] = max(ep_scores[ep_num], novel_score)
-        nov_type_to_ep_scores[nov_type] = ep_scores
+        frame_num = int(path.stem)
+        # get list of episodes and pad if needed
+        ep_scores = nov_type_to_scores.get(nov_type, [])
+        ep_scores += [torch.tensor([])] * (ep_num - len(ep_scores) + 1)
+        # pad list of scores and assign values
+        if frame_num - len(ep_scores[ep_num]) + 1 > 0:
+            ep_scores[ep_num] = torch.hstack(
+                (ep_scores[ep_num], torch.zeros((frame_num - len(ep_scores[ep_num]) + 1,))))
+        ep_scores[ep_num][frame_num] = novel_score
+        nov_type_to_scores[nov_type] = ep_scores
     # visualize trials
-    for nov_type, ep_scores in nov_type_to_ep_scores.items():
+    for nov_type, ep_scores in nov_type_to_scores.items():
+        # remove last frame in each episode due to bug
+        ep_scores = [frame_scores[:-1] for frame_scores in ep_scores]
+        # reduce episode to max score from frames
+        ep_scores = [torch.max(frame_scores) for frame_scores in ep_scores]
         # TODO add lines for max/min pre/post novelty?
         plt.bar(range(len(ep_scores)), ep_scores)
         plt.title(nov_type)
