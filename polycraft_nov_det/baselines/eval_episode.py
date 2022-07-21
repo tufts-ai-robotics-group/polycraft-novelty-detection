@@ -49,8 +49,14 @@ def eval_from_save(output_folder):
         ep_scores = [frame_scores[:-1] for frame_scores in ep_scores]
         # reduce episode to max score from frames
         ep_scores = [torch.max(frame_scores) for frame_scores in ep_scores]
-        # TODO add lines for max/min pre/post novelty?
-        plt.bar(range(len(ep_scores)), ep_scores)
+        # get max normal reconstruction error
+        first_novel_ep = ep_const.TEST_CLASS_FIRST_NOVEL_EP[nov_type]
+        max_norm = max(ep_scores[:first_novel_ep])
+        # bar chart with lines for max normal reconstruction error and novelty split
+        plt.figure(dpi=150)
+        plt.bar(range(first_novel_ep), ep_scores[:first_novel_ep], color="red")
+        plt.bar(range(first_novel_ep, len(ep_scores)), ep_scores[first_novel_ep:], color="green")
+        plt.axhline(max_norm, color="black")
         plt.title(nov_type)
         plt.savefig(output_folder / f"{nov_type}.png")
         plt.close()
