@@ -1,9 +1,9 @@
 import argparse
 
-from polycraft_nov_data.dataloader import polycraft_dataloaders_gcd
-import polycraft_nov_data.data_const as data_const
+from polycraft_nov_data.dataloader import novelcraft_dataloader
+import polycraft_nov_data.novelcraft_const as n_const
 
-from polycraft_nov_det.data.loader_trans import DINOConsistentTrans
+from polycraft_nov_det.dino_trans import DINOConsistentTrans
 from polycraft_nov_det.model_load import load_dino_pretrained
 from polycraft_nov_det.models.dino_train import DinoWithHead
 import polycraft_nov_det.train as train
@@ -25,10 +25,11 @@ if args.gpu < 0:
 
 if args.model == "gcd":
     batch_size = 64
-    labeled_loader, unlabeled_loader = polycraft_dataloaders_gcd(DINOConsistentTrans(), batch_size)
+    labeled_loader = novelcraft_dataloader("train", DINOConsistentTrans(), batch_size, True)
+    unlabeled_loader = novelcraft_dataloader("valid", DINOConsistentTrans(), batch_size)
     # get model instance
     model = DinoWithHead(load_dino_pretrained())
     # start model training
     model_label = args.name if args.name is not None else train.model_label(model, None)
-    train.train_gcd(model, model_label, labeled_loader, unlabeled_loader, data_const.NORMAL_CLASSES,
+    train.train_gcd(model, model_label, labeled_loader, unlabeled_loader, n_const.NORMAL_CLASSES,
                     gpu=args.gpu, supervised_weight=args.sup_weight)

@@ -3,10 +3,10 @@ from pathlib import Path
 import torch
 import numpy as np
 
-from polycraft_nov_data.dataloader import polycraft_dataloaders_gcd
-import polycraft_nov_data.data_const as data_const
+from polycraft_nov_data.dataloader import novelcraft_dataloader
+import polycraft_nov_data.novelcraft_const as n_const
 
-from polycraft_nov_det.data.loader_trans import DINOTestTrans
+from polycraft_nov_det.dino_trans import DINOTestTrans
 import polycraft_nov_det.eval.stats as stats
 from polycraft_nov_det.plot import plot_gcd_con_matrix
 from polycraft_nov_det.ss_kmeans import SSKMeans
@@ -17,8 +17,8 @@ def polycraft_gcd(model, label="GCD", device="cpu"):
     model.eval()
     # get dataloader
     batch_size = 128
-    labeled_loader, unlabeled_loader = polycraft_dataloaders_gcd(
-        DINOTestTrans(), batch_size, eval_mode=True)
+    labeled_loader = novelcraft_dataloader("train", DINOTestTrans(), batch_size, True)
+    unlabeled_loader = novelcraft_dataloader("valid", DINOTestTrans(), batch_size)
     # collect labeled embeddings and labels
     labeled_embeddings = np.empty((0, 768))
     labeled_y = np.empty((0,))
@@ -45,7 +45,7 @@ def polycraft_gcd(model, label="GCD", device="cpu"):
     print(f"{label}\n")
     print(f"All: {acc}")
     # results for normal and novel subsets
-    num_norm = len(data_const.NORMAL_CLASSES)
+    num_norm = len(n_const.NORMAL_CLASSES)
     con_mat = stats.cluster_confusion(row_ind, col_ind, weight)
     # clear rows so only looking at predictions with the desired true labels
     norm_con = np.copy(con_mat)
