@@ -96,6 +96,13 @@ def eval_from_save(output_folder):
     # choose threshold from validation set to limit FPR < 5%
     fpr, tpr, thresholds = roc_curve(valid_targets, valid_scores)
     nov_thresh = thresholds[fpr < .05][-1]
+    nov_thresh = .005  # TODO remove?
+    # create figures for each statistic
+    fig, (m1_ax, m2_ax, m21_ax) = plt.subplots(3, 1)
+    m1_ax.set_ylabel("Av FN in CDTs")
+    m2_ax.set_ylabel("Percentage CDTs")
+    m21_ax.set_ylabel("Percentage FP > 0")
+    m21_ax.set_xlabel("Threshold Low to High")
 
     # bootstrap to generate test trials
     for nov_type, (test_scores, test_targets) in nov_to_test_tuple.items():
@@ -108,30 +115,44 @@ def eval_from_save(output_folder):
             rng.choice(norm_test_scores, (n_trials, n_norm)),
             rng.choice(novel_test_scores, (n_trials, n_novel)),
         ))
-        # CDT (correctly detected trials) = 0 FP and at least 1 TP
-        bt_pred = bt_test_scores >= nov_thresh
-        cdt_mask = np.logical_and(np.all(~bt_pred[:, :n_norm], axis=1),
-                                  np.any(bt_pred[:, n_norm:], axis=1))
-        # calc M1, average FN among CDTs
-        av_fn = 0
-        for i, nov_preds in enumerate(bt_pred[cdt_mask, n_norm:]):
-            cur_fn = 0
-            for nov_pred in nov_preds:
-                if not nov_pred:
-                    cur_fn += 1
-                else:
-                    break
-            av_fn = (cur_fn + av_fn * i) / (i + 1)
-        # calc M2, % of trials that are CDTs
-        percent_cdt = np.sum(cdt_mask) / n_trials * 100
-        # calc M2.1, % of trials with at least 1 FP
-        percent_fp = np.sum(np.any(bt_pred[:, :n_norm], axis=1)) / n_trials * 100
-        # print results
-        print(f"{nov_type} Results:")
-        print(f"Av FN in CDTs: {av_fn}")
-        print(f"Percent CDTs: {percent_cdt}")
-        print(f"Percent FPs: {percent_fp}")
-        print()
+        # examine range of values
+        nov_thresh_range = .001
+        num_interps = 10
+        av_fns = np.zeros((num_interps,))
+        percent_cdts = np.zeros((num_interps,))
+        percent_fps = np.zeros((num_interps,))
+        nov_threshs = np.linspace(
+                nov_thresh - nov_thresh_range,
+                nov_thresh + nov_thresh_range, num_interps)
+        for i, temp_nov_thresh in enumerate(nov_threshs):
+            # CDT (correctly detected trials) = 0 FP and at least 1 TP
+            bt_pred = bt_test_scores >= temp_nov_thresh
+            cdt_mask = np.logical_and(np.all(~bt_pred[:, :n_norm], axis=1),
+                                      np.any(bt_pred[:, n_norm:], axis=1))
+            # calc M1, average FN among CDTs
+            av_fn = 0
+            for j, nov_preds in enumerate(bt_pred[cdt_mask, n_norm:]):
+                cur_fn = 0
+                for nov_pred in nov_preds:
+                    if not nov_pred:
+                        cur_fn += 1
+                    else:
+                        break
+                av_fn = (cur_fn + av_fn * j) / (j + 1)
+            # calc M2, % of trials that are CDTs
+            percent_cdt = np.sum(cdt_mask) / n_trials * 100
+            # calc M2.1, % of trials with at least 1 FP
+            percent_fp = np.sum(np.any(bt_pred[:, :n_norm], axis=1)) / n_trials * 100
+            # store results
+            av_fns[i] = av_fn
+            percent_cdts[i] = percent_cdt
+            percent_fps[i] = percent_fp
+        # plot results
+        m1_ax.plot(range(num_interps), av_fns, label=nov_type)
+        m2_ax.plot(range(num_interps), percent_cdts, label=nov_type)
+        m21_ax.plot(range(num_interps), percent_fps, label=nov_type)
+    m1_ax.legend()
+    fig.savefig(output_folder / "bootstrap.png")
     return
 
 
