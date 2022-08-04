@@ -102,7 +102,9 @@ def eval_from_save(output_folder):
     m1_ax.set_ylabel("Av FN in CDTs")
     m2_ax.set_ylabel("Percentage CDTs")
     m21_ax.set_ylabel("Percentage FP > 0")
-    m21_ax.set_xlabel("Threshold Low to High")
+    m21_ax.set_xlabel("Threshold")
+    for ax in (m1_ax, m2_ax, m21_ax):
+        ax.tick_params(axis='x', labelsize=8)
 
     # bootstrap to generate test trials
     for nov_type, (test_scores, test_targets) in nov_to_test_tuple.items():
@@ -148,9 +150,9 @@ def eval_from_save(output_folder):
             percent_cdts[i] = percent_cdt
             percent_fps[i] = percent_fp
         # plot results
-        m1_ax.plot(range(num_interps), av_fns, label=nov_type)
-        m2_ax.plot(range(num_interps), percent_cdts, label=nov_type)
-        m21_ax.plot(range(num_interps), percent_fps, label=nov_type)
+        m1_ax.plot(nov_threshs, av_fns, label=nov_type)
+        m2_ax.plot(nov_threshs, percent_cdts, label=nov_type)
+        m21_ax.plot(nov_threshs, percent_fps, label=nov_type)
     m1_ax.legend()
     fig.savefig(output_folder / "bootstrap.png")
     return
