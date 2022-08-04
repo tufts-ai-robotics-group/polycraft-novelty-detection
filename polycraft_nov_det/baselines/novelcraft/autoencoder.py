@@ -1,5 +1,8 @@
+import numpy as np
 import torch
 from torch.nn.functional import mse_loss
+
+import polycraft_nov_data.novelcraft_const as nc_const
 
 from polycraft_nov_det.detector import NoveltyDetector
 from polycraft_nov_det.model_utils import load_autoencoder_model
@@ -13,7 +16,6 @@ class ReconstructDetector(NoveltyDetector):
 
     @torch.no_grad()
     def novelty_score(self, data):
-
         data = data.to(self.device)
         r_data, embedding = self.model(data)
         return torch.mean(mse_loss(data, r_data, reduction="none"),
@@ -29,10 +31,49 @@ class ReconstructDetectorPatchBased(NoveltyDetector):
     @torch.no_grad()
     def novelty_score(self, data):
         data = data.to(self.device)
-        # print(data.shape)
         r_data, embedding = self.model(data)
-
         return torch.mean(mse_loss(data, r_data)).unsqueeze(0)
+
+
+class AgentReconstructDetector(ReconstructDetectorPatchBased):
+    def __init__(self, model_path, input_shape, device="cpu"):
+        super().__init__(model_path, input_shape, device)
+
+    def localization(self, data, scale):
+        """Evaluate where something (potentially) novel appeared based on where the
+           maximum reconstruction error (per patch) appears. Returns 0 if the error
+           is highest in the leftmost column/third of the image, 1 if the error is highest in
+           the central column/third of the image, 2 if it the error is highest in the
+           rightmost column/third.
+
+        Args:
+            data (torch.tensor): Data to use as input to autoencoder and then pool
+
+        Returns:
+            column (int): 0 --> leftmost column, 1 --> central column,
+            2 --> rightmost column
+        """
+        data = data.to(self.device)
+        r_data, embedding = self.model(data)
+        r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
+                             (*range(1, data.dim()),))
+        r_error_per_patch = r_error.detach().cpu().numpy()
+        # amount of patches per image width
+        pw = nc_const.IMAGE_SHAPE[1]*scale/(nc_const.PATCH_SHAPE[1]//2) - 1
+        # amount of patches per image height and width
+        two_d_patches_shape = [int(data.shape[0]//pw), int(pw)]
+        # reshape flattened patch error array to 2d
+        r_error_per_patch = r_error_per_patch.reshape(two_d_patches_shape)
+        first_col_idx = int(np.round(two_d_patches_shape[1]/3))
+        second_col_idx = int(np.round(two_d_patches_shape[1] - first_col_idx))
+        # Average the per patch rec. errors over each corresponding column
+        r_error_per_column = np.zeros(3)
+        r_error_per_column[0] = np.mean(r_error_per_patch[:, 0:first_col_idx])
+        r_error_per_column[1] = np.mean(r_error_per_patch[:, first_col_idx:second_col_idx])
+        r_error_per_column[2] = np.mean(r_error_per_patch[:, second_col_idx:two_d_patches_shape[1]])
+        # column where maximum rec. error appears
+        column = np.argmax(r_error_per_column)
+        return column  # 0 --> 1st column, 1 --> 2nd column, 2 --> 3rd column
 
 
 if __name__ == '__main__':
