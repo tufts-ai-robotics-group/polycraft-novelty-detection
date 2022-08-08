@@ -1,10 +1,7 @@
-import os.path
-
 import torch
 
 from polycraft_nov_det.models.lsa.LSA_cifar10_no_est import LSACIFAR10NoEst
 from polycraft_nov_det.models.vgg import VGGPretrained
-from polycraft_nov_det.detector import load_lin_reg, reconstruction_lin_reg
 
 
 def load_model(path, model, device="cpu"):
@@ -29,20 +26,6 @@ def load_autoencoder_model(path, input_shape, device="cpu", latent_len=100):
 def load_vgg_model(path, device="cpu", num_classes=5):
     model = VGGPretrained(num_classes)
     return load_model(path, model, device)
-
-
-def load_cached_lin_reg(model_path, model, train_loader, device="cpu"):
-    model_dir, model_name = os.path.split(model_path)
-    model_name = model_name[:model_name.rfind(".")]
-    # load cached regularization if it exists
-    reg_path = os.path.join(model_dir, "train_%s.npy" % (model_name))
-    if os.path.isfile(reg_path):
-        reg = load_lin_reg(reg_path)
-    # otherwise generate regularization and cache it for later
-    else:
-        reg = reconstruction_lin_reg(model, train_loader, device)
-        reg.save(reg_path)
-    return reg
 
 
 def calc_model_embeddings(model, data_loader):
