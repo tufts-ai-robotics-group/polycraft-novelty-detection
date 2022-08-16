@@ -8,6 +8,7 @@ import torch
 import polycraft_nov_data.episode_const as ep_const
 
 from polycraft_nov_det.detector import NoveltyDetector
+from polycraft_nov_det.baselines.eval_novelcraft import detection_metrics
 
 
 def save_scores(detector: NoveltyDetector, output_folder, test_loader):
@@ -55,9 +56,23 @@ def eval_from_save(output_folder):
         max_scores = [torch.max(frame_scores) for frame_scores in ep_scores]
         nov_to_max_scores[nov_type] = max_scores
 
+    ep_detection_metrics(nov_to_max_scores, output_folder)
     vis_trials(nov_to_max_scores, output_folder)
     bootstrap_metrics(nov_to_max_scores, output_folder)
     return
+
+
+def ep_detection_metrics(nov_to_max_scores, output_folder):
+    # construct tensors of novelty labels and scores
+    novel_true = torch.Tensor([])
+    novel_score = torch.Tensor([])
+    for nov_type, max_scores in nov_to_max_scores.items():
+        first_novel_ep = ep_const.TEST_CLASS_FIRST_NOVEL_EP[nov_type]
+        cur_novel_true = torch.zeros(len(max_scores))
+        cur_novel_true[first_novel_ep:] = 1
+        novel_true = torch.hstack((novel_true, cur_novel_true))
+        novel_score = torch.hstack((novel_score, torch.Tensor(max_scores)))
+    return detection_metrics(output_folder, novel_true, novel_score)
 
 
 def vis_trials(nov_to_max_scores, output_folder):

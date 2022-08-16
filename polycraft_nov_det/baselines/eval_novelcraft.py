@@ -35,9 +35,13 @@ def save_scores(detector: NoveltyDetector, output_folder, valid_loader, test_loa
 
 
 def eval_from_save(output_folder):
-    folder_path = Path(output_folder)
-    novel_true = torch.load(folder_path / "test_novel_true.pt")
-    novel_score = torch.load(folder_path / "test_novel_score.pt")
+    output_folder = Path(output_folder)
+    novel_true = torch.load(output_folder / "test_novel_true.pt")
+    novel_score = torch.load(output_folder / "test_novel_score.pt")
+    return detection_metrics(output_folder, novel_true, novel_score)
+
+
+def detection_metrics(output_folder, novel_true, novel_score):
     # upsample normal data so it accounts for 3/4 of the weight, roughly the split of an episode
     # should affect PRC but not ROC
     norm_count = torch.sum(novel_true == 0)
@@ -48,7 +52,7 @@ def eval_from_save(output_folder):
     fpr, tpr, roc_threshs = metrics.roc_curve(novel_true, novel_score, sample_weight=weight)
     auroc = metrics.roc_auc_score(novel_true, novel_score, sample_weight=weight)
     metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=auroc).plot()
-    plt.savefig(folder_path / "roc.png")
+    plt.savefig(output_folder / "roc.png")
     plt.close()
     print(f"AUROC: {auroc}")
     # TNR at TPR 95%
@@ -63,7 +67,7 @@ def eval_from_save(output_folder):
     av_p = metrics.average_precision_score(novel_true, novel_score, sample_weight=weight)
     metrics.PrecisionRecallDisplay(
         precision=precision, recall=recall, average_precision=av_p).plot()
-    plt.savefig(folder_path / "prc.png")
+    plt.savefig(output_folder / "prc.png")
     plt.close()
     print(f"Average Precision: {av_p}")
     # recall at precision 80%
