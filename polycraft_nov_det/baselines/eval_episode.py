@@ -55,6 +55,12 @@ def eval_from_save(output_folder):
         max_scores = [torch.max(frame_scores) for frame_scores in ep_scores]
         nov_to_max_scores[nov_type] = max_scores
 
+    vis_trials(nov_to_max_scores, output_folder)
+    bootstrap_metrics(nov_to_max_scores, output_folder)
+    return
+
+
+def vis_trials(nov_to_max_scores, output_folder):
     # visualize trials
     for nov_type, max_scores in nov_to_max_scores.items():
         # get max normal reconstruction error
@@ -69,6 +75,8 @@ def eval_from_save(output_folder):
         plt.savefig(output_folder / f"{nov_type}.png")
         plt.close()
 
+
+def bootstrap_metrics(nov_to_max_scores, output_folder):
     # aggregate trials and split into validation and test sets
     valid_scores = []
     valid_targets = []
