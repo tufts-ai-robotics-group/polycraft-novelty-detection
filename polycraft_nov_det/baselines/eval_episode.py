@@ -47,6 +47,11 @@ def eval_from_save(output_folder):
         ep_scores[ep_num][frame_num] = novel_score
         nov_to_scores[nov_type] = ep_scores
 
+    # drop normal scores and arena if included in data
+    if "normal" in nov_to_scores:
+        nov_to_scores.pop("normal")
+    if "ArenaBlockHard" in nov_to_scores:
+        nov_to_scores.pop("ArenaBlockHard")
     # get list of max score for each episode
     nov_to_max_scores = {}
     for nov_type, ep_scores in nov_to_scores.items():
@@ -56,9 +61,10 @@ def eval_from_save(output_folder):
         max_scores = [torch.max(frame_scores) for frame_scores in ep_scores]
         nov_to_max_scores[nov_type] = max_scores
 
-    ep_detection_metrics(nov_to_max_scores, output_folder)
+    tpr_95_thresh, prc_80_thresh = ep_detection_metrics(nov_to_max_scores, output_folder)
+    print(f"Delay @ TPR: {av_delay_at_thresh(nov_to_scores, tpr_95_thresh)}")
+    print(f"Delay @ Precision: {av_delay_at_thresh(nov_to_scores, prc_80_thresh)}")
     vis_trials(nov_to_max_scores, output_folder)
-    bootstrap_metrics(nov_to_max_scores, output_folder)
     return
 
 
@@ -72,7 +78,8 @@ def ep_detection_metrics(nov_to_max_scores, output_folder):
         cur_novel_true[first_novel_ep:] = 1
         novel_true = torch.hstack((novel_true, cur_novel_true))
         novel_score = torch.hstack((novel_score, torch.Tensor(max_scores)))
-    return detection_metrics(output_folder, novel_true, novel_score)
+    tpr_95_thresh, prc_80_thresh = detection_metrics(output_folder, novel_true, novel_score)[-2:]
+    return tpr_95_thresh, prc_80_thresh
 
 
 def vis_trials(nov_to_max_scores, output_folder):
@@ -155,15 +162,7 @@ def bootstrap_metrics(nov_to_max_scores, output_folder):
             cdt_mask = np.logical_and(np.all(~bt_pred[:, :n_norm], axis=1),
                                       np.any(bt_pred[:, n_norm:], axis=1))
             # calc M1, average FN among CDTs
-            av_fn = 0
-            for j, nov_preds in enumerate(bt_pred[cdt_mask, n_norm:]):
-                cur_fn = 0
-                for nov_pred in nov_preds:
-                    if not nov_pred:
-                        cur_fn += 1
-                    else:
-                        break
-                av_fn = (cur_fn + av_fn * j) / (j + 1)
+            av_fn = av_neg_before_pos(bt_pred[cdt_mask, n_norm:])
             # calc M2, % of trials that are CDTs
             percent_cdt = np.sum(cdt_mask) / n_trials * 100
             # calc M2.1, % of trials with at least 1 FP
@@ -181,6 +180,46 @@ def bootstrap_metrics(nov_to_max_scores, output_folder):
     return
 
 
+def av_delay_at_thresh(nov_to_scores, thresh):
+    # calculate average delay for each novelty, then average those
+    thresh = float(thresh)
+    delay = 0
+    for nov_type, ep_scores in nov_to_scores.items():
+        # get average false negatives before first positive for novel eps
+        first_novel_ep = ep_const.TEST_CLASS_FIRST_NOVEL_EP[nov_type]
+        ep_nov_preds = [frame_scores >= thresh for frame_scores in ep_scores[first_novel_ep:]]
+        delay += av_neg_before_pos(ep_nov_preds)
+    return delay / len(nov_to_scores.keys())
+
+
+def av_neg_before_pos(eps_nov_preds):
+    """Average number of negative predictions before first positive prediction
+
+    Args:
+        eps_nov_preds (list): For each episode, list of boolean novelty predictions
+
+    Returns:
+        float: Average number of negative predictions before first positive prediction
+    """
+    av_fn = 0
+    for j, nov_preds in enumerate(eps_nov_preds):
+        cur_fn = 0
+        for nov_pred in nov_preds:
+            if not nov_pred:
+                cur_fn += 1
+            else:
+                break
+        av_fn = (cur_fn + av_fn * j) / (j + 1)
+    return av_fn
+
+
 if __name__ == "__main__":
-    # TODO comparisons across model types
-    pass
+    method_to_outputs = {
+        "Autoencoder (Patch)": Path("models/episode/ae_patch/eval_patch/"),
+        "JSON (2 step)": Path("models/episode/json/eval_json_2/"),
+        "JSON (5 step)": Path("models/episode/json/eval_json_5/"),
+    }
+    for method, output_folder in method_to_outputs.items():
+        print(f"Method: {method}")
+        eval_from_save(output_folder)
+        print()
