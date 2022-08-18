@@ -65,7 +65,7 @@ def eval_from_save(output_folder):
     print(f"Delay @ TPR: {av_delay_at_thresh(nov_to_scores, tpr_95_thresh)}")
     print(f"Delay @ Precision: {av_delay_at_thresh(nov_to_scores, prc_80_thresh)}")
     vis_trials(nov_to_max_scores, output_folder)
-    return
+    return nov_to_scores
 
 
 def ep_detection_metrics(nov_to_max_scores, output_folder):
@@ -218,6 +218,8 @@ if __name__ == "__main__":
         "Autoencoder (Patch)": Path("models/episode/ae_patch/eval_patch/"),
         "JSON (2 step)": Path("models/episode/json/eval_json_2/"),
         "JSON (5 step)": Path("models/episode/json/eval_json_5/"),
+        "Multimodal (2 step)": Path("models/episode/multimodal/eval_multimodal/"),
+        "Multimodal (5 step)": Path("models/episode/multimodal/eval_multimodal_5/"),
     }
     for method, output_folder in method_to_outputs.items():
         print(f"Method: {method}")
