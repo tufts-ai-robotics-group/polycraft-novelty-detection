@@ -201,7 +201,7 @@ if __name__ == '__main__':
                                                   balance_classes=True)
     else:
         train_loader = novelcraft_dataloader("train", VGGPreprocess(), opt.batch_size)
-    valid_loader = novelcraft_dataloader("valid", VGGPreprocess(), opt.batch_size)
+    valid_loader = novelcraft_dataloader("valid_norm", VGGPreprocess(), opt.batch_size)
     test_loader = novelcraft_dataloader("test", VGGPreprocess(), opt.batch_size)
     dataloaders = {}
     dataloaders['train'] = train_loader
