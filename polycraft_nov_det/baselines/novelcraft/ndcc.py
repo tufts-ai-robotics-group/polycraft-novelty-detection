@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from torch.optim import lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 
-from polycraft_nov_data.dataloader import novelcraft_dataloader
+from polycraft_nov_data.dataloader import novelcraft_dataloader, novelcraft_plus_dataloader
 from polycraft_nov_data.image_transforms import VGGPreprocess
 import polycraft_nov_data.novelcraft_const as nc_const
 
@@ -195,7 +195,12 @@ if __name__ == '__main__':
         opt.lr_milestones = [25, 28, 30]
         opt.num_epochs = 30
 
-    train_loader = novelcraft_dataloader("train", VGGPreprocess(), opt.batch_size)
+    use_novelcraft_plus = True
+    if use_novelcraft_plus:
+        train_loader = novelcraft_plus_dataloader("train", VGGPreprocess(), opt.batch_size,
+                                                  balance_classes=True)
+    else:
+        train_loader = novelcraft_dataloader("train", VGGPreprocess(), opt.batch_size)
     valid_loader = novelcraft_dataloader("valid", VGGPreprocess(), opt.batch_size)
     test_loader = novelcraft_dataloader("test", VGGPreprocess(), opt.batch_size)
     dataloaders = {}
