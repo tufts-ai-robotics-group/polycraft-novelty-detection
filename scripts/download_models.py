@@ -9,6 +9,9 @@ model_path_to_url = {
     Path("models/vgg/ndcc_stanford_dogs_times_1e-1_30.pt"):
     "https://tufts.box.com/shared/static/sfc0ser0ys3phutmr9png0gvreq436kp.pt",
 
+    Path("models/vgg/ndcc_plus_30.pt"):
+    "https://tufts.box.com/shared/static/zijwq9qjgizpw5fdd3ceo4fmokj3o5xu.pt",
+
     Path("models/vgg/vgg_classifier_1000.pt"):
     "https://tufts.box.com/shared/static/lzbx7ph26fl70otyjyab7z9ka7bpickq.pt",
 
