@@ -81,5 +81,10 @@ if __name__ == "__main__":
     polycraft_gcd(load_dino_pretrained(device), "DINO_SS_K-Means", device)
     polycraft_gcd(load_dino_block("models/polycraft/GCD/block200.pt", device), "GCD_SS_K-Means",
                   device)
-    polycraft_gcd(torch.hub.load("tufts-ai-robotics-group/CCGaussian:main", "ccg_gcd"),
-                  "CCG_GCD_SS_K-Means", device, embedding_ind=1)
+    polycraft_gcd(
+        torch.hub.load(
+            "tufts-ai-robotics-group/CCGaussian:main",
+            "ccg_gcd",
+            skip_validation=True,  # temp fix for torch bug
+            trust_repo=True).to(device),
+        "CCG_GCD_SS_K-Means", device, embedding_ind=1)
