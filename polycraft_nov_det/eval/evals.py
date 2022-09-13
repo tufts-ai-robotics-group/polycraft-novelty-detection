@@ -13,7 +13,7 @@ from polycraft_nov_det.ss_kmeans import SSKMeans
 
 
 @torch.no_grad()
-def polycraft_gcd(model, label="GCD", device="cpu"):
+def polycraft_gcd(model, label="GCD", device="cpu", embedding_ind=None):
     model.eval()
     # get dataloader
     batch_size = 128
@@ -24,7 +24,11 @@ def polycraft_gcd(model, label="GCD", device="cpu"):
     labeled_y = np.empty((0,))
     for data, targets in labeled_loader:
         data, targets = data.to(device), targets.to(device)
-        data_embeddings = model(data).detach().cpu().numpy()
+        outputs = model(data)
+        if embedding_ind is None:
+            data_embeddings = outputs.detach().cpu().numpy()
+        else:
+            data_embeddings = outputs[embedding_ind].detach().cpu().numpy()
         labeled_embeddings = np.vstack((labeled_embeddings, data_embeddings))
         labeled_y = np.hstack((labeled_y, targets.cpu().numpy()))
     # collect unlabeled embeddings and labels
@@ -32,7 +36,11 @@ def polycraft_gcd(model, label="GCD", device="cpu"):
     y_true = np.empty((0,))
     for data, targets in unlabeled_loader:
         data, targets = data.to(device), targets.to(device)
-        data_embeddings = model(data).detach().cpu().numpy()
+        outputs = model(data)
+        if embedding_ind is None:
+            data_embeddings = outputs.detach().cpu().numpy()
+        else:
+            data_embeddings = outputs[embedding_ind].detach().cpu().numpy()
         embeddings = np.vstack((embeddings, data_embeddings))
         y_true = np.hstack((y_true, targets.cpu().numpy()))
     # SS KMeans
@@ -69,7 +77,9 @@ def polycraft_gcd(model, label="GCD", device="cpu"):
 if __name__ == "__main__":
     from polycraft_nov_det.model_load import load_dino_block, load_dino_pretrained
 
-    device = torch.device("cuda:1")
+    device = torch.device("cuda:0")
     polycraft_gcd(load_dino_pretrained(device), "DINO_SS_K-Means", device)
     polycraft_gcd(load_dino_block("models/polycraft/GCD/block200.pt", device), "GCD_SS_K-Means",
                   device)
+    polycraft_gcd(torch.hub.load("tufts-ai-robotics-group/CCGaussian:main", "ccg_gcd"),
+                  "CCG_GCD_SS_K-Means", device, embedding_ind=1)
