@@ -26,9 +26,9 @@ def save_scores(detector: NoveltyDetector, output_folder, test_loader):
 
 
 def eval_from_save(output_folder):
-    folder_path = Path(output_folder)
-    novel_scores = torch.load(folder_path / "novel_scores.pt")
-    paths = np.load(folder_path / "paths.npy")
+    output_folder = Path(output_folder)
+    novel_scores = torch.load(output_folder / "novel_scores.pt")
+    paths = np.load(output_folder / "paths.npy")
 
     # for each novelty type produce list of episode scores in order of occurrence
     nov_to_scores = {}
@@ -47,11 +47,9 @@ def eval_from_save(output_folder):
         ep_scores[ep_num][frame_num] = novel_score
         nov_to_scores[nov_type] = ep_scores
 
-    # drop normal scores and arena if included in data
+    # drop normal scores if included in data
     if "normal" in nov_to_scores:
         nov_to_scores.pop("normal")
-    if "ArenaBlockHard" in nov_to_scores:
-        nov_to_scores.pop("ArenaBlockHard")
     # get list of max score for each episode
     nov_to_max_scores = {}
     for nov_type, ep_scores in nov_to_scores.items():
