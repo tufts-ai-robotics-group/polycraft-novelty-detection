@@ -230,7 +230,7 @@ if __name__ == '__main__':
     # eval model
     else:
         from polycraft_nov_data.dataloader import episode_dataloader
-        # from polycraft_nov_det.baselines.eval_novelcraft import save_scores, eval_from_save
+
         from polycraft_nov_det.baselines.eval_episode import save_scores, eval_from_save
         from polycraft_nov_det.model_utils import load_model
 
