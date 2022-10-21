@@ -57,23 +57,21 @@ class AgentReconstructDetector(ReconstructDetectorPatchBased):
         r_data, embedding = self.model(data)
         r_error = torch.mean(mse_loss(data, r_data, reduction="none"),
                              (*range(1, data.dim()),))
-        r_error_per_patch = r_error.detach().cpu().numpy()
         # amount of patches per image width
         pw = nc_const.IMAGE_SHAPE[1]*scale/(nc_const.PATCH_SHAPE[1]//2) - 1
         # amount of patches per image height and width
-        two_d_patches_shape = [int(data.shape[0]//pw), int(pw)]
+        patches_shape = [int(data.shape[0]//pw), int(pw)]
         # reshape flattened patch error array to 2d
-        r_error_per_patch = r_error_per_patch.reshape(two_d_patches_shape)
-        first_col_idx = int(np.round(two_d_patches_shape[1]/3))
-        second_col_idx = int(np.round(two_d_patches_shape[1] - first_col_idx))
-        # Average the per patch rec. errors over each corresponding column
-        r_error_per_column = np.zeros(3)
-        r_error_per_column[0] = np.mean(r_error_per_patch[:, 0:first_col_idx])
-        r_error_per_column[1] = np.mean(r_error_per_patch[:, first_col_idx:second_col_idx])
-        r_error_per_column[2] = np.mean(r_error_per_patch[:, second_col_idx:two_d_patches_shape[1]])
-        # column where maximum rec. error appears
-        column = np.argmax(r_error_per_column)
-        return column  # 0 --> 1st column, 1 --> 2nd column, 2 --> 3rd column
+        r_error_per_patch = r_error.detach().cpu().numpy().reshape(patches_shape)
+        # determine columns to which start new thirds of the image
+        col_breaks = [patches_shape[1]//3, patches_shape[1] - patches_shape[1]//3]
+        column = int(np.where(r_error_per_patch == np.max(r_error_per_patch))[1][0])
+        out = 0
+        if column >= col_breaks[0] and out < col_breaks[1]:
+            out = 1
+        elif column >= col_breaks[1]:
+            out = 2
+        return out
 
 
 if __name__ == '__main__':
