@@ -47,9 +47,12 @@ def eval_from_save(output_folder):
         ep_scores[ep_num][frame_num] = novel_score
         nov_to_scores[nov_type] = ep_scores
 
-    # drop normal scores if included in data
+    # drop ArenaBlockHard scores if included in data
+    if "ArenaBlockHard" in nov_to_scores:
+        nov_to_scores.pop("ArenaBlockHard")
+    # filter out empty normal episode indices since only using test set
     if "normal" in nov_to_scores:
-        nov_to_scores.pop("normal")
+        nov_to_scores["normal"] = [scores for scores in nov_to_scores["normal"] if len(scores) > 0]
     # get list of max score for each episode
     nov_to_max_scores = {}
     for nov_type, ep_scores in nov_to_scores.items():
@@ -76,7 +79,9 @@ def ep_detection_metrics(nov_to_max_scores, output_folder):
         cur_novel_true[first_novel_ep:] = 1
         novel_true = torch.hstack((novel_true, cur_novel_true))
         novel_score = torch.hstack((novel_score, torch.Tensor(max_scores)))
-    tpr_95_thresh, prc_80_thresh = detection_metrics(output_folder, novel_true, novel_score)[-2:]
+    # detection metrics with 15% normal 85% novel weighting
+    tpr_95_thresh, prc_80_thresh = detection_metrics(
+        output_folder, novel_true, novel_score, .15)[-2:]
     return tpr_95_thresh, prc_80_thresh
 
 
@@ -85,11 +90,15 @@ def vis_trials(nov_to_max_scores, output_folder):
     for nov_type, max_scores in nov_to_max_scores.items():
         # get max normal reconstruction error
         first_novel_ep = ep_const.TEST_CLASS_FIRST_NOVEL_EP[nov_type]
+        if nov_type == "normal":  # normal will not have novel scores
+            first_novel_ep = len(max_scores)
         max_norm = max(max_scores[:first_novel_ep])
         # bar chart with lines for max normal reconstruction error and novelty split
         plt.figure(dpi=150)
         plt.bar(range(first_novel_ep), max_scores[:first_novel_ep], color="red")
-        plt.bar(range(first_novel_ep, len(max_scores)), max_scores[first_novel_ep:], color="green")
+        if nov_type != "normal":  # normal will not have novel scores
+            plt.bar(range(first_novel_ep, len(max_scores)), max_scores[first_novel_ep:],
+                    color="green")
         plt.axhline(max_norm, color="black")
         plt.title(nov_type)
         plt.savefig(output_folder / f"{nov_type}.png")
