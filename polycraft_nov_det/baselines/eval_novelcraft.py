@@ -41,13 +41,15 @@ def eval_from_save(output_folder):
     return detection_metrics(output_folder, novel_true, novel_score)[:-2]
 
 
-def detection_metrics(output_folder, novel_true, novel_score):
-    # upsample normal data so it accounts for 3/4 of the weight, roughly the split of an episode
+def detection_metrics(output_folder, novel_true, novel_score, normal_weight=.75):
+    # weight normal data so it accounts for normal_weight% of the weight
+    # normal_weight=.75 is roughly the split of an episode
     # should affect PRC but not ROC
     norm_count = torch.sum(novel_true == 0)
     novel_count = torch.sum(novel_true == 1)
     weight = torch.ones_like(novel_score)
-    weight[novel_true == 0] = 3 * novel_count / norm_count
+    weight[novel_true == 0] = normal_weight * novel_count / norm_count
+    weight[novel_true == 0] = (1 - normal_weight) * norm_count / novel_count
     # ROC with 1 as novel target
     fpr, tpr, roc_threshs = metrics.roc_curve(novel_true, novel_score, sample_weight=weight)
     auroc = metrics.roc_auc_score(novel_true, novel_score, sample_weight=weight)
