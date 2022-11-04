@@ -1,6 +1,6 @@
 import argparse
 
-from polycraft_nov_data.dataloader import episode_dataloader, novelcraft_dataloader
+from polycraft_nov_data.dataloader import episode_dataloader, novelcraft_plus_dataloader
 from polycraft_nov_data.image_transforms import PatchTrainPreprocess
 from polycraft_nov_data.novelcraft_const import PATCH_SHAPE
 
@@ -52,8 +52,8 @@ if args.dataset == "episode":
     train_loader = episode_dataloader("train", transform, batch_size=batch_size)
     valid_loader = None
 else:
-    train_loader = novelcraft_dataloader("train", transform, batch_size=batch_size)
-    valid_loader = novelcraft_dataloader("valid_norm", transform, batch_size=batch_size)
+    train_loader = novelcraft_plus_dataloader("train", transform, batch_size=batch_size)
+    valid_loader = novelcraft_plus_dataloader("valid_norm", transform, batch_size=batch_size)
 # get model instance
 latent_len = 100 if args.latent_len is None else args.latent_len
 model = LSA_cifar10_no_est.LSACIFAR10NoEst(PATCH_SHAPE, latent_len)
