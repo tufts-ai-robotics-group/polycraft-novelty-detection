@@ -48,8 +48,7 @@ def detection_metrics(output_folder, novel_true, novel_score, normal_weight=.75)
     norm_count = torch.sum(novel_true == 0)
     novel_count = torch.sum(novel_true == 1)
     weight = torch.ones_like(novel_score)
-    weight[novel_true == 0] = normal_weight * novel_count / norm_count
-    weight[novel_true == 0] = (1 - normal_weight) * norm_count / novel_count
+    weight[novel_true == 0] = normal_weight / (1 - normal_weight) * novel_count / norm_count
     # ROC with 1 as novel target
     fpr, tpr, roc_threshs = metrics.roc_curve(novel_true, novel_score, sample_weight=weight)
     auroc = metrics.roc_auc_score(novel_true, novel_score, sample_weight=weight)
