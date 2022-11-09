@@ -77,7 +77,7 @@ class AgentReconstructDetector(ReconstructDetectorPatchBased):
 if __name__ == '__main__':
     from pathlib import Path
 
-    from polycraft_nov_data.dataloader import collate_patches, novelcraft_dataloader
+    from polycraft_nov_data.dataloader import collate_patches, novelcraft_dataloader, novelcraft_plus_dataloader
     from polycraft_nov_data.image_transforms import PatchTestPreprocess
 
     from polycraft_nov_det.baselines.eval_novelcraft import save_scores, eval_from_save
@@ -86,24 +86,23 @@ if __name__ == '__main__':
     output_parent = Path("models/polycraft/noisy/scale_1/patch_based")
     output_folder = output_parent / Path("AE_patchwise")
     model_path = "models/polycraft/noisy/scale_1/patch_based/8000.pt"
-
+    
+    use_novelcraft_plus = True
+    if use_novelcraft_plus:
+        train_loader = novelcraft_plus_dataloader("train", PatchTestPreprocess(), 
+        collate_fn=collate_patches)
+        model_path = "models/polycraft/noisy/scale_1/patch_based/4000_plus.pt"
+    else:
+        train_loader = novelcraft_dataloader("train", PatchTestPreprocess(), 
+        collate_fn=collate_patches)
+    valid_loader = novelcraft_dataloader("valid_norm", PatchTestPreprocess(), collate_fn=collate_patches)
+    test_loader = novelcraft_dataloader("test", PatchTestPreprocess(), collate_fn=collate_patches)
+    
     model_path = Path(model_path)
 
     save_scores(ReconstructDetectorPatchBased(
-            model_path, input_shape=(3, 32, 32), device=torch.device("cuda:0")),
-        output_folder,
-        novelcraft_dataloader("valid", PatchTestPreprocess(), 32, collate_fn=collate_patches),
-        novelcraft_dataloader("test", PatchTestPreprocess(), 32, collate_fn=collate_patches),)
+            model_path, input_shape=nc_const.PATCH_SHAPE, device=torch.device("cuda:1")),
+        output_folder, valid_loader, test_loader)
     eval_from_save(output_folder)
 
-    # full image based AE
-    output_parent = Path("models/polycraft/noisy/scale_1/fullimage_based")
-    output_folder = output_parent / Path("AE_fullimage")
-    model_path = "models/polycraft/noisy/scale_1/fullimage_based/8000.pt"
-
-    model_path = Path(model_path)
-
-    save_scores(ReconstructDetector(
-            model_path, input_shape=(3, 256, 256), device=torch.device("cuda:0")),
-        output_folder, quad_full_image=True)
-    eval_from_save(output_folder)
+   
