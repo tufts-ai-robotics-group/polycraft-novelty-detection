@@ -7,7 +7,9 @@ import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
 import polycraft_nov_data.novelcraft_const as nc_const
-from polycraft_nov_data.image_transforms import GaussianNoise
+from polycraft_nov_data.image_transforms import GaussianNoise, VGGPreprocess
+from polycraft_nov_data.dataloader import novelcraft_dataloader, novelcraft_plus_dataloader
+from polycraft_nov_det.models.vgg import VGGPretrained
 
 import polycraft_nov_det.plot as plot
 
@@ -228,3 +230,28 @@ def train_vgg(model, train_loader, valid_loader, num_classes, lr, epochs=500, gp
                 # save model
                 save_model(model, session_path, epoch)
     return model
+    
+    
+if __name__ == '__main__':
+
+    use_novelcraft_plus = True
+    lr = 1e-5
+    
+    classifier = VGGPretrained(len(nc_const.NORMAL_CLASSES)).backbone
+    
+    if use_novelcraft_plus:
+        train_loader = novelcraft_plus_dataloader("train", VGGPreprocess(), 
+                                                  batch_size=32,
+                                                  balance_classes=True)
+    else:
+        train_loader = novelcraft_dataloader("train", VGGPreprocess(), 
+                                             batch_size=32,
+                                             balance_classes=True)
+
+    valid_loader = novelcraft_dataloader("valid_norm", VGGPreprocess(), 
+                                         batch_size=32)
+    
+    train_vgg(classifier, train_loader, valid_loader, 
+              len(nc_const.NORMAL_CLASSES), lr, epochs=1000, gpu=1)
+    
+    
