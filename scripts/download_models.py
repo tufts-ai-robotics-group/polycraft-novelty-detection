@@ -32,6 +32,9 @@ model_path_to_url = {
 
     Path("models/polycraft/noisy/scale_1/fullimage_based/8000.pt"):
     "https://tufts.box.com/shared/static/m1q942jp2r4r29xgx5rn19caha980ubo.pt",
+    
+    Path("models/polycraft/noisy/scale_1/patch_based/8000_plus.pt"):
+    "https://tufts.box.com/shared/static/3nl567njynbbafq3mqp8l1dj80mv32xy.pt",
 }
 
 if __name__ == "__main__":
