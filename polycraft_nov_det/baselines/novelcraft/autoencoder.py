@@ -89,7 +89,7 @@ if __name__ == '__main__':
     
     use_novelcraft_plus = True
     if use_novelcraft_plus:
-        model_path = "models/polycraft/noisy/scale_1/patch_based/4000_plus.pt"
+        model_path = "models/polycraft/noisy/scale_1/patch_based/8000_plus.pt"
     
     valid_loader = novelcraft_dataloader("valid_norm", PatchTestPreprocess(), collate_fn=collate_patches)
     test_loader = novelcraft_dataloader("test", PatchTestPreprocess(), collate_fn=collate_patches)
