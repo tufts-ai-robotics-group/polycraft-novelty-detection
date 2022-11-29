@@ -50,7 +50,7 @@ def eval_from_save(output_folder):
     # drop ArenaBlockHard scores if included in data
     if "ArenaBlockHard" in nov_to_scores:
         nov_to_scores.pop("ArenaBlockHard")
-    # filter out empty normal episode indices since only using test set
+    # filter out empty normal episode indices from only using test set
     if "normal" in nov_to_scores:
         nov_to_scores["normal"] = [scores for scores in nov_to_scores["normal"] if len(scores) > 0]
     # get list of max score for each episode
@@ -222,11 +222,11 @@ def av_neg_before_pos(eps_nov_preds):
 
 if __name__ == "__main__":
     method_to_outputs = {
-        "Autoencoder (Patch)": Path("models/episode/ae_patch/eval_patch/"),
+        # "Autoencoder (Patch)": Path("models/episode/ae_patch/eval_patch/"),
         "JSON (2 step)": Path("models/episode/json/eval_json_2/"),
         "JSON (5 step)": Path("models/episode/json/eval_json_5/"),
-        "Multimodal (2 step)": Path("models/episode/multimodal/eval_multimodal/"),
-        "Multimodal (5 step)": Path("models/episode/multimodal/eval_multimodal_5/"),
+        # "Multimodal (2 step)": Path("models/episode/multimodal/eval_multimodal/"),
+        # "Multimodal (5 step)": Path("models/episode/multimodal/eval_multimodal_5/"),
     }
     for method, output_folder in method_to_outputs.items():
         print(f"Method: {method}")
