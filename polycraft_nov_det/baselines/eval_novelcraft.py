@@ -50,7 +50,9 @@ def detection_metrics(output_folder, novel_true, novel_score, normal_weight=.75)
     weight = torch.ones_like(novel_score)
     weight[novel_true == 0] = normal_weight / (1 - normal_weight) * novel_count / norm_count
     # ROC with 1 as novel target
-    fpr, tpr, roc_threshs = metrics.roc_curve(novel_true, novel_score, sample_weight=weight)
+    fpr, tpr, roc_threshs = metrics.roc_curve(
+        novel_true, novel_score, sample_weight=weight,
+        drop_intermediate=False)  # needed for matching with PRC
     auroc = metrics.roc_auc_score(novel_true, novel_score, sample_weight=weight)
     metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=auroc).plot()
     plt.savefig(output_folder / "roc.png")
@@ -71,8 +73,8 @@ def detection_metrics(output_folder, novel_true, novel_score, normal_weight=.75)
     plt.savefig(output_folder / "prc.png")
     plt.close()
     print(f"Average Precision: {av_p}")
-    # recall at precision 80%
-    precision_80_ind = np.argwhere(precision >= .8)[0]
+    # recall at precision 80%, complex search since not monotonic
+    precision_80_ind = np.argwhere(precision == np.min(precision[precision >= .8]))[0]
     print(f"Recall(TPR) @ Precision {precision[precision_80_ind][0]}%: " +
           f"{recall[precision_80_ind][0]}")
     prc_80_thresh = prc_threshs[precision_80_ind]
