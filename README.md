@@ -1,4 +1,5 @@
 # polycraft-novelty-detection
+[![polycraft-novelty-detection](https://github.com/tufts-ai-robotics-group/polycraft-novelty-detection/actions/workflows/main.yml/badge.svg)](https://github.com/tufts-ai-robotics-group/polycraft-novelty-detection/actions/workflows/main.yml)
 Visual novelty detector for the Polycraft domain.
 
 ## Installation
