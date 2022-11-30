@@ -222,11 +222,11 @@ def av_neg_before_pos(eps_nov_preds):
 
 if __name__ == "__main__":
     method_to_outputs = {
-        # "Autoencoder (Patch)": Path("models/episode/ae_patch/eval_patch/"),
+        "Autoencoder (Patch)": Path("models/episode/ae_patch/eval_patch/"),
         "JSON (2 step)": Path("models/episode/json/eval_json_2/"),
         "JSON (5 step)": Path("models/episode/json/eval_json_5/"),
-        # "Multimodal (2 step)": Path("models/episode/multimodal/eval_multimodal/"),
-        # "Multimodal (5 step)": Path("models/episode/multimodal/eval_multimodal_5/"),
+        "Multimodal (2 step)": Path("models/episode/multimodal/eval_multimodal_2/"),
+        "Multimodal (5 step)": Path("models/episode/multimodal/eval_multimodal_5/"),
     }
     for method, output_folder in method_to_outputs.items():
         print(f"Method: {method}")
