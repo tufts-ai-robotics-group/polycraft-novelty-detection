@@ -41,7 +41,7 @@ def eval_from_save(output_folder):
     return detection_metrics(output_folder, novel_true, novel_score)[:-2]
 
 
-def detection_metrics(output_folder, novel_true, novel_score, normal_weight=.75):
+def detection_metrics(output_folder, novel_true, novel_score, normal_weight=.75, prc_target=.8):
     # weight normal data so it accounts for normal_weight% of the weight
     # normal_weight=.75 is roughly the split of an episode
     # should affect PRC but not ROC
@@ -73,24 +73,24 @@ def detection_metrics(output_folder, novel_true, novel_score, normal_weight=.75)
     plt.savefig(output_folder / "prc.png")
     plt.close()
     print(f"Average Precision: {av_p}")
-    # recall at precision 80%, complex search since not monotonic
-    precision_80_ind = np.argwhere(precision == np.min(precision[precision >= .8]))[0]
-    print(f"Recall(TPR) @ Precision {precision[precision_80_ind][0]}%: " +
-          f"{recall[precision_80_ind][0]}")
-    prc_80_thresh = prc_threshs[precision_80_ind]
-    print('Prec 80 thresh', prc_80_thresh)
+    # recall at target precision, complex search since not monotonic
+    prc_target_ind = np.argwhere(precision == np.min(precision[precision >= prc_target]))[0]
+    print(f"Recall(TPR) @ Precision {precision[prc_target_ind][0]}%: " +
+          f"{recall[prc_target_ind][0]}")
+    prc_target_thresh = prc_threshs[prc_target_ind]
+    print('Prec 80 thresh', prc_target_thresh)
     # precision at TPR 95%
     prc_tpr_95_ind = np.argwhere(prc_threshs >= roc_threshs[tpr_95_ind])[0]
     print(f"Precision @ TPR {tpr[tpr_95_ind][0]}%: {precision[prc_tpr_95_ind][0]}")
     tpr_95_thresh = roc_threshs[tpr_95_ind]
     print('TPR 95 thresh', tpr_95_thresh)
     # TNR at precision 80%
-    roc_precision_80_ind = np.argwhere(roc_threshs >= prc_threshs[precision_80_ind])[-1]
-    print(f"TNR @ Precision {precision[precision_80_ind][0]}%: " +
+    roc_precision_80_ind = np.argwhere(roc_threshs >= prc_threshs[prc_target_ind])[-1]
+    print(f"TNR @ Precision {precision[prc_target_ind][0]}%: " +
           f"{1 - fpr[roc_precision_80_ind][0]}")
-    print(f"TPR @ Precision {precision[precision_80_ind][0]}%: " +
+    print(f"TPR @ Precision {precision[prc_target_ind][0]}%: " +
           f"{tpr[roc_precision_80_ind][0]}")
-    return fpr, tpr, auroc, precision, recall, av_p, auprc, tpr_95_thresh, prc_80_thresh
+    return fpr, tpr, auroc, precision, recall, av_p, auprc, tpr_95_thresh, prc_target_thresh
 
 
 if __name__ == "__main__":

@@ -62,9 +62,9 @@ def eval_from_save(output_folder):
         max_scores = [torch.max(frame_scores) for frame_scores in ep_scores]
         nov_to_max_scores[nov_type] = max_scores
 
-    tpr_95_thresh, prc_80_thresh = ep_detection_metrics(nov_to_max_scores, output_folder)
+    tpr_95_thresh, prc_95_thresh = ep_detection_metrics(nov_to_max_scores, output_folder)
     print(f"Delay @ TPR: {av_delay_at_thresh(nov_to_scores, tpr_95_thresh)}")
-    print(f"Delay @ Precision: {av_delay_at_thresh(nov_to_scores, prc_80_thresh)}")
+    print(f"Delay @ Precision: {av_delay_at_thresh(nov_to_scores, prc_95_thresh)}")
     vis_trials(nov_to_max_scores, output_folder)
     return nov_to_scores
 
@@ -80,9 +80,9 @@ def ep_detection_metrics(nov_to_max_scores, output_folder):
         novel_true = torch.hstack((novel_true, cur_novel_true))
         novel_score = torch.hstack((novel_score, torch.Tensor(max_scores)))
     # detection metrics with 15% normal 85% novel weighting
-    tpr_95_thresh, prc_80_thresh = detection_metrics(
-        output_folder, novel_true, novel_score, .15)[-2:]
-    return tpr_95_thresh, prc_80_thresh
+    tpr_95_thresh, prc_95_thresh = detection_metrics(
+        output_folder, novel_true, novel_score, .15, .95)[-2:]
+    return tpr_95_thresh, prc_95_thresh
 
 
 def vis_trials(nov_to_max_scores, output_folder):
