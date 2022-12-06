@@ -226,7 +226,7 @@ def train_vgg(model, train_loader, valid_loader, num_classes, lr, epochs=500, gp
                 print('Avg. Valid Acc, class ', str(c), ': ', acc_pc[c].item(), flush=True)
                 writer.add_scalar("Average Valid Acc class" + str(c), acc_pc[c].item(), epoch)
             # updates every 10% of training time
-            if (epochs >= 10 and (epoch + 1) % (epochs // 10) == 0) or epoch == epochs - 1:
+            if (epochs >= 20 and (epoch + 1) % (epochs // 20) == 0) or epoch == epochs - 1:
                 # save model
                 save_model(model, session_path, epoch)
     return model
@@ -237,21 +237,21 @@ if __name__ == '__main__':
     use_novelcraft_plus = True
     lr = 1e-5
     
-    classifier = VGGPretrained(len(nc_const.NORMAL_CLASSES)).backbone
+    classifier = VGGPretrained(len(nc_const.NORMAL_CLASSES))
     
     if use_novelcraft_plus:
         train_loader = novelcraft_plus_dataloader("train", VGGPreprocess(), 
-                                                  batch_size=32,
+                                                  batch_size=16,
                                                   balance_classes=True)
     else:
         train_loader = novelcraft_dataloader("train", VGGPreprocess(), 
-                                             batch_size=32,
+                                             batch_size=16,
                                              balance_classes=True)
 
     valid_loader = novelcraft_dataloader("valid_norm", VGGPreprocess(), 
-                                         batch_size=32)
+                                         batch_size=16)
     
     train_vgg(classifier, train_loader, valid_loader, 
-              len(nc_const.NORMAL_CLASSES), lr, epochs=1000, gpu=1)
+              len(nc_const.NORMAL_CLASSES), lr, epochs=1000, gpu=2)
     
     

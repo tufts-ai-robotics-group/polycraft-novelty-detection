@@ -45,7 +45,15 @@ if __name__ == "__main__":
     from polycraft_nov_det.baselines.eval_novelcraft import save_scores, eval_from_save
 
     output_parent = Path("models/vgg/eval_odin")
-    model_path = Path("models/vgg/vgg_classifier_1000.pt")
+    
+    use_novelcraft_plus = True
+    
+    if use_novelcraft_plus:
+        model_path = Path("models/vgg/vgg_classifier_1000_plus.pt")
+    
+    else:
+        model_path = Path("models/vgg/vgg_classifier_1000.pt")
+        
     # define hyperparameter search space
     temps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
     noises = [i * 0.004 / 20 for i in range(21)]
@@ -53,7 +61,7 @@ if __name__ == "__main__":
         for noise in noises:
             output_folder = output_parent / Path(f"t={temp}_n={noise:.4f}")
             save_scores(
-                OdinDetector(model_path, device=torch.device("cuda:1"), temp=temp, noise=noise),
+                OdinDetector(model_path, device=torch.device("cuda:0"), temp=temp, noise=noise),
                 output_folder,
                 novelcraft_dataloader("valid", VGGPreprocess(), 32),
                 novelcraft_dataloader("test", VGGPreprocess(), 32))
