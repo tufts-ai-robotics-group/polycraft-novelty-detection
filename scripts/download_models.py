@@ -26,6 +26,21 @@ model_path_to_url = {
 
     Path("models/vgg/vgg_classifier_1000_5.pt"):
     "https://tufts.box.com/shared/static/vbbvdgknw2ozebali0giiylss1ax9urd.pt",
+    
+    Path("models/vgg/vgg_classifier_1000_plus.pt"):
+    "https://tufts.box.com/shared/static/rkxhqx1f00p761jsk4ri9wrbeekpkgnf.pt",
+
+    Path("models/vgg/vgg_classifier_1000_2_plus.pt"):
+    "https://tufts.box.com/shared/static/4wxlcrf5ad0j8cmopdqiblv8q2ryefzv.pt",
+
+    Path("models/vgg/vgg_classifier_1000_3_plus.pt"):
+    "https://tufts.box.com/shared/static/bwutzrhks7f75jrcwpu92p1gk1d8epk8.pt",
+
+    Path("models/vgg/vgg_classifier_1000_4_plus.pt"):
+    "https://tufts.box.com/shared/static/dl90066p6nd56ymo1nyldglafw0qyvnh.pt",
+
+    Path("models/vgg/vgg_classifier_1000_5_plus.pt"):
+    "https://tufts.box.com/shared/static/vbbvdgknw2ozebali0giiylss1ax9urd.pt",
 
     Path("models/polycraft/noisy/scale_1/patch_based/8000.pt"):
     "https://tufts.box.com/shared/static/xjjl6ogwdxeyp6972x3x94c2haoh7twj.pt",
