@@ -95,7 +95,7 @@ def detection_metrics(output_folder, novel_true, novel_score, normal_weight=.75,
 
 if __name__ == "__main__":
     method_to_outputs = {
-        "NDCC": Path("models/vgg/eval_ndcc/stanford_dogs_times_1e-1"),
+        "NDCC": Path("models/vgg/eval_ndcc/plus"),
         "ODIN": Path("models/vgg/eval_odin/t=1000_n=0.0000"),
         "Ensemble": Path("models/vgg/eval_ensemble/"),
         "One-Class SVM": Path("models/vgg/eval_ocsvm/nu=0.800000_gamm=0.000010"),
