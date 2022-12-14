@@ -22,8 +22,7 @@ class DINONDCCDetector(NoveltyDetector):
     def novelty_score(self, data):
         data = data.to(self.device)
         with torch.no_grad():
-            outputs = self.model(data)
-            outputs = outputs.detach().cpu().numpy().squeeze()
+            outputs = self.model(data)[1].detach().cpu().numpy().squeeze()
         distances = mahalanobis_metric(outputs, self.means, self.inv_sigma)
         nd_scores = np.min(distances, axis=1)
         return torch.Tensor(nd_scores)
