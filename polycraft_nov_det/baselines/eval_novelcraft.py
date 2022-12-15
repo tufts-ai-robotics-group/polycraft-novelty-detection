@@ -95,13 +95,19 @@ def detection_metrics(output_folder, novel_true, novel_score, normal_weight=.75,
 
 if __name__ == "__main__":
     method_to_outputs = {
-        "NDCC": Path("models/vgg/eval_ndcc/plus"),
+        "NDCC": Path("models/vgg/eval_ndcc/stanford_dogs_times_1e-1"),
         "ODIN": Path("models/vgg/eval_odin/t=1000_n=0.0000"),
         "Ensemble": Path("models/vgg/eval_ensemble/"),
         "One-Class SVM": Path("models/vgg/eval_ocsvm/nu=0.800000_gamm=0.000010"),
-        "Autoencoder (Patch)": Path("models/polycraft/noisy/scale_1/patch_based/AE_patchwise"),
-        "Autoencoder (Full image)":
-        Path("models/polycraft/noisy/scale_1/fullimage_based/AE_fullimage")}
+        "AE (Patch)": Path("models/polycraft/noisy/scale_1/patch_based/AE_patchwise"),
+        #"Autoencoder (Full image)":
+        #Path("models/polycraft/noisy/scale_1/fullimage_based/AE_fullimage")
+        "NDCC+": Path("models/vgg/eval_ndcc/plus"),
+        "ODIN+": Path("models/vgg/eval_odin/plus/t=1000_n=0.0000"),
+        "Ensemble+": Path("models/vgg/eval_ensemble/plus"),
+        "One-Class SVM+": Path("models/vgg/eval_ocsvm/plus/subset_10000/nu=0.800000_gamm=0.001778"),
+        "AE+ (Patch)": Path("models/polycraft/noisy/scale_1/patch_based/plus/AE_patchwise")
+        }
     for method, output_folder in method_to_outputs.items():
         print(f"Method: {method}")
         fpr, tpr, auroc, precision, recall, av_p, auprc = eval_from_save(output_folder)
