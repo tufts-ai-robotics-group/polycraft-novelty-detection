@@ -130,7 +130,7 @@ if __name__ == '__main__':
     valid_loader = novelcraft_dataloader("valid_norm", VGGPreprocess(), 1)
     test_loader = novelcraft_dataloader("test", VGGPreprocess(), 1)
 
-    output_parent = Path("models/OneClassSVM/2022.12.05.15.05.01")
+    output_parent = Path("models/vgg/eval_ocsvm/plus/subset_10000")
     classifier_path = Path("models/vgg/vgg_classifier_1000_plus.pt")
     feature_extractor = load_vgg_model(classifier_path, device).to(device).eval()
     
