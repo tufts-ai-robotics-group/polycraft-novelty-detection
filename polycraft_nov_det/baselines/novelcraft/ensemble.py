@@ -52,7 +52,7 @@ if __name__ == "__main__":
             load_vgg_model(Path("models/vgg/vgg_classifier_1000_5.pt"), device),
         ]    
     
-    output_folder = Path("models/vgg/eval_ensemble/")
+    output_folder = Path("models/vgg/eval_ensemble/plus/")
 
     save_scores(EnsembleDetector(models, device), output_folder,
                 novelcraft_dataloader("valid_norm", VGGPreprocess(), 32),

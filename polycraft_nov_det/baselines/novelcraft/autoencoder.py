@@ -83,7 +83,7 @@ if __name__ == '__main__':
     from polycraft_nov_det.baselines.eval_novelcraft import save_scores, eval_from_save
 
     # patch based AE
-    output_parent = Path("models/polycraft/noisy/scale_1/patch_based")
+    output_parent = Path("models/polycraft/noisy/scale_1/patch_based/plus")
     output_folder = output_parent / Path("AE_patchwise")
     model_path = "models/polycraft/noisy/scale_1/patch_based/8000.pt"
     
