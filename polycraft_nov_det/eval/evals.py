@@ -9,6 +9,7 @@ import polycraft_nov_data.novelcraft_const as n_const
 from polycraft_nov_det.dino_trans import DINOTestTrans
 import polycraft_nov_det.eval.stats as stats
 from polycraft_nov_det.plot import plot_gcd_con_matrix
+from polycraft_nov_det.ss_gmm import SSGMM
 from polycraft_nov_det.ss_kmeans import SSKMeans
 
 
@@ -43,34 +44,43 @@ def polycraft_gcd(model, label="GCD", device="cpu", embedding_ind=None):
             data_embeddings = outputs[embedding_ind].detach().cpu().numpy()
         embeddings = np.vstack((embeddings, data_embeddings))
         y_true = np.hstack((y_true, targets.cpu().numpy()))
-    # SS KMeans
-    ss_est = SSKMeans(labeled_embeddings, labeled_y, 10).fit(
-        embeddings, np.zeros_like(y_true))
-    y_pred = ss_est.predict(embeddings)
-    # print results
-    row_ind, col_ind, weight = stats.assign_clusters(y_pred, y_true)
-    acc = stats.cluster_acc(row_ind, col_ind, weight)
-    print(f"{label}\n")
-    print(f"All: {acc}")
-    # results for normal and novel subsets
-    num_norm = len(n_const.NORMAL_CLASSES)
-    con_mat = stats.cluster_confusion(row_ind, col_ind, weight)
-    # clear rows so only looking at predictions with the desired true labels
-    norm_con = np.copy(con_mat)
-    norm_con[num_norm:] = 0
-    norm_acc = float(np.diag(norm_con).sum()) / norm_con.sum()
-    print(f"Normal: {norm_acc}")
-    novel_con = np.copy(con_mat)
-    novel_con[:num_norm] = 0
-    novel_acc = float(np.diag(novel_con).sum()) / novel_con.sum()
-    print(f"Novel: {novel_acc}")
-    print("Confusion Matrix:")
-    print(con_mat)
-    print()
-    # confusion matrix visualization
-    fig_dir = Path("figures")
-    fig_dir.mkdir(exist_ok=True)
-    plot_gcd_con_matrix(con_mat).savefig(fig_dir / f"{label}_con_mat.png")
+    # apply SS clustering and output results
+    for ss_method in ["KMeans", "GMM"]:
+        if ss_method == "KMeans":
+            # SS KMeans
+            ss_est = SSKMeans(labeled_embeddings, labeled_y, 10).fit(
+                embeddings)
+            y_pred = ss_est.predict(embeddings)
+        if ss_method == "GMM":
+            # SS GMM
+            ss_est = SSGMM(labeled_embeddings, labeled_y, embeddings, 10).fit(
+                embeddings)
+            y_pred = ss_est.predict(embeddings)
+        # print results
+        row_ind, col_ind, weight = stats.assign_clusters(y_pred, y_true)
+        acc = stats.cluster_acc(row_ind, col_ind, weight)
+        out_label = f"{label}_{ss_method}"
+        print(f"{out_label}\n")
+        print(f"All: {acc}")
+        # results for normal and novel subsets
+        num_norm = len(n_const.NORMAL_CLASSES)
+        con_mat = stats.cluster_confusion(row_ind, col_ind, weight)
+        # clear rows so only looking at predictions with the desired true labels
+        norm_con = np.copy(con_mat)
+        norm_con[num_norm:] = 0
+        norm_acc = float(np.diag(norm_con).sum()) / norm_con.sum()
+        print(f"Normal: {norm_acc}")
+        novel_con = np.copy(con_mat)
+        novel_con[:num_norm] = 0
+        novel_acc = float(np.diag(novel_con).sum()) / novel_con.sum()
+        print(f"Novel: {novel_acc}")
+        print("Confusion Matrix:")
+        print(con_mat)
+        print()
+        # confusion matrix visualization
+        fig_dir = Path("figures")
+        fig_dir.mkdir(exist_ok=True)
+        plot_gcd_con_matrix(con_mat).savefig(fig_dir / f"{out_label}_con_mat.png")
     return acc
 
 
@@ -81,10 +91,10 @@ if __name__ == "__main__":
     polycraft_gcd(load_dino_pretrained(device), "DINO_SS_K-Means", device)
     polycraft_gcd(load_dino_block("models/polycraft/GCD/block200.pt", device), "GCD_SS_K-Means",
                   device)
-    polycraft_gcd(
-        torch.hub.load(
-            "tufts-ai-robotics-group/CCGaussian:main",
-            "ccg_gcd",
-            skip_validation=True,  # temp fix for torch bug
-            trust_repo=True).to(device),
-        "CCG_GCD_SS_K-Means", device, embedding_ind=1)
+    # polycraft_gcd(
+    #     torch.hub.load(
+    #         "tufts-ai-robotics-group/CCGaussian:main",
+    #         "ccg_gcd",
+    #         skip_validation=True,  # temp fix for torch bug
+    #         trust_repo=True).to(device),
+    #     "CCG_GCD_SS_K-Means", device, embedding_ind=1)
