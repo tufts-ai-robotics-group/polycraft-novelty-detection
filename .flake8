@@ -2,3 +2,4 @@
 max-line-length = 100
 per-file-ignores =
     polycraft_nov_det/ss_kmeans.py:N803,N806
+    polycraft_nov_det/ss_gmm.py:N803,N806
