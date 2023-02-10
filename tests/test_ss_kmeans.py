@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 
 import polycraft_nov_det.eval.stats as stats
@@ -30,9 +32,10 @@ def test_ss_kmeans():
         ]).reshape((-1, n_dim))
     y_labeled = np.array([[i] * n_samples for i in range(n_labeled)]).flatten()
     X_unlabeled = np.array([
-        rng.multivariate_normal(means[i], cov, n_samples) for i in range(n_labeled, n_clusters)
+        rng.multivariate_normal(means[i], cov, n_samples) for i in range(n_clusters)
         ]).reshape((-1, n_dim))
-    y_true = np.array([[i] * n_samples for i in range(n_clusters)]).flatten()
+    y_true = np.array([[i] * n_samples for i in
+                       itertools.chain(range(n_labeled), range(n_clusters))]).flatten()
 
     ss_est = SSKMeans(X_labeled, y_labeled, n_clusters).fit(X_unlabeled)
     y_pred = ss_est.predict(np.vstack((X_labeled, X_unlabeled)))
