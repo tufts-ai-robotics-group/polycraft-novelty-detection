@@ -9,7 +9,7 @@ from polycraft_nov_det.ss_kmeans import ss_kmeans_plusplus
 class SSGMM(GaussianMixture):
     def __init__(self, X_labeled, y_labeled, X_unlabeled, n_components):
         self.X_labeled = X_labeled
-        self.y_labeled = y_labeled
+        self.y_labeled = y_labeled.astype(int)
         self.n_labeled = X_labeled.shape[0]
         means_init = ss_kmeans_plusplus(
             X_labeled, y_labeled, X_unlabeled, n_components - len(np.unique(y_labeled)))
