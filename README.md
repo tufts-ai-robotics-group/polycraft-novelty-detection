@@ -9,7 +9,7 @@ This repository utilizes Git submodules so utilize ```git clone --recurse-submod
 git submodule update --init --recursive
 ```
 
-If you do not have Pipenv installed, run the following:
+The following instructions should be done with Python 3.10. If you do not have Pipenv installed, run the following:
 ```
 pip install pipenv
 ```
@@ -26,7 +26,7 @@ pipenv run python scripts/download_models.py
 
 #### Conda Installation
 
-The following instructions are **not recommended** unless you are unable to install a Python version compatible with the Pipenv.
+The following instructions are **not recommended** unless you are unable to install Python 3.10 with Pipenv on the computer.
 
 For this installation Pytorch will be installed in the Conda environment using the appropriate command according to the [Pytorch website](https://pytorch.org/get-started/locally/). For example:
 ```
