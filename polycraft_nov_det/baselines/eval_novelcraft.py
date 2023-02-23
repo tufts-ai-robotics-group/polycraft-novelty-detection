@@ -78,12 +78,12 @@ def detection_metrics(output_folder, novel_true, novel_score, normal_weight=.75,
     print(f"Recall(TPR) @ Precision {precision[prc_target_ind][0]}%: " +
           f"{recall[prc_target_ind][0]}")
     prc_target_thresh = prc_threshs[prc_target_ind]
-    print('Prec 80 thresh', prc_target_thresh)
+    print(f"Prec {precision[prc_target_ind][0]} thresh", prc_target_thresh)
     # precision at TPR 95%
     prc_tpr_95_ind = np.argwhere(prc_threshs >= roc_threshs[tpr_95_ind])[0]
     print(f"Precision @ TPR {tpr[tpr_95_ind][0]}%: {precision[prc_tpr_95_ind][0]}")
     tpr_95_thresh = roc_threshs[tpr_95_ind]
-    print('TPR 95 thresh', tpr_95_thresh)
+    print("TPR 95 thresh", tpr_95_thresh)
     # TNR at precision 80%
     roc_precision_80_ind = np.argwhere(roc_threshs >= prc_threshs[prc_target_ind])[-1]
     print(f"TNR @ Precision {precision[prc_target_ind][0]}%: " +
