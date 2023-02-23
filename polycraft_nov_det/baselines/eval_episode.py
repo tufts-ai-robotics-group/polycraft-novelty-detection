@@ -92,7 +92,10 @@ def vis_trials(nov_to_max_scores, output_folder):
         first_novel_ep = ep_const.TEST_CLASS_FIRST_NOVEL_EP[nov_type]
         if nov_type == "normal":  # normal will not have novel scores
             first_novel_ep = len(max_scores)
-        max_norm = max(max_scores[:first_novel_ep])
+        if first_novel_ep > 0:
+            max_norm = max(max_scores[:first_novel_ep])
+        else:
+            max_norm = 0
         # bar chart with lines for max normal reconstruction error and novelty split
         plt.figure(dpi=150)
         plt.bar(range(first_novel_ep), max_scores[:first_novel_ep], color="red")
