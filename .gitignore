@@ -5,3 +5,4 @@ build
 reqlib-metadata
 *.egg-info
 models/vgg/*.pt
+models/polycraft/noisy/scale_1/*/8000*.pt
