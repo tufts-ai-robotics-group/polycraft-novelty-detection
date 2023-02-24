@@ -4,8 +4,8 @@ def bootstrap_metric(y_pred, y_true, metric_func):
     """Compute test set boostrapping of a metric
 
     Args:
-        y_pred (torch.Tensor): Model predictions for some output y
-        y_true (torch.Tensor): True value of output y
+        y_pred (np.array): Model predictions for some output y
+        y_true (np.array): True value of output y
         metric_func (function): function with parameters (y_pred, y_true) returning a float metric
 
     Returns:
