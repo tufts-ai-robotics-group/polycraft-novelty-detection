@@ -19,6 +19,40 @@ def plot_gcd_con_matrix(con_matrix):
     disp = disp.plot(cmap="Blues", values_format=".0f")
     return disp.figure_
 
+def plot_gcd_CI(all, normal, novel):
+    """Plot confidence interval for GCD results
+
+    Args:
+        all (tuple): (mean, ci_low, ci_high) for all results
+        normal (tuple): (mean, ci_low, ci_high) for normal results
+        novel (tuple): (mean, ci_low, ci_high) for novel results
+    Returns:
+        plt.Figure: Figure with confidence interval plot
+    """
+    fig, ax = plt.subplots()
+    x = np.arange(3)
+    means = np.array([all[0], normal[0], novel[0]])
+    ci_low = np.array([all[1], normal[1], novel[1]])
+    ci_high = np.array([all[2], normal[2], novel[2]])
+    colors = ['blue', 'red', 'green']
+    ax.bar(x, means, yerr=[means - ci_low, ci_high - means], capsize=5,
+           color=colors, alpha=0.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels(["All", "Normal", "Novel"])
+    ax.set_ylabel("Accuracy")
+
+    # add text to the bar 
+    for i in range(len(means)):
+        ax.text(x = x[i]-0.1 , y = means[i]+0.007, 
+                s = f"{means[i]:.2f}", size = 8)
+    # add text to the error bar
+    for i in range(len(means)):
+        ax.text(x = x[i]-0.1 , y = ci_low[i]-0.015, 
+                s = f"{ci_low[i]:.2f}", size = 8)
+        ax.text(x = x[i]-0.1 , y = ci_high[i]+0.015, 
+                s = f"{ci_high[i]:.2f}", size = 8)
+    return fig
+
 
 def plot_embedding(embeddings, targets):
     """Plot PCA projection of autoencoder embeddings
