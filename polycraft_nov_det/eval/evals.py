@@ -8,11 +8,11 @@ import polycraft_nov_data.novelcraft_const as n_const
 
 from polycraft_nov_det.dino_trans import DINOTestTrans
 import polycraft_nov_det.eval.stats as stats
-from polycraft_nov_det.plot import plot_gcd_con_matrix, plot_gcd_CI
+from polycraft_nov_det.plot import plot_gcd_con_matrix, plot_gcd_ci
 from polycraft_nov_det.ss_gmm import SSGMM
 from polycraft_nov_det.ss_kmeans import SSKMeans
 from polycraft_nov_det.bootstrap import bootstrap_metric
-import matplotlib.pyplot as plt
+
 
 def _accuracy_on_subset(num_norm, y_pred, y_true, category="normal"):
     """
@@ -40,14 +40,17 @@ def _accuracy_on_subset(num_norm, y_pred, y_true, category="normal"):
 
     return acc
 
+
 @torch.no_grad()
-def polycraft_gcd(model, label="GCD", device="cpu", embedding_ind=None, 
+def polycraft_gcd(model, label="GCD", device="cpu", embedding_ind=None,
                   bootstrap=False, n_bootsraps=100):
     model.eval()
     # get dataloader
     batch_size = 128
-    labeled_loader = novelcraft_dataloader("train", DINOTestTrans(), batch_size, True)
-    unlabeled_loader = novelcraft_dataloader("valid", DINOTestTrans(), batch_size)
+    labeled_loader = novelcraft_dataloader(
+        "train", DINOTestTrans(), batch_size, True)
+    unlabeled_loader = novelcraft_dataloader(
+        "valid", DINOTestTrans(), batch_size)
     # collect labeled embeddings and labels
     labeled_embeddings = np.empty((0, 768))
     labeled_y = np.empty((0,))
@@ -108,50 +111,59 @@ def polycraft_gcd(model, label="GCD", device="cpu", embedding_ind=None,
         # confusion matrix visualization
         fig_dir = Path("figures")
         fig_dir.mkdir(exist_ok=True)
-        plot_gcd_con_matrix(con_mat).savefig(fig_dir / f"{out_label}_con_mat.png")
+        plot_gcd_con_matrix(con_mat).savefig(
+            fig_dir / f"{out_label}_con_mat.png")
 
         if bootstrap:
             # bootstrap
-            # define metric function, which takes y_pred and y_true 
-            # as arguments to stats.assign_clusters, and unpacks the returned values
-            # to pass to stats.cluster_acc
-            metric_func = lambda y_pred, y_true: \
-                    stats.cluster_acc(*stats.assign_clusters(y_pred, y_true))
-            mean, ci_low, ci_high = bootstrap_metric(y_pred, 
-                                                    y_true, 
-                                                    metric_func=metric_func, 
-                                                    n_bootstraps=n_bootsraps)
+            # define metric function, which takes y_pred and y_true
+            # as arguments to stats.assign_clusters, and unpacks the
+            # returned values to pass to stats.cluster_acc
+            def metric_func(y_pred, y_true): return \
+                stats.cluster_acc(*stats.assign_clusters(y_pred, y_true))
+            mean, ci_low, ci_high = bootstrap_metric(y_pred,
+                                                     y_true,
+                                                     metric_func=metric_func,
+                                                     n_bootstraps=n_bootsraps)
             print(f"Bootstrap All: {mean:3f} ({ci_low:3f}, {ci_high:3f})")
 
             # get bootstrap results for normal and novel subsets
-            metric_func = lambda y_pred, y_true: \
-                    _accuracy_on_subset(num_norm, y_pred, y_true, category="normal")
-            norm_mean, norm_ci_low, norm_ci_high = bootstrap_metric(y_pred,
-                                                        y_true,
-                                                        metric_func=metric_func,
-                                                        n_bootstraps=n_bootsraps)
-            print(f"Bootstrap Normal: {norm_mean:3f} ({norm_ci_low:3f}, {norm_ci_high:3f})")
+            def metric_func(y_pred, y_true): return \
+                _accuracy_on_subset(
+                    num_norm, y_pred, y_true, category="normal")
+            norm_mean, norm_ci_low, norm_ci_high = bootstrap_metric(
+                y_pred,
+                y_true,
+                metric_func=metric_func,
+                n_bootstraps=n_bootsraps)
+            print(
+                f"Bootstrap Normal: {norm_mean:3f}",
+                f"({norm_ci_low:3f}, {norm_ci_high:3f})")
 
-            metric_func = lambda y_pred, y_true: \
-                    _accuracy_on_subset(num_norm, y_pred, y_true, category="novel")
-            novel_mean, novel_ci_low, novel_ci_high = bootstrap_metric(y_pred,
-                                                        y_true,
-                                                        metric_func=metric_func,
-                                                        n_bootstraps=n_bootsraps)
-            print(f"Bootstrap Novel: {novel_mean:3f} ({novel_ci_low:3f}, {novel_ci_high:3f})")
-            
-            plot_gcd_CI((mean, ci_low, ci_high,),
+            def metric_func(y_pred, y_true): return \
+                _accuracy_on_subset(num_norm, y_pred, y_true, category="novel")
+            novel_mean, novel_ci_low, novel_ci_high = bootstrap_metric(
+                y_pred,
+                y_true,
+                metric_func=metric_func,
+                n_bootstraps=n_bootsraps)
+            print(
+                f"Bootstrap Novel: {novel_mean:3f}",
+                f"({novel_ci_low:3f}, {novel_ci_high:3f})")
+            print()
+            plot_gcd_ci((mean, ci_low, ci_high,),
                         (norm_mean, norm_ci_low, norm_ci_high,),
                         (novel_mean, novel_ci_low, novel_ci_high,)).savefig(
                             fig_dir / f"{out_label}_CI.png")
     return acc
+
 
 if __name__ == "__main__":
     from polycraft_nov_det.model_load import load_dino_block, load_dino_pretrained
 
     device = torch.device("cuda:0")
 
-    polycraft_gcd(load_dino_pretrained(device), "DINO_SS_K-Means", device, 
+    polycraft_gcd(load_dino_pretrained(device), "DINO_SS_K-Means", device,
                   embedding_ind=None, bootstrap=True, n_bootsraps=30)
     polycraft_gcd(load_dino_block("models/polycraft/GCD/block200.pt", device), "GCD_SS_K-Means",
                   device, embedding_ind=None, bootstrap=True, n_bootsraps=30)
