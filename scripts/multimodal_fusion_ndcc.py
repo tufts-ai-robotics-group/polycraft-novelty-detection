@@ -30,5 +30,5 @@ if __name__ == "__main__":
             cur_paths = [f"{nov}/{ep}/{i}" for i in range(len(ae_nov_to_scores[nov][ep]))]
             nov_scores = torch.hstack([nov_scores, cur_nov_scores])
             paths = np.hstack((paths, np.array(cur_paths)))
-    torch.save(nov_scores, "models/episode/multimodal/eval_multimodal_ndcc/novel_scores.pt")
-    np.save("models/episode/multimodal/eval_multimodal_ndcc/paths.npy", paths)
+    torch.save(nov_scores, "models/episode/ndcc/ensemble_ndcc/novel_scores.pt")
+    np.save("models/episode/ndcc/ensemble_ndcc/paths.npy", paths)
